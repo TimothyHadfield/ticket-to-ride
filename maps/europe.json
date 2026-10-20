@@ -1,0 +1,1379 @@
+{
+ "id": "europe",
+ "name": "Europe",
+ "players": [
+  2,
+  5
+ ],
+ "trains": 45,
+ "stations": 3,
+ "stationPoints": 4,
+ "startHand": 4,
+ "bothDoublesFrom": 4,
+ "setup": {
+  "deal": 3,
+  "keep": 2,
+  "long": 1
+ },
+ "draw": {
+  "deal": 3,
+  "keep": 1
+ },
+ "deck": {
+  "colors": {
+   "pink": 12,
+   "white": 12,
+   "blue": 12,
+   "yellow": 12,
+   "orange": 12,
+   "black": 12,
+   "red": 12,
+   "green": 12
+  },
+  "loco": 14
+ },
+ "points": {
+  "1": 1,
+  "2": 2,
+  "3": 4,
+  "4": 7,
+  "5": 10,
+  "6": 15,
+  "7": 18,
+  "8": 21
+ },
+ "bonuses": {
+  "longest": 10
+ },
+ "longestName": "European Express",
+ "nordicLocos": false,
+ "size": [
+  1000,
+  725
+ ],
+ "cities": [
+  {
+   "id": "edinburgh",
+   "name": "Edinburgh",
+   "x": 156,
+   "y": 156
+  },
+  {
+   "id": "london",
+   "name": "London",
+   "x": 206,
+   "y": 259
+  },
+  {
+   "id": "dieppe",
+   "name": "Dieppe",
+   "x": 223,
+   "y": 319
+  },
+  {
+   "id": "brest",
+   "name": "Brest",
+   "x": 133,
+   "y": 358
+  },
+  {
+   "id": "paris",
+   "name": "Paris",
+   "x": 269,
+   "y": 359
+  },
+  {
+   "id": "pamplona",
+   "name": "Pamplona",
+   "x": 184,
+   "y": 507
+  },
+  {
+   "id": "barcelona",
+   "name": "Barcelona",
+   "x": 252,
+   "y": 545
+  },
+  {
+   "id": "madrid",
+   "name": "Madrid",
+   "x": 147,
+   "y": 571
+  },
+  {
+   "id": "lisboa",
+   "name": "Lisboa",
+   "x": 50,
+   "y": 616
+  },
+  {
+   "id": "cadiz",
+   "name": "Cádiz",
+   "x": 101,
+   "y": 674
+  },
+  {
+   "id": "amsterdam",
+   "name": "Amsterdam",
+   "x": 291,
+   "y": 239
+  },
+  {
+   "id": "bruxelles",
+   "name": "Bruxelles",
+   "x": 290,
+   "y": 301
+  },
+  {
+   "id": "essen",
+   "name": "Essen",
+   "x": 347,
+   "y": 266
+  },
+  {
+   "id": "frankfurt",
+   "name": "Frankfurt",
+   "x": 371,
+   "y": 323
+  },
+  {
+   "id": "zurich",
+   "name": "Zürich",
+   "x": 364,
+   "y": 386
+  },
+  {
+   "id": "marseille",
+   "name": "Marseille",
+   "x": 309,
+   "y": 494
+  },
+  {
+   "id": "kobenhavn",
+   "name": "København",
+   "x": 438,
+   "y": 163
+  },
+  {
+   "id": "berlin",
+   "name": "Berlin",
+   "x": 452,
+   "y": 248
+  },
+  {
+   "id": "munchen",
+   "name": "München",
+   "x": 422,
+   "y": 364
+  },
+  {
+   "id": "venezia",
+   "name": "Venezia",
+   "x": 433,
+   "y": 437
+  },
+  {
+   "id": "roma",
+   "name": "Roma",
+   "x": 436,
+   "y": 531
+  },
+  {
+   "id": "stockholm",
+   "name": "Stockholm",
+   "x": 536,
+   "y": 66
+  },
+  {
+   "id": "danzig",
+   "name": "Danzig",
+   "x": 546,
+   "y": 199
+  },
+  {
+   "id": "wien",
+   "name": "Wien",
+   "x": 501,
+   "y": 361
+  },
+  {
+   "id": "zagrab",
+   "name": "Zagrab",
+   "x": 498,
+   "y": 427
+  },
+  {
+   "id": "sarajevo",
+   "name": "Sarajevo",
+   "x": 542,
+   "y": 479
+  },
+  {
+   "id": "brindisi",
+   "name": "Brindisi",
+   "x": 533,
+   "y": 565
+  },
+  {
+   "id": "palermo",
+   "name": "Palermo",
+   "x": 452,
+   "y": 630
+  },
+  {
+   "id": "warszawa",
+   "name": "Warszawa",
+   "x": 588,
+   "y": 255
+  },
+  {
+   "id": "budapest",
+   "name": "Budapest",
+   "x": 558,
+   "y": 384
+  },
+  {
+   "id": "sofia",
+   "name": "Sofia",
+   "x": 630,
+   "y": 510
+  },
+  {
+   "id": "athina",
+   "name": "Athina",
+   "x": 637,
+   "y": 645
+  },
+  {
+   "id": "riga",
+   "name": "Riga",
+   "x": 644,
+   "y": 130
+  },
+  {
+   "id": "petrograd",
+   "name": "Petrograd",
+   "x": 755,
+   "y": 50
+  },
+  {
+   "id": "wilno",
+   "name": "Wilno",
+   "x": 665,
+   "y": 190
+  },
+  {
+   "id": "smolensk",
+   "name": "Smolensk",
+   "x": 785,
+   "y": 187
+  },
+  {
+   "id": "moskva",
+   "name": "Moskva",
+   "x": 885,
+   "y": 161
+  },
+  {
+   "id": "kyiv",
+   "name": "Kyiv",
+   "x": 758,
+   "y": 303
+  },
+  {
+   "id": "kharkov",
+   "name": "Kharkov",
+   "x": 860,
+   "y": 315
+  },
+  {
+   "id": "rostov",
+   "name": "Rostov",
+   "x": 922,
+   "y": 389
+  },
+  {
+   "id": "bucuresti",
+   "name": "Bucuresti",
+   "x": 679,
+   "y": 464
+  },
+  {
+   "id": "sevastopol",
+   "name": "Sevastopol",
+   "x": 812,
+   "y": 458
+  },
+  {
+   "id": "constantinople",
+   "name": "Constantinople",
+   "x": 731,
+   "y": 555
+  },
+  {
+   "id": "smyrna",
+   "name": "Smyrna",
+   "x": 698,
+   "y": 622
+  },
+  {
+   "id": "angora",
+   "name": "Angora",
+   "x": 800,
+   "y": 584
+  },
+  {
+   "id": "erzurum",
+   "name": "Erzurum",
+   "x": 950,
+   "y": 584
+  },
+  {
+   "id": "sochi",
+   "name": "Sochi",
+   "x": 923,
+   "y": 486
+  }
+ ],
+ "routes": [
+  {
+   "id": "r0",
+   "a": "edinburgh",
+   "b": "london",
+   "len": 4,
+   "color": "orange",
+   "twin": "r1",
+   "lane": -1
+  },
+  {
+   "id": "r1",
+   "a": "edinburgh",
+   "b": "london",
+   "len": 4,
+   "color": "black",
+   "twin": "r0",
+   "lane": 1
+  },
+  {
+   "id": "r2",
+   "a": "amsterdam",
+   "b": "london",
+   "len": 2,
+   "color": "gray",
+   "kind": "ferry",
+   "locos": 2
+  },
+  {
+   "id": "r3",
+   "a": "dieppe",
+   "b": "london",
+   "len": 2,
+   "color": "gray",
+   "kind": "ferry",
+   "locos": 1,
+   "twin": "r4",
+   "lane": -1
+  },
+  {
+   "id": "r4",
+   "a": "dieppe",
+   "b": "london",
+   "len": 2,
+   "color": "gray",
+   "kind": "ferry",
+   "locos": 1,
+   "twin": "r3",
+   "lane": 1
+  },
+  {
+   "id": "r5",
+   "a": "brest",
+   "b": "dieppe",
+   "len": 2,
+   "color": "orange"
+  },
+  {
+   "id": "r6",
+   "a": "bruxelles",
+   "b": "dieppe",
+   "len": 2,
+   "color": "green"
+  },
+  {
+   "id": "r7",
+   "a": "dieppe",
+   "b": "paris",
+   "len": 1,
+   "color": "pink"
+  },
+  {
+   "id": "r8",
+   "a": "amsterdam",
+   "b": "bruxelles",
+   "len": 1,
+   "color": "black"
+  },
+  {
+   "id": "r9",
+   "a": "bruxelles",
+   "b": "frankfurt",
+   "len": 2,
+   "color": "blue"
+  },
+  {
+   "id": "r10",
+   "a": "bruxelles",
+   "b": "paris",
+   "len": 2,
+   "color": "yellow",
+   "twin": "r11",
+   "lane": -1
+  },
+  {
+   "id": "r11",
+   "a": "bruxelles",
+   "b": "paris",
+   "len": 2,
+   "color": "red",
+   "twin": "r10",
+   "lane": 1
+  },
+  {
+   "id": "r12",
+   "a": "amsterdam",
+   "b": "essen",
+   "len": 3,
+   "color": "yellow"
+  },
+  {
+   "id": "r13",
+   "a": "amsterdam",
+   "b": "frankfurt",
+   "len": 2,
+   "color": "white"
+  },
+  {
+   "id": "r14",
+   "a": "brest",
+   "b": "paris",
+   "len": 3,
+   "color": "black"
+  },
+  {
+   "id": "r15",
+   "a": "brest",
+   "b": "pamplona",
+   "len": 4,
+   "color": "pink"
+  },
+  {
+   "id": "r16",
+   "a": "pamplona",
+   "b": "paris",
+   "len": 4,
+   "color": "blue",
+   "twin": "r17",
+   "lane": -1
+  },
+  {
+   "id": "r17",
+   "a": "pamplona",
+   "b": "paris",
+   "len": 4,
+   "color": "green",
+   "twin": "r16",
+   "lane": 1
+  },
+  {
+   "id": "r18",
+   "a": "frankfurt",
+   "b": "paris",
+   "len": 3,
+   "color": "white",
+   "twin": "r19",
+   "lane": -1
+  },
+  {
+   "id": "r19",
+   "a": "frankfurt",
+   "b": "paris",
+   "len": 3,
+   "color": "orange",
+   "twin": "r18",
+   "lane": 1
+  },
+  {
+   "id": "r20",
+   "a": "paris",
+   "b": "zurich",
+   "len": 3,
+   "color": "gray",
+   "kind": "tunnel"
+  },
+  {
+   "id": "r21",
+   "a": "marseille",
+   "b": "paris",
+   "len": 4,
+   "color": "gray"
+  },
+  {
+   "id": "r22",
+   "a": "madrid",
+   "b": "pamplona",
+   "len": 3,
+   "color": "black",
+   "kind": "tunnel",
+   "twin": "r23",
+   "lane": -1
+  },
+  {
+   "id": "r23",
+   "a": "madrid",
+   "b": "pamplona",
+   "len": 3,
+   "color": "white",
+   "kind": "tunnel",
+   "twin": "r22",
+   "lane": 1
+  },
+  {
+   "id": "r24",
+   "a": "barcelona",
+   "b": "pamplona",
+   "len": 2,
+   "color": "gray",
+   "kind": "tunnel"
+  },
+  {
+   "id": "r25",
+   "a": "marseille",
+   "b": "pamplona",
+   "len": 4,
+   "color": "red"
+  },
+  {
+   "id": "r26",
+   "a": "lisboa",
+   "b": "madrid",
+   "len": 3,
+   "color": "pink"
+  },
+  {
+   "id": "r27",
+   "a": "cadiz",
+   "b": "madrid",
+   "len": 3,
+   "color": "orange"
+  },
+  {
+   "id": "r28",
+   "a": "barcelona",
+   "b": "madrid",
+   "len": 2,
+   "color": "yellow"
+  },
+  {
+   "id": "r29",
+   "a": "cadiz",
+   "b": "lisboa",
+   "len": 2,
+   "color": "blue"
+  },
+  {
+   "id": "r30",
+   "a": "barcelona",
+   "b": "marseille",
+   "len": 4,
+   "color": "gray"
+  },
+  {
+   "id": "r31",
+   "a": "marseille",
+   "b": "zurich",
+   "len": 2,
+   "color": "pink",
+   "kind": "tunnel"
+  },
+  {
+   "id": "r32",
+   "a": "marseille",
+   "b": "roma",
+   "len": 4,
+   "color": "gray",
+   "kind": "tunnel"
+  },
+  {
+   "id": "r33",
+   "a": "venezia",
+   "b": "zurich",
+   "len": 2,
+   "color": "green",
+   "kind": "tunnel"
+  },
+  {
+   "id": "r34",
+   "a": "munchen",
+   "b": "zurich",
+   "len": 2,
+   "color": "yellow",
+   "kind": "tunnel"
+  },
+  {
+   "id": "r35",
+   "a": "essen",
+   "b": "frankfurt",
+   "len": 2,
+   "color": "green"
+  },
+  {
+   "id": "r36",
+   "a": "berlin",
+   "b": "frankfurt",
+   "len": 3,
+   "color": "black",
+   "twin": "r37",
+   "lane": -1
+  },
+  {
+   "id": "r37",
+   "a": "berlin",
+   "b": "frankfurt",
+   "len": 3,
+   "color": "red",
+   "twin": "r36",
+   "lane": 1
+  },
+  {
+   "id": "r38",
+   "a": "frankfurt",
+   "b": "munchen",
+   "len": 2,
+   "color": "pink"
+  },
+  {
+   "id": "r39",
+   "a": "munchen",
+   "b": "venezia",
+   "len": 2,
+   "color": "blue",
+   "kind": "tunnel"
+  },
+  {
+   "id": "r40",
+   "a": "munchen",
+   "b": "wien",
+   "len": 3,
+   "color": "orange"
+  },
+  {
+   "id": "r41",
+   "a": "venezia",
+   "b": "zagrab",
+   "len": 2,
+   "color": "gray"
+  },
+  {
+   "id": "r42",
+   "a": "roma",
+   "b": "venezia",
+   "len": 2,
+   "color": "black"
+  },
+  {
+   "id": "r43",
+   "a": "brindisi",
+   "b": "roma",
+   "len": 2,
+   "color": "white"
+  },
+  {
+   "id": "r44",
+   "a": "palermo",
+   "b": "roma",
+   "len": 4,
+   "color": "gray",
+   "kind": "ferry",
+   "locos": 1
+  },
+  {
+   "id": "r45",
+   "a": "berlin",
+   "b": "essen",
+   "len": 2,
+   "color": "blue"
+  },
+  {
+   "id": "r46",
+   "a": "essen",
+   "b": "kobenhavn",
+   "len": 3,
+   "color": "gray",
+   "kind": "ferry",
+   "locos": 1,
+   "twin": "r47",
+   "lane": -1
+  },
+  {
+   "id": "r47",
+   "a": "essen",
+   "b": "kobenhavn",
+   "len": 3,
+   "color": "gray",
+   "kind": "ferry",
+   "locos": 1,
+   "twin": "r46",
+   "lane": 1
+  },
+  {
+   "id": "r48",
+   "a": "kobenhavn",
+   "b": "stockholm",
+   "len": 3,
+   "color": "yellow",
+   "twin": "r49",
+   "lane": -1
+  },
+  {
+   "id": "r49",
+   "a": "kobenhavn",
+   "b": "stockholm",
+   "len": 3,
+   "color": "white",
+   "twin": "r48",
+   "lane": 1
+  },
+  {
+   "id": "r50",
+   "a": "berlin",
+   "b": "danzig",
+   "len": 4,
+   "color": "gray"
+  },
+  {
+   "id": "r51",
+   "a": "berlin",
+   "b": "warszawa",
+   "len": 4,
+   "color": "pink",
+   "twin": "r52",
+   "lane": -1
+  },
+  {
+   "id": "r52",
+   "a": "berlin",
+   "b": "warszawa",
+   "len": 4,
+   "color": "yellow",
+   "twin": "r51",
+   "lane": 1
+  },
+  {
+   "id": "r53",
+   "a": "berlin",
+   "b": "wien",
+   "len": 3,
+   "color": "green"
+  },
+  {
+   "id": "r54",
+   "a": "warszawa",
+   "b": "wien",
+   "len": 4,
+   "color": "blue"
+  },
+  {
+   "id": "r55",
+   "a": "budapest",
+   "b": "wien",
+   "len": 1,
+   "color": "red",
+   "twin": "r56",
+   "lane": -1
+  },
+  {
+   "id": "r56",
+   "a": "budapest",
+   "b": "wien",
+   "len": 1,
+   "color": "white",
+   "twin": "r55",
+   "lane": 1
+  },
+  {
+   "id": "r57",
+   "a": "wien",
+   "b": "zagrab",
+   "len": 2,
+   "color": "gray"
+  },
+  {
+   "id": "r58",
+   "a": "budapest",
+   "b": "zagrab",
+   "len": 2,
+   "color": "orange"
+  },
+  {
+   "id": "r59",
+   "a": "sarajevo",
+   "b": "zagrab",
+   "len": 3,
+   "color": "red"
+  },
+  {
+   "id": "r60",
+   "a": "brindisi",
+   "b": "palermo",
+   "len": 3,
+   "color": "gray",
+   "kind": "ferry",
+   "locos": 1
+  },
+  {
+   "id": "r61",
+   "a": "athina",
+   "b": "brindisi",
+   "len": 4,
+   "color": "gray",
+   "kind": "ferry",
+   "locos": 1
+  },
+  {
+   "id": "r62",
+   "a": "palermo",
+   "b": "smyrna",
+   "len": 6,
+   "color": "gray",
+   "kind": "ferry",
+   "locos": 2
+  },
+  {
+   "id": "r63",
+   "a": "budapest",
+   "b": "sarajevo",
+   "len": 3,
+   "color": "pink"
+  },
+  {
+   "id": "r64",
+   "a": "sarajevo",
+   "b": "sofia",
+   "len": 2,
+   "color": "gray",
+   "kind": "tunnel"
+  },
+  {
+   "id": "r65",
+   "a": "athina",
+   "b": "sarajevo",
+   "len": 4,
+   "color": "green"
+  },
+  {
+   "id": "r66",
+   "a": "budapest",
+   "b": "kyiv",
+   "len": 6,
+   "color": "gray",
+   "kind": "tunnel"
+  },
+  {
+   "id": "r67",
+   "a": "bucuresti",
+   "b": "budapest",
+   "len": 4,
+   "color": "gray",
+   "kind": "tunnel"
+  },
+  {
+   "id": "r68",
+   "a": "athina",
+   "b": "smyrna",
+   "len": 2,
+   "color": "gray",
+   "kind": "ferry",
+   "locos": 1
+  },
+  {
+   "id": "r69",
+   "a": "athina",
+   "b": "sofia",
+   "len": 3,
+   "color": "pink"
+  },
+  {
+   "id": "r70",
+   "a": "danzig",
+   "b": "riga",
+   "len": 3,
+   "color": "black"
+  },
+  {
+   "id": "r71",
+   "a": "danzig",
+   "b": "warszawa",
+   "len": 2,
+   "color": "gray"
+  },
+  {
+   "id": "r72",
+   "a": "warszawa",
+   "b": "wilno",
+   "len": 3,
+   "color": "red"
+  },
+  {
+   "id": "r73",
+   "a": "kyiv",
+   "b": "warszawa",
+   "len": 4,
+   "color": "gray"
+  },
+  {
+   "id": "r74",
+   "a": "bucuresti",
+   "b": "sofia",
+   "len": 2,
+   "color": "gray",
+   "kind": "tunnel"
+  },
+  {
+   "id": "r75",
+   "a": "constantinople",
+   "b": "sofia",
+   "len": 3,
+   "color": "blue"
+  },
+  {
+   "id": "r76",
+   "a": "petrograd",
+   "b": "stockholm",
+   "len": 8,
+   "color": "gray",
+   "kind": "tunnel"
+  },
+  {
+   "id": "r77",
+   "a": "petrograd",
+   "b": "riga",
+   "len": 4,
+   "color": "gray"
+  },
+  {
+   "id": "r78",
+   "a": "riga",
+   "b": "wilno",
+   "len": 4,
+   "color": "green"
+  },
+  {
+   "id": "r79",
+   "a": "petrograd",
+   "b": "wilno",
+   "len": 4,
+   "color": "blue"
+  },
+  {
+   "id": "r80",
+   "a": "smolensk",
+   "b": "wilno",
+   "len": 3,
+   "color": "yellow"
+  },
+  {
+   "id": "r81",
+   "a": "kyiv",
+   "b": "wilno",
+   "len": 2,
+   "color": "gray"
+  },
+  {
+   "id": "r82",
+   "a": "kyiv",
+   "b": "smolensk",
+   "len": 3,
+   "color": "red"
+  },
+  {
+   "id": "r83",
+   "a": "kharkov",
+   "b": "kyiv",
+   "len": 4,
+   "color": "gray"
+  },
+  {
+   "id": "r84",
+   "a": "bucuresti",
+   "b": "kyiv",
+   "len": 4,
+   "color": "gray"
+  },
+  {
+   "id": "r85",
+   "a": "bucuresti",
+   "b": "sevastopol",
+   "len": 4,
+   "color": "white"
+  },
+  {
+   "id": "r86",
+   "a": "bucuresti",
+   "b": "constantinople",
+   "len": 3,
+   "color": "yellow"
+  },
+  {
+   "id": "r87",
+   "a": "moskva",
+   "b": "petrograd",
+   "len": 4,
+   "color": "white"
+  },
+  {
+   "id": "r88",
+   "a": "moskva",
+   "b": "smolensk",
+   "len": 2,
+   "color": "orange"
+  },
+  {
+   "id": "r89",
+   "a": "kharkov",
+   "b": "moskva",
+   "len": 4,
+   "color": "gray"
+  },
+  {
+   "id": "r90",
+   "a": "kharkov",
+   "b": "rostov",
+   "len": 2,
+   "color": "green"
+  },
+  {
+   "id": "r91",
+   "a": "rostov",
+   "b": "sevastopol",
+   "len": 4,
+   "color": "gray"
+  },
+  {
+   "id": "r92",
+   "a": "rostov",
+   "b": "sochi",
+   "len": 2,
+   "color": "gray"
+  },
+  {
+   "id": "r93",
+   "a": "sevastopol",
+   "b": "sochi",
+   "len": 2,
+   "color": "gray",
+   "kind": "ferry",
+   "locos": 1
+  },
+  {
+   "id": "r94",
+   "a": "constantinople",
+   "b": "sevastopol",
+   "len": 4,
+   "color": "gray",
+   "kind": "ferry",
+   "locos": 2
+  },
+  {
+   "id": "r95",
+   "a": "erzurum",
+   "b": "sevastopol",
+   "len": 4,
+   "color": "gray",
+   "kind": "ferry",
+   "locos": 2
+  },
+  {
+   "id": "r96",
+   "a": "erzurum",
+   "b": "sochi",
+   "len": 3,
+   "color": "red",
+   "kind": "tunnel"
+  },
+  {
+   "id": "r97",
+   "a": "constantinople",
+   "b": "smyrna",
+   "len": 2,
+   "color": "gray",
+   "kind": "tunnel"
+  },
+  {
+   "id": "r98",
+   "a": "angora",
+   "b": "constantinople",
+   "len": 2,
+   "color": "gray",
+   "kind": "tunnel"
+  },
+  {
+   "id": "r99",
+   "a": "angora",
+   "b": "smyrna",
+   "len": 3,
+   "color": "orange",
+   "kind": "tunnel"
+  },
+  {
+   "id": "r100",
+   "a": "angora",
+   "b": "erzurum",
+   "len": 3,
+   "color": "black"
+  }
+ ],
+ "ticketDecks": [
+  {
+   "id": "standard",
+   "name": "Standard (46)",
+   "tickets": [
+    {
+     "a": "brest",
+     "b": "petrograd",
+     "pts": 20,
+     "long": true
+    },
+    {
+     "a": "cadiz",
+     "b": "stockholm",
+     "pts": 21,
+     "long": true
+    },
+    {
+     "a": "edinburgh",
+     "b": "athina",
+     "pts": 21,
+     "long": true
+    },
+    {
+     "a": "kobenhavn",
+     "b": "erzurum",
+     "pts": 21,
+     "long": true
+    },
+    {
+     "a": "lisboa",
+     "b": "danzig",
+     "pts": 20,
+     "long": true
+    },
+    {
+     "a": "palermo",
+     "b": "moskva",
+     "pts": 20,
+     "long": true
+    },
+    {
+     "a": "amsterdam",
+     "b": "pamplona",
+     "pts": 7
+    },
+    {
+     "a": "amsterdam",
+     "b": "wilno",
+     "pts": 12
+    },
+    {
+     "a": "angora",
+     "b": "kharkov",
+     "pts": 10
+    },
+    {
+     "a": "athina",
+     "b": "angora",
+     "pts": 5
+    },
+    {
+     "a": "athina",
+     "b": "wilno",
+     "pts": 11
+    },
+    {
+     "a": "barcelona",
+     "b": "bruxelles",
+     "pts": 8
+    },
+    {
+     "a": "barcelona",
+     "b": "munchen",
+     "pts": 8
+    },
+    {
+     "a": "berlin",
+     "b": "bucuresti",
+     "pts": 8
+    },
+    {
+     "a": "berlin",
+     "b": "moskva",
+     "pts": 12
+    },
+    {
+     "a": "berlin",
+     "b": "roma",
+     "pts": 9
+    },
+    {
+     "a": "brest",
+     "b": "marseille",
+     "pts": 7
+    },
+    {
+     "a": "brest",
+     "b": "venezia",
+     "pts": 8
+    },
+    {
+     "a": "bruxelles",
+     "b": "danzig",
+     "pts": 9
+    },
+    {
+     "a": "budapest",
+     "b": "sofia",
+     "pts": 5
+    },
+    {
+     "a": "edinburgh",
+     "b": "paris",
+     "pts": 7
+    },
+    {
+     "a": "essen",
+     "b": "kyiv",
+     "pts": 10
+    },
+    {
+     "a": "frankfurt",
+     "b": "kobenhavn",
+     "pts": 5
+    },
+    {
+     "a": "frankfurt",
+     "b": "smolensk",
+     "pts": 13
+    },
+    {
+     "a": "kyiv",
+     "b": "petrograd",
+     "pts": 6
+    },
+    {
+     "a": "kyiv",
+     "b": "sochi",
+     "pts": 8
+    },
+    {
+     "a": "london",
+     "b": "berlin",
+     "pts": 7
+    },
+    {
+     "a": "london",
+     "b": "wien",
+     "pts": 10
+    },
+    {
+     "a": "madrid",
+     "b": "dieppe",
+     "pts": 8
+    },
+    {
+     "a": "madrid",
+     "b": "zurich",
+     "pts": 8
+    },
+    {
+     "a": "marseille",
+     "b": "essen",
+     "pts": 8
+    },
+    {
+     "a": "palermo",
+     "b": "constantinople",
+     "pts": 8
+    },
+    {
+     "a": "paris",
+     "b": "wien",
+     "pts": 8
+    },
+    {
+     "a": "paris",
+     "b": "zagrab",
+     "pts": 7
+    },
+    {
+     "a": "riga",
+     "b": "bucuresti",
+     "pts": 10
+    },
+    {
+     "a": "roma",
+     "b": "smyrna",
+     "pts": 8
+    },
+    {
+     "a": "rostov",
+     "b": "erzurum",
+     "pts": 5
+    },
+    {
+     "a": "sarajevo",
+     "b": "sevastopol",
+     "pts": 8
+    },
+    {
+     "a": "smolensk",
+     "b": "rostov",
+     "pts": 8
+    },
+    {
+     "a": "sofia",
+     "b": "smyrna",
+     "pts": 5
+    },
+    {
+     "a": "stockholm",
+     "b": "wien",
+     "pts": 11
+    },
+    {
+     "a": "venezia",
+     "b": "constantinople",
+     "pts": 10
+    },
+    {
+     "a": "warszawa",
+     "b": "smolensk",
+     "pts": 6
+    },
+    {
+     "a": "zagrab",
+     "b": "brindisi",
+     "pts": 6
+    },
+    {
+     "a": "zurich",
+     "b": "brindisi",
+     "pts": 6
+    },
+    {
+     "a": "zurich",
+     "b": "budapest",
+     "pts": 6
+    }
+   ]
+  }
+ ]
+}
