@@ -3,7 +3,9 @@
 (function (root) {
   'use strict';
   const NS = 'http://www.w3.org/2000/svg';
-  const CAR_W = 9, GAP = 3, CITY_R = 11, LANE = 6.5;
+  const CAR_W = 9, GAP = 3, CITY_R = 11, LANE = 7.5;
+  // city names: 15 map units on a big screen, growing up to LABEL_MAX so they stay ~LABEL_PX on screen when the map is small
+  const LABEL_MIN = 15, LABEL_MAX = 21, LABEL_PX = 8.5;
   const COLOR = {
     pink: '#d77bd0', white: '#eef0f4', blue: '#4f8ff0', yellow: '#f2cf45', orange: '#f0913a',
     black: '#2b2f3a', red: '#e2504c', green: '#4fbf6a', gray: '#8d93a6', loco: '#b9a3ff',
@@ -47,13 +49,17 @@
       const o = city[r.a === c.id ? r.b : r.a];
       angs.push(Math.atan2(o.y - c.y, o.x - c.x));
     }
-    const W = c.name.length * 8.4, H = 15;
+    // boxes are sized for the biggest label font (LABEL_MAX), so labels never collide when they grow on a phone
+    const W = c.name.length * 0.56 * LABEL_MAX, H = LABEL_MAX;
     const spot = a => {
       const ca = Math.cos(a), sa = Math.sin(a);
       const anchor = ca > 0.3 ? 'start' : ca < -0.3 ? 'end' : 'middle';
-      const x = c.x + ca * 15, y = c.y + sa * 15 + (sa > 0.3 ? 11 : sa < -0.3 ? -1 : 5);
+      // the baseline hangs below / sits above / centres on the city, so it stays put whatever the font size
+      const base = sa > 0.3 ? 'hanging' : sa < -0.3 ? 'alphabetic' : 'central';
+      const x = c.x + ca * 14, y = c.y + sa * 13;
       const x0 = anchor === 'start' ? x : anchor === 'end' ? x - W : x - W / 2;
-      return { x, y, anchor, box: [x0, y - 12, x0 + W, y - 12 + H] };
+      const y0 = base === 'hanging' ? y : base === 'alphabetic' ? y - H : y - H / 2;
+      return { x, y, anchor, base, box: [x0, y0, x0 + W, y0 + H] };
     };
     const overlap = (p, q) => Math.max(0, Math.min(p[2], q[2]) - Math.max(p[0], q[0])) * Math.max(0, Math.min(p[3], q[3]) - Math.max(p[1], q[1]));
     const cands = [-Math.PI / 2, -Math.PI / 4, 0, Math.PI / 4, Math.PI / 2, 3 * Math.PI / 4, Math.PI, -3 * Math.PI / 4];
@@ -77,7 +83,7 @@
     handlers = handlers || {};
     const svg = el('svg', { class: 'board', role: 'img' });
     wrap.appendChild(svg);
-    let geo = [], routeEls = {}, cityEls = {}, vb = null, full = null;
+    let geo = [], routeEls = {}, cityEls = {}, vb = null, full = null, labelBox = null;
     const gLand = el('g', {}, svg), gRoutes = el('g', {}, svg), gMarks = el('g', {}, svg), gCities = el('g', {}, svg);
 
     function build(m) {
@@ -86,8 +92,9 @@
       svg.setAttribute('aria-label', map.name + ' map');
       geo = geometry(map); routeEls = {}; cityEls = {};
       const city = Object.fromEntries(map.cities.map(c => [c.id, c]));
-      // land: thick rounded strokes along overland routes + discs at cities (ferries stay at sea)
-      for (const layer of [{ w: 84, r: 46, fill: 'var(--land-edge)' }, { w: 74, r: 41, fill: 'var(--land)' }]) {
+      // land: thick rounded strokes along overland routes + discs at cities (ferries stay at sea),
+      // with the small gaps between routes filled in (smoothLand); the plain strokes are the fallback
+      if (!smoothLand(map, city)) for (const layer of [{ w: 84, r: 46, fill: 'var(--land-edge)' }, { w: 74, r: 41, fill: 'var(--land)' }]) {
         const g = el('g', { fill: layer.fill, stroke: layer.fill }, gLand);
         for (const r of map.routes) {
           if (r.kind === 'ferry') continue;
@@ -100,7 +107,7 @@
         const grp = el('g', { class: 'route', 'data-route': r.id }, gRoutes);
         g.carEls = g.cars.map((c, i) => {
           const cg = el('g', { transform: `translate(${c.x.toFixed(1)},${c.y.toFixed(1)}) rotate(${g.ang.toFixed(1)})` }, grp);
-          const rect = el('rect', { class: 'car' + (r.kind === 'tunnel' ? ' tunnel' : ''), x: -g.carL / 2, y: -CAR_W / 2, width: g.carL, height: CAR_W, rx: 2, fill: COLOR[r.color] }, cg);
+          const rect = el('rect', { class: 'car' + (r.kind === 'tunnel' ? ' tunnel' : '') + (r.color === 'black' ? ' blk' : ''), x: -g.carL / 2, y: -CAR_W / 2, width: g.carL, height: CAR_W, rx: 2, fill: COLOR[r.color] }, cg);
           if (r.locos && i < r.locos) el('path', { class: 'loco-mark', d: `M${-g.carL / 2 + 2} 0 h${g.carL - 4} M0 ${-CAR_W / 2 + 2} v${CAR_W - 4}` }, cg);
           // a claimed space shows a little train piece: windows + wheels (hidden until claimed)
           el('path', { class: 'train-mark', d: `M${-g.carL / 2 + 3} -1.6 h${g.carL - 6} v2.6 h${-(g.carL - 6)} z` }, cg);
@@ -122,12 +129,65 @@
           el('circle', { class: 'dot', cx: c.x, cy: c.y, r: 6.5 }, grp);
         }
         const ls = labelSpot(map, c, placed);
-        const t = el('text', { x: ls.x.toFixed(1), y: ls.y.toFixed(1), 'text-anchor': ls.anchor }, grp);
+        const t = el('text', { x: ls.x.toFixed(1), y: ls.y.toFixed(1), 'text-anchor': ls.anchor, 'dominant-baseline': ls.base }, grp);
         t.textContent = c.name;
         cityEls[c.id] = grp;
       }
+      const bx = placed.concat(map.cities.map(c => [c.x - 12, c.y - 12, c.x + 12, c.y + 12]));
+      const lx0 = Math.min(...bx.map(q => q[0])), ly0 = Math.min(...bx.map(q => q[1]));
+      labelBox = { x: lx0, y: ly0, width: Math.max(...bx.map(q => q[2])) - lx0, height: Math.max(...bx.map(q => q[3])) - ly0 };
       full = { x: -10, y: -10, w: map.size[0] + 20, h: map.size[1] + 20 }; measured = false;
       fit();
+    }
+
+    // Land as one smooth shape: draw the route strokes on a small canvas, blur, and cut at a threshold.
+    // That closes the little holes between routes (a "closing"), so the land doesn't look shattered.
+    function smoothLand(m, city) {
+      try {
+        const K = 0.5, M = 70; // canvas px per map unit; margin in map units
+        const x0 = -M, y0 = -M, W = Math.ceil((m.size[0] + 2 * M) * K), H = Math.ceil((m.size[1] + 2 * M) * K);
+        const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+        const cx = cv.getContext('2d'); if (!cx) return false;
+        cx.setTransform(K, 0, 0, K, -x0 * K, -y0 * K);
+        cx.strokeStyle = cx.fillStyle = '#fff'; cx.lineCap = 'round'; cx.lineWidth = 74;
+        cx.beginPath();
+        for (const r of m.routes) { if (r.kind === 'ferry') continue; cx.moveTo(city[r.a].x, city[r.a].y); cx.lineTo(city[r.b].x, city[r.b].y); }
+        cx.stroke();
+        for (const c of m.cities) { cx.beginPath(); cx.arc(c.x, c.y, 41, 0, 7); cx.fill(); }
+        const img = cx.getImageData(0, 0, W, H), N = W * H;
+        let a = new Float32Array(N), b = new Float32Array(N);
+        for (let i = 0; i < N; i++) a[i] = img.data[i * 4 + 3] / 255;
+        const orig = a.slice();
+        // three box blurs ~ a gaussian with sigma ~ 35 map units
+        const R = Math.round(35 * K);
+        const pass = (src, dst, horiz) => {
+          const len = horiz ? W : H, lines = horiz ? H : W, step = horiz ? 1 : W, jump = horiz ? W : 1, n = 2 * R + 1;
+          for (let l = 0; l < lines; l++) {
+            const base = l * jump; let sum = 0;
+            for (let k = -R; k <= R; k++) sum += src[base + Math.min(len - 1, Math.max(0, k)) * step];
+            for (let k = 0; k < len; k++) {
+              dst[base + k * step] = sum / n;
+              sum += src[base + Math.min(len - 1, k + R + 1) * step] - src[base + Math.max(0, k - R) * step];
+            }
+          }
+        };
+        for (let k = 0; k < 3; k++) { pass(a, b, true); pass(b, a, false); }
+        const col = v => { const h = getComputedStyle(document.documentElement).getPropertyValue(v).trim() || '#1b2130'; const n = parseInt(h.slice(1), 16); return [n >> 16 & 255, n >> 8 & 255, n & 255]; };
+        const land = col('--land'), edge = col('--land-edge');
+        const out = cx.createImageData(W, H), d = out.data;
+        for (let i = 0; i < N; i++) {
+          const v = Math.max(orig[i] * 0.6, a[i]); // keep every original stroke, fill gaps where the blur is dense
+          const inner = Math.min(1, Math.max(0, (v - 0.42) / 0.05)), outer = Math.min(1, Math.max(0, (v - 0.33) / 0.05));
+          const c = inner > 0 ? land : edge, al = inner > 0 ? 1 : outer;
+          d[i * 4] = inner > 0 && inner < 1 ? edge[0] + (land[0] - edge[0]) * inner : c[0];
+          d[i * 4 + 1] = inner > 0 && inner < 1 ? edge[1] + (land[1] - edge[1]) * inner : c[1];
+          d[i * 4 + 2] = inner > 0 && inner < 1 ? edge[2] + (land[2] - edge[2]) * inner : c[2];
+          d[i * 4 + 3] = Math.round(al * 255);
+        }
+        cx.setTransform(1, 0, 0, 1, 0, 0); cx.putImageData(out, 0, 0);
+        el('image', { href: cv.toDataURL('image/png'), x: x0, y: y0, width: W / K, height: H / K, preserveAspectRatio: 'none', class: 'land-img' }, gLand);
+        return true;
+      } catch (e) { return false; }
     }
 
     // The whole-map view hugs the drawn routes and labels (names at the edge stay inside).
@@ -136,23 +196,34 @@
     function measure() {
       if (measured) return;
       try {
-        const a = gRoutes.getBBox(), b = gCities.getBBox();
-        if (!a.width || !b.width) return;
+        const a = gRoutes.getBBox();
+        if (!a.width) return;
+        // labels: use their placement boxes at the biggest font, so a name at the edge is never cut off on a phone
+        const b = labelBox || { x: a.x, y: a.y, width: a.width, height: a.height };
         const x0 = Math.min(a.x, b.x) - 6, y0 = Math.min(a.y, b.y) - 6;
         let x1 = Math.max(a.x + a.width, b.x + b.width) + 6;
         // keep the right edge clear of the zoom buttons (~40 screen px) so no route sits under them
         const W = svg.clientWidth || 390;
-        x1 += 40 * (x1 - x0) / Math.max(200, W - 40);
+        x1 += 36 * (x1 - x0) / Math.max(200, W - 36);
         const y1 = Math.max(a.y + a.height, b.y + b.height) + 6;
         full = { x: x0, y: y0, w: x1 - x0, h: y1 - y0 }; measured = true;
       } catch (e) { /* not rendered yet */ }
     }
-    function setVB(v) { vb = v; svg.setAttribute('viewBox', `${v.x.toFixed(1)} ${v.y.toFixed(1)} ${v.w.toFixed(1)} ${v.h.toFixed(1)}`); }
+    function setVB(v) {
+      vb = v; svg.setAttribute('viewBox', `${v.x.toFixed(1)} ${v.y.toFixed(1)} ${v.w.toFixed(1)} ${v.h.toFixed(1)}`);
+      const cw = svg.clientWidth, ch = svg.clientHeight;
+      if (cw && ch) {
+        const s = Math.min(cw / v.w, ch / v.h);
+        const f = Math.max(LABEL_MIN, Math.min(LABEL_MAX, LABEL_PX / s));
+        svg.style.setProperty('--lf', f.toFixed(1) + 'px');
+      }
+    }
     function fit() { measure(); setVB(Object.assign({}, full)); }
 
     // ------------------------------------------------------------ render state
     function render(o) {
       o = o || {};
+      svg.classList.toggle('heat', !!o.heat);
       const owner = o.owner || {}, hl = o.highlight || new Set(), path = o.path || new Set(), blocked = o.blocked || new Set();
       for (const g of geo) {
         const id = g.r.id, e = routeEls[id];
@@ -165,6 +236,14 @@
         if (o.sel === id) cls += ' sel';
         if (o.dimOthers && !path.has(id) && !hl.has(id) && own == null) cls += ' dim';
         e.setAttribute('class', cls);
+        // a claimed route becomes one solid, slightly fatter train (no gaps), so it can't be mistaken for an open route
+        const isOwn = own != null ? own : -1;
+        if (g.own !== isOwn) {
+          g.own = isOwn;
+          const L = isOwn >= 0 ? g.carL + GAP + 0.4 : g.carL, Wd = isOwn >= 0 ? CAR_W + 2.6 : CAR_W;
+          g.carEls.forEach(c => { c.setAttribute('x', -L / 2); c.setAttribute('width', L); c.setAttribute('y', -Wd / 2); c.setAttribute('height', Wd); c.setAttribute('rx', isOwn >= 0 ? 1.2 : 2); });
+          if (isOwn >= 0) e.setAttribute('data-own', isOwn); else e.removeAttribute('data-own');
+        }
         let fill = own != null ? PLAYER[own] : COLOR[g.r.color];
         if (o.heat && own == null) fill = heatColor(o.heat[id] || 0);
         g.carEls.forEach(c => c.setAttribute('fill', fill));
@@ -283,6 +362,8 @@
       if (b.dataset.z === 'fit') fit(); else zoomAt(r.left + r.width / 2, r.top + r.height / 2, b.dataset.z === 'in' ? 1.5 : 1 / 1.5);
     });
     wrap.appendChild(z);
+    // the label size depends on how big the board is on screen
+    if (window.ResizeObserver) new ResizeObserver(() => { if (vb) setVB(vb); }).observe(svg);
 
     build(map);
     return {

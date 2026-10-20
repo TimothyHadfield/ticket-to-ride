@@ -27,7 +27,7 @@
     const stripe = color === 'loco'
       ? '<g opacity=".55"><rect x="0" y="0" width="50" height="4" fill="#e2504c"/><rect x="0" y="4" width="50" height="4" fill="#f2cf45"/><rect x="0" y="8" width="50" height="4" fill="#4fbf6a"/><rect x="0" y="12" width="50" height="4" fill="#4f8ff0"/></g>'
       : '';
-    return `<svg viewBox="0 0 50 74" preserveAspectRatio="none" aria-hidden="true">
+    return `<svg viewBox="0 0 50 74" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
 <defs><linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${a}"/><stop offset="1" stop-color="${b}"/></linearGradient></defs>
 <rect width="50" height="74" fill="url(#${id})"/>${stripe}
 <g transform="translate(0,22)" fill="${ink}" fill-opacity=".9" stroke="none">

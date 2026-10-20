@@ -3,7 +3,7 @@
 (function () {
   'use strict';
   const T = window.TTR, G = window.TTRGraph, AI = window.TTRAI, O = window.TTROdds, B = window.Board;
-  const VERSION = '1.2';
+  const VERSION = '1.3';
   const MAP_IDS = ['usa', 'europe', 'nordic', 'india', 'switzerland'];
   const MAP_NAMES = { usa: 'USA', europe: 'Europe', nordic: 'Nordic Countries', india: 'India', switzerland: 'Switzerland' };
   const LEVELS = ['easy', 'medium', 'hard'];
@@ -67,6 +67,7 @@
   function showTab(id, push) {
     if (!TABS.some(t => t[0] === id)) id = 'table';
     S.tab = id; save();
+    document.body.dataset.view = id; // not data-tab: that marks the tab buttons
     document.querySelectorAll('[data-tab]').forEach(b => b.setAttribute('aria-selected', b.dataset.tab === id));
     document.querySelectorAll('.view').forEach(v => v.classList.toggle('active', v.id === 'v-' + id));
     if (push) history.pushState({ tab: id }, '', '#' + id); // Back returns to the previous tab
@@ -426,7 +427,10 @@
       };
       const res = T.score(s);
       const R = T.rules(s);
-      const rows = res.order.map(seat => res.rows[seat]);
+      // "Just mine": rivals' tickets aren't in the app, so their totals are incomplete and can't be ranked
+      // against yours. Show you first, then the rivals in seat order, and crown nobody.
+      const partial = S.settings.privacy === 'mine';
+      const rows = partial ? [tb.me].concat(tb.players.map((_, i) => i).filter(i => i !== tb.me)).map(seat => res.rows[seat]) : res.order.map(seat => res.rows[seat]);
       const cols = [['Routes', 'routePts'], ['Tickets', 'ticketPts']];
       if (R.stations) cols.push(['Stations', 'stationPts']);
       if (R.longest) cols.push([map.id === 'europe' ? 'Express' : 'Longest', 'longestPts']);
@@ -435,7 +439,7 @@
       const missing = S.settings.privacy === 'mine' ? '<p class="note">Only your tickets are in the app, so rivals\' ticket points are missing. Use "Pass the phone" in Settings to count everyone.</p>' : '';
       const sh = openSheet(`<h2>Final score</h2>
         <table class="scores"><tr><th>Player</th>${cols.map(c => `<th>${c[0]}</th>`).join('')}<th>Total</th></tr>
-        ${rows.map((r, i) => `<tr class="${i === 0 ? 'win' : ''}"><td>${esc(r.name)}</td>${cols.map(c => `<td>${r[c[1]]}</td>`).join('')}<td><b>${r.total}</b></td></tr>`).join('')}</table>
+        ${rows.map((r, i) => `<tr class="${i === 0 && !partial ? 'win' : ''}"><td>${esc(r.name)}</td>${cols.map(c => `<td>${r[c[1]]}</td>`).join('')}<td><b>${r.total}</b></td></tr>`).join('')}</table>
         <p class="note">${map.id === 'europe' ? 'European Express' : 'Longest route'}: ${rows.map(r => esc(r.name) + ' ' + r.longest).join(' · ')}</p>${missing}
         <div class="acts"><button class="btn" data-x>Close</button></div>`);
       sh.querySelector('[data-x]').onclick = () => closeSheet();
@@ -502,21 +506,15 @@
           <button type="button" class="tdeck" id="p-tix" ${legal.includes('drawTickets') ? '' : 'disabled'}><b>${s.ticketDeck.length}</b>tickets</button></div>
         <div class="sec">My hand · ${pl.trains} trains${map.stations ? ' · ' + pl.stations + ' stations' : ''}</div>
         <div class="hand">${hand}</div>
-        <div class="small muted" style="margin-top:6px">${Play.unseenHTML(s, me)} <button class="q" data-help="unseen" aria-label="About unseen cards">?</button></div>
-        <div class="small muted" style="margin-top:4px">Longest: ${s.players.map((q, i) => `<b style="color:${B.PLAYER[i]}">${G.longestTrail(map, q.routes).len}</b>`).join(' · ')} <button class="q" data-help="longest" aria-label="About longest route">?</button></div>
         ${map.stations && myTurn && !s.drew && pl.stations > 0 ? `<div class="row" style="margin-top:8px"><button class="btn small${Play.stationMode ? ' warm' : ''}" id="p-station">${Play.stationMode ? 'Cancel station' : 'Build a station (' + T.stationCost(s, me) + ' cards)'}</button><button class="q" data-help="stations" aria-label="About stations">?</button></div>` : ''}
         <div class="sec">My tickets <button class="q" data-help="chance" aria-label="About chance">?</button></div>
         <div class="tlist">${odds.tickets.map((x, i) => ticketRow(map, x.t, x, `data-tix="${i}"`)).join('') || '<div class="empty">None yet.</div>'}</div>
+        <div class="small muted" style="margin-top:10px">${Play.unseenHTML(s, me)} <button class="q" data-help="unseen" aria-label="About unseen cards">?</button></div>
+        <div class="small muted" style="margin-top:4px">Longest: ${s.players.map((q, i) => `<b style="color:${B.PLAYER[i]}">${G.longestTrail(map, q.routes).len}</b>`).join(' · ')} <button class="q" data-help="longest" aria-label="About longest route">?</button></div>
         ${study ? `<div class="sec">Study: computers' hands</div>${studyHTML}` : ''}
         <div class="sec">Log</div><div class="log">${logLines}</div>
         <div class="row" style="margin-top:10px"><button class="btn small" id="p-new">${p.online ? 'Leave room' : 'New game'}</button>${p.online ? `<span class="grow small muted">Room ${esc(Play.net && Play.net.snap ? Play.net.snap.code : '')}</span>` : ''}</div>`;
-      const tix = Play.sel != null && odds.tickets[Play.sel];
-      Play.board.render({
-        owner: s.owner, stations: s.stationAt,
-        path: new Set(tix ? tix.path : Play.hintRoute ? [Play.hintRoute] : []),
-        endCities: tix ? [tix.t.a, tix.t.b] : [], sel: Play.hintRoute,
-        highlight: new Set(Play.flash ? [Play.flash] : []),
-      });
+      Play.renderBoard();
       // events
       panel.querySelectorAll('[data-face]').forEach(b => b.onclick = () => Play.act({ type: 'draw', from: +b.dataset.face }));
       panel.querySelectorAll('.players [data-seat]').forEach(b => b.onclick = () => { const i = +b.dataset.seat; if (i !== me) Play.guess(i); });
@@ -532,6 +530,17 @@
       if (pl.pending && (s.phase === 'setup' || myTurn) && !sheetEl) Play.ticketSheet();
       if (s.pendingTunnel && s.turn === me && !sheetEl) Play.tunnelSheet();
       if (s.phase === 'over' && !p.shownScores && !sheetEl) { p.shownScores = true; save(); Play.scores(); }
+    },
+    renderBoard() {
+      const p = S.play; if (!p || !Play.board) return;
+      const s = p.state, odds = Play.lastOdds || { tickets: [] };
+      const tix = Play.sel != null && odds.tickets[Play.sel];
+      Play.board.render({
+        owner: s.owner, stations: s.stationAt,
+        path: new Set(tix ? tix.path : Play.hintRoute ? [Play.hintRoute] : []),
+        endCities: tix ? [tix.t.a, tix.t.b] : [], sel: Play.claiming || Play.hintRoute,
+        highlight: new Set(Play.flash ? [Play.flash] : []),
+      });
     },
     // score race: route points after every turn
     record() {
@@ -712,7 +721,10 @@
       const sh = openSheet(`<h2>${esc(cityName(map, r.a))} – ${esc(cityName(map, r.b))}</h2>
         <p class="note">${r.len} trains · +${T.routePoints(map, r.len)} points${r.kind === 'tunnel' ? ' · tunnel: 3 cards are turned over and each match costs one more' : ''}${r.locos ? ' · needs ' + r.locos + ' locomotive' + (r.locos > 1 ? 's' : '') : ''}</p>
         <div class="paylist">${opts.map((o, i) => `<button type="button" class="payopt" data-o="${i}">${payLabel(o)}${o.any ? ' <span class="muted small">(swap)</span>' : ''}</button>`).join('')}</div>
-        <div class="acts"><button class="btn" data-x>Cancel</button></div>`);
+        <div class="acts"><button class="btn" data-x>Cancel</button></div>`, () => { Play.claiming = null; if (S.tab === 'play') Play.render(); });
+      // show which route is being claimed: it glows on the map, which stays visible behind a light scrim
+      scrimEl.classList.add('light');
+      Play.claiming = id; Play.renderBoard();
       sh.querySelectorAll('[data-o]').forEach(b => b.onclick = () => { closeSheet(true); Play.act({ type: 'claim', route: id, pay: opts[+b.dataset.o] }); });
       sh.querySelector('[data-x]').onclick = () => closeSheet();
     },
