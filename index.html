@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ticket to Ride — Timothy Hadfield</title>
+<meta name="description" content="Ticket to Ride companion for the real table, computer opponents with measured strength, and a route lab — USA, Europe, Nordic Countries and India.">
+<meta name="theme-color" content="#0f1117">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="stylesheet" href="css/style.css?v=1">
+</head>
+<body>
+<div id="app">
+  <header class="top">
+    <svg class="logo" viewBox="0 0 64 64" aria-hidden="true"><use href="#i-logo"/></svg>
+    <h1>Ticket to Ride</h1>
+    <div class="sub" id="sub"></div>
+    <nav class="toptabs" id="toptabs" aria-label="Sections"></nav>
+    <div class="spacer"></div>
+  </header>
+  <main>
+    <section class="view" id="v-table" aria-label="Table"><div class="board-wrap"></div><div class="panel"></div></section>
+    <section class="view" id="v-play" aria-label="Play"><div class="board-wrap"></div><div class="panel"></div></section>
+    <section class="view" id="v-lab" aria-label="Route Lab"><div class="board-wrap"></div><div class="panel"></div></section>
+    <section class="view" id="v-settings" aria-label="Settings"><div class="panel" style="border:0"></div></section>
+  </main>
+  <nav class="tabbar" id="tabbar" aria-label="Sections"></nav>
+</div>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="i-logo" viewBox="0 0 64 64">
+      <rect width="64" height="64" rx="14" fill="#1a1e2b"/>
+      <path d="M12 46 C 24 40, 30 26, 52 18" fill="none" stroke="#f0b354" stroke-width="3" stroke-dasharray="7 3"/>
+      <circle cx="12" cy="46" r="6" fill="#f4efe4" stroke="#0f1117" stroke-width="2"/>
+      <circle cx="52" cy="18" r="6" fill="#f4efe4" stroke="#0f1117" stroke-width="2"/>
+    </symbol>
+    <symbol id="i-table" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" d="M4 7h16v10H4z M8 7V4h8v3 M7 12h2 M11 12h2 M15 12h2"/></symbol>
+    <symbol id="i-play" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" d="M5 16V8a3 3 0 0 1 3-3h8a3 3 0 0 1 3 3v8z M5 12h14 M8 19l-1.5 2 M16 19l1.5 2 M8.5 16v.01 M15.5 16v.01 M9 8h6"/></symbol>
+    <symbol id="i-lab" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" d="M5 18c3-1 4-6 7-7s5-5 7-6 M5 18a1.5 1.5 0 1 0 0 .01 M19 5a1.5 1.5 0 1 0 0 .01 M12 11a1.5 1.5 0 1 0 0 .01"/></symbol>
+    <symbol id="i-gear" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-2.7 1.1V21a2 2 0 1 1-4 0v-.1A1.6 1.6 0 0 0 7.1 19.8l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1A1.6 1.6 0 0 0 3.1 14H3a2 2 0 1 1 0-4h.1A1.6 1.6 0 0 0 4.2 7.1l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1A1.6 1.6 0 0 0 9.7 3.1V3a2 2 0 1 1 4 0v.1a1.6 1.6 0 0 0 2.7 1.1l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0 1.1 2.7H21a2 2 0 1 1 0 4h-.1a1.6 1.6 0 0 0-1.5 1z"/></symbol>
+  </defs>
+</svg>
+
+<script src="js/graph.js?v=1"></script>
+<script src="js/engine.js?v=1"></script>
+<script src="js/ai.js?v=1"></script>
+<script src="js/odds.js?v=1"></script>
+<script src="js/board.js?v=1"></script>
+<script src="js/cards.js?v=1"></script>
+<script src="js/app.js?v=1"></script>
+</body>
+</html>

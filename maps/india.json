@@ -450,9 +450,7 @@
    "a": "ambala",
    "b": "bareilly",
    "len": 2,
-   "color": "orange",
-   "twin": "r30",
-   "lane": -1
+   "color": "orange"
   },
   {
    "id": "r19",
@@ -545,57 +543,48 @@
   },
   {
    "id": "r30",
-   "a": "ambala",
-   "b": "bareilly",
-   "len": 2,
-   "color": "orange",
-   "twin": "r18",
-   "lane": 1
-  },
-  {
-   "id": "r31",
    "a": "bareilly",
    "b": "lucknow",
    "len": 1,
    "color": "gray"
   },
   {
-   "id": "r32",
+   "id": "r31",
    "a": "bareilly",
    "b": "patna",
    "len": 4,
    "color": "green"
   },
   {
-   "id": "r33",
+   "id": "r32",
    "a": "ahmadabad",
    "b": "bombay",
    "len": 3,
    "color": "white"
   },
   {
-   "id": "r34",
+   "id": "r33",
    "a": "bombay",
    "b": "manmad",
    "len": 1,
    "color": "black"
   },
   {
-   "id": "r35",
+   "id": "r34",
    "a": "bombay",
    "b": "poona",
    "len": 1,
    "color": "blue"
   },
   {
-   "id": "r36",
+   "id": "r35",
    "a": "bombay",
    "b": "mormugau",
    "len": 1,
    "color": "green"
   },
   {
-   "id": "r37",
+   "id": "r36",
    "a": "bombay",
    "b": "calicut",
    "len": 6,
@@ -604,79 +593,88 @@
    "locos": 2
   },
   {
-   "id": "r38",
+   "id": "r37",
    "a": "ahmadabad",
    "b": "ratiam",
    "len": 1,
    "color": "green"
   },
   {
-   "id": "r39",
+   "id": "r38",
    "a": "ahmadabad",
    "b": "khandwa",
    "len": 2,
    "color": "yellow"
   },
   {
-   "id": "r40",
+   "id": "r39",
    "a": "jaipur",
    "b": "ratiam",
    "len": 1,
    "color": "yellow",
-   "twin": "r41",
+   "twin": "r40",
    "lane": -1
   },
   {
-   "id": "r41",
+   "id": "r40",
    "a": "jaipur",
    "b": "ratiam",
    "len": 1,
    "color": "orange",
-   "twin": "r40",
+   "twin": "r39",
    "lane": 1
+  },
+  {
+   "id": "r41",
+   "a": "agra",
+   "b": "jaipur",
+   "len": 1,
+   "color": "white",
+   "twin": "r42",
+   "lane": -1
   },
   {
    "id": "r42",
    "a": "agra",
    "b": "jaipur",
    "len": 1,
-   "color": "white",
-   "twin": "r43",
-   "lane": -1
-  },
-  {
-   "id": "r43",
-   "a": "agra",
-   "b": "jaipur",
-   "len": 1,
    "color": "blue",
-   "twin": "r42",
+   "twin": "r41",
    "lane": 1
   },
   {
-   "id": "r44",
+   "id": "r43",
    "a": "agra",
    "b": "lucknow",
    "len": 2,
    "color": "gray"
   },
   {
-   "id": "r45",
+   "id": "r44",
    "a": "katni",
    "b": "lucknow",
    "len": 1,
    "color": "blue",
-   "twin": "r46",
+   "twin": "r45",
    "lane": -1
   },
   {
-   "id": "r46",
+   "id": "r45",
    "a": "katni",
    "b": "lucknow",
    "len": 1,
    "color": "black",
-   "twin": "r45",
+   "twin": "r44",
    "lane": 1
+  },
+  {
+   "id": "r46",
+   "a": "katni",
+   "b": "patna",
+   "len": 2,
+   "color": "gray",
+   "twin": "r47",
+   "lane": -1
   },
   {
    "id": "r47",
@@ -684,116 +682,118 @@
    "b": "patna",
    "len": 2,
    "color": "gray",
-   "twin": "r48",
-   "lane": -1
-  },
-  {
-   "id": "r48",
-   "a": "katni",
-   "b": "patna",
-   "len": 2,
-   "color": "gray",
-   "twin": "r47",
+   "twin": "r46",
    "lane": 1
   },
   {
-   "id": "r49",
+   "id": "r48",
    "a": "calcutta",
    "b": "patna",
    "len": 2,
    "color": "pink"
   },
   {
-   "id": "r50",
+   "id": "r49",
    "a": "dhubri",
    "b": "patna",
    "len": 2,
    "color": "blue",
-   "twin": "r51",
+   "twin": "r50",
    "lane": -1
   },
   {
-   "id": "r51",
+   "id": "r50",
    "a": "dhubri",
    "b": "patna",
    "len": 2,
    "color": "red",
-   "twin": "r50",
+   "twin": "r49",
    "lane": 1
   },
   {
-   "id": "r52",
+   "id": "r51",
    "a": "manmad",
    "b": "poona",
    "len": 1,
    "color": "gray"
   },
   {
-   "id": "r53",
+   "id": "r52",
    "a": "indur",
    "b": "manmad",
    "len": 3,
    "color": "pink"
   },
   {
-   "id": "r54",
+   "id": "r53",
    "a": "khandwa",
    "b": "manmad",
    "len": 1,
    "color": "red"
   },
   {
-   "id": "r55",
+   "id": "r54",
    "a": "poona",
    "b": "wadi",
    "len": 1,
    "color": "orange"
   },
   {
-   "id": "r56",
+   "id": "r55",
    "a": "mormugau",
    "b": "poona",
    "len": 1,
    "color": "gray"
   },
   {
-   "id": "r57",
+   "id": "r56",
    "a": "mormugau",
    "b": "wadi",
    "len": 2,
    "color": "gray"
   },
   {
-   "id": "r58",
+   "id": "r57",
    "a": "guntakal",
    "b": "mormugau",
    "len": 2,
    "color": "red"
   },
   {
-   "id": "r59",
+   "id": "r58",
    "a": "mangalore",
    "b": "mormugau",
    "len": 2,
    "color": "black"
   },
   {
-   "id": "r60",
+   "id": "r59",
    "a": "calicut",
    "b": "mangalore",
    "len": 1,
    "color": "white",
-   "twin": "r61",
+   "twin": "r60",
    "lane": -1
   },
   {
-   "id": "r61",
+   "id": "r60",
    "a": "calicut",
    "b": "mangalore",
    "len": 1,
    "color": "yellow",
-   "twin": "r60",
+   "twin": "r59",
    "lane": 1
+  },
+  {
+   "id": "r61",
+   "a": "calicut",
+   "b": "quilon",
+   "len": 2,
+   "color": "gray",
+   "kind": "ferry",
+   "locos": 1,
+   "twin": "r62",
+   "lane": -1
   },
   {
    "id": "r62",
@@ -803,115 +803,115 @@
    "color": "gray",
    "kind": "ferry",
    "locos": 1,
-   "twin": "r63",
-   "lane": -1
+   "twin": "r61",
+   "lane": 1
   },
   {
    "id": "r63",
    "a": "calicut",
-   "b": "quilon",
-   "len": 2,
-   "color": "gray",
-   "kind": "ferry",
-   "locos": 1,
-   "twin": "r62",
-   "lane": 1
+   "b": "erode",
+   "len": 3,
+   "color": "red",
+   "twin": "r64",
+   "lane": -1
   },
   {
    "id": "r64",
    "a": "calicut",
    "b": "erode",
    "len": 3,
-   "color": "red",
-   "twin": "r65",
-   "lane": -1
-  },
-  {
-   "id": "r65",
-   "a": "calicut",
-   "b": "erode",
-   "len": 3,
    "color": "blue",
-   "twin": "r64",
+   "twin": "r63",
    "lane": 1
   },
   {
-   "id": "r66",
+   "id": "r65",
    "a": "khandwa",
    "b": "ratiam",
    "len": 2,
    "color": "gray"
   },
   {
-   "id": "r67",
+   "id": "r66",
    "a": "bhopal",
    "b": "ratiam",
    "len": 2,
    "color": "black"
   },
   {
-   "id": "r68",
+   "id": "r67",
    "a": "bhopal",
    "b": "khandwa",
    "len": 2,
    "color": "blue"
   },
   {
-   "id": "r69",
+   "id": "r68",
    "a": "khandwa",
    "b": "raipur",
    "len": 4,
    "color": "orange"
   },
   {
-   "id": "r70",
+   "id": "r69",
    "a": "agra",
    "b": "bhopal",
    "len": 1,
    "color": "red",
-   "twin": "r71",
+   "twin": "r70",
    "lane": -1
   },
   {
-   "id": "r71",
+   "id": "r70",
    "a": "agra",
    "b": "bhopal",
    "len": 1,
    "color": "pink",
-   "twin": "r70",
+   "twin": "r69",
    "lane": 1
   },
   {
-   "id": "r72",
+   "id": "r71",
    "a": "agra",
    "b": "katni",
    "len": 2,
    "color": "green"
   },
   {
-   "id": "r73",
+   "id": "r72",
    "a": "bilaspur",
    "b": "katni",
    "len": 1,
    "color": "white",
-   "twin": "r74",
+   "twin": "r73",
    "lane": -1
   },
   {
-   "id": "r74",
+   "id": "r73",
    "a": "bilaspur",
    "b": "katni",
    "len": 1,
    "color": "pink",
-   "twin": "r73",
+   "twin": "r72",
    "lane": 1
   },
   {
-   "id": "r75",
+   "id": "r74",
    "a": "bilaspur",
    "b": "calcutta",
    "len": 4,
    "color": "yellow"
+  },
+  {
+   "id": "r75",
+   "a": "calcutta",
+   "b": "chittagong",
+   "len": 2,
+   "color": "gray",
+   "kind": "ferry",
+   "locos": 1,
+   "twin": "r76",
+   "lane": -1
   },
   {
    "id": "r76",
@@ -921,19 +921,17 @@
    "color": "gray",
    "kind": "ferry",
    "locos": 1,
-   "twin": "r77",
-   "lane": -1
+   "twin": "r75",
+   "lane": 1
   },
   {
    "id": "r77",
    "a": "calcutta",
-   "b": "chittagong",
+   "b": "dhubri",
    "len": 2,
    "color": "gray",
-   "kind": "ferry",
-   "locos": 1,
-   "twin": "r76",
-   "lane": 1
+   "twin": "r78",
+   "lane": -1
   },
   {
    "id": "r78",
@@ -941,31 +939,31 @@
    "b": "dhubri",
    "len": 2,
    "color": "gray",
-   "twin": "r79",
-   "lane": -1
-  },
-  {
-   "id": "r79",
-   "a": "calcutta",
-   "b": "dhubri",
-   "len": 2,
-   "color": "gray",
-   "twin": "r78",
+   "twin": "r77",
    "lane": 1
   },
   {
-   "id": "r80",
+   "id": "r79",
    "a": "calcutta",
    "b": "raipur",
    "len": 4,
    "color": "blue"
   },
   {
-   "id": "r81",
+   "id": "r80",
    "a": "calcutta",
    "b": "waltain",
    "len": 4,
    "color": "red"
+  },
+  {
+   "id": "r81",
+   "a": "dhubri",
+   "b": "jarhat",
+   "len": 2,
+   "color": "gray",
+   "twin": "r82",
+   "lane": -1
   },
   {
    "id": "r82",
@@ -973,120 +971,120 @@
    "b": "jarhat",
    "len": 2,
    "color": "gray",
-   "twin": "r83",
-   "lane": -1
-  },
-  {
-   "id": "r83",
-   "a": "dhubri",
-   "b": "jarhat",
-   "len": 2,
-   "color": "gray",
-   "twin": "r82",
+   "twin": "r81",
    "lane": 1
   },
   {
-   "id": "r84",
+   "id": "r83",
    "a": "chittagong",
    "b": "dhubri",
    "len": 2,
    "color": "white"
   },
   {
-   "id": "r85",
+   "id": "r84",
    "a": "indur",
    "b": "wadi",
    "len": 2,
    "color": "gray"
   },
   {
-   "id": "r86",
+   "id": "r85",
    "a": "bezwada",
    "b": "indur",
    "len": 2,
    "color": "green",
-   "twin": "r87",
+   "twin": "r86",
    "lane": -1
   },
   {
-   "id": "r87",
+   "id": "r86",
    "a": "bezwada",
    "b": "indur",
    "len": 2,
    "color": "yellow",
-   "twin": "r86",
+   "twin": "r85",
    "lane": 1
+  },
+  {
+   "id": "r87",
+   "a": "guntakal",
+   "b": "wadi",
+   "len": 1,
+   "color": "black",
+   "twin": "r88",
+   "lane": -1
   },
   {
    "id": "r88",
    "a": "guntakal",
    "b": "wadi",
    "len": 1,
-   "color": "black",
-   "twin": "r89",
-   "lane": -1
-  },
-  {
-   "id": "r89",
-   "a": "guntakal",
-   "b": "wadi",
-   "len": 1,
    "color": "pink",
-   "twin": "r88",
+   "twin": "r87",
    "lane": 1
   },
   {
-   "id": "r90",
+   "id": "r89",
    "a": "guntakal",
    "b": "mangalore",
    "len": 2,
    "color": "gray"
   },
   {
-   "id": "r91",
+   "id": "r90",
    "a": "bezwada",
    "b": "guntakal",
    "len": 2,
    "color": "blue"
   },
   {
-   "id": "r92",
+   "id": "r91",
    "a": "guntakal",
    "b": "madras",
    "len": 2,
    "color": "white"
   },
   {
-   "id": "r93",
+   "id": "r92",
    "a": "madras",
    "b": "mangalore",
    "len": 4,
    "color": "pink"
   },
   {
-   "id": "r94",
+   "id": "r93",
    "a": "erode",
    "b": "quilon",
    "len": 4,
    "color": "gray"
   },
   {
-   "id": "r95",
+   "id": "r94",
    "a": "erode",
    "b": "madras",
    "len": 2,
    "color": "orange",
-   "twin": "r96",
+   "twin": "r95",
    "lane": -1
   },
   {
-   "id": "r96",
+   "id": "r95",
    "a": "erode",
    "b": "madras",
    "len": 2,
    "color": "green",
-   "twin": "r95",
+   "twin": "r94",
    "lane": 1
+  },
+  {
+   "id": "r96",
+   "a": "bhopal",
+   "b": "bilaspur",
+   "len": 2,
+   "color": "gray",
+   "twin": "r97",
+   "lane": -1
   },
   {
    "id": "r97",
@@ -1094,64 +1092,55 @@
    "b": "bilaspur",
    "len": 2,
    "color": "gray",
-   "twin": "r98",
-   "lane": -1
+   "twin": "r96",
+   "lane": 1
   },
   {
    "id": "r98",
-   "a": "bhopal",
-   "b": "bilaspur",
-   "len": 2,
-   "color": "gray",
-   "twin": "r97",
-   "lane": 1
+   "a": "bilaspur",
+   "b": "raipur",
+   "len": 1,
+   "color": "black",
+   "twin": "r99",
+   "lane": -1
   },
   {
    "id": "r99",
    "a": "bilaspur",
    "b": "raipur",
    "len": 1,
-   "color": "black",
-   "twin": "r100",
-   "lane": -1
+   "color": "red",
+   "twin": "r98",
+   "lane": 1
   },
   {
    "id": "r100",
-   "a": "bilaspur",
-   "b": "raipur",
-   "len": 1,
-   "color": "red",
-   "twin": "r99",
-   "lane": 1
+   "a": "raipur",
+   "b": "waltain",
+   "len": 3,
+   "color": "white",
+   "twin": "r101",
+   "lane": -1
   },
   {
    "id": "r101",
    "a": "raipur",
    "b": "waltain",
    "len": 3,
-   "color": "white",
-   "twin": "r102",
-   "lane": -1
-  },
-  {
-   "id": "r102",
-   "a": "raipur",
-   "b": "waltain",
-   "len": 3,
    "color": "green",
-   "twin": "r101",
+   "twin": "r100",
    "lane": 1
   },
   {
-   "id": "r103",
+   "id": "r102",
    "a": "chittagong",
    "b": "jarhat",
    "len": 3,
    "color": "gray"
   },
   {
-   "id": "r104",
-   "a": "chittagong",
+   "id": "r103",
+   "a": "calcutta",
    "b": "madras",
    "len": 8,
    "color": "gray",
@@ -1159,32 +1148,32 @@
    "locos": 2
   },
   {
-   "id": "r105",
+   "id": "r104",
    "a": "madras",
    "b": "waltain",
    "len": 3,
    "color": "yellow"
   },
   {
-   "id": "r106",
+   "id": "r105",
    "a": "bezwada",
    "b": "waltain",
    "len": 2,
    "color": "black",
-   "twin": "r107",
+   "twin": "r106",
    "lane": -1
   },
   {
-   "id": "r107",
+   "id": "r106",
    "a": "bezwada",
    "b": "waltain",
    "len": 2,
    "color": "orange",
-   "twin": "r106",
+   "twin": "r105",
    "lane": 1
   },
   {
-   "id": "r108",
+   "id": "r107",
    "a": "bezwada",
    "b": "madras",
    "len": 1,
