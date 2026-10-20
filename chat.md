@@ -29,3 +29,9 @@
 - **Built:** track beds, claimed trains on a casing, tunnel ties, ferry bands + loco badges, lake fill, label cap; pinch-pan, flick coast, gliding zoom buttons; card faces/piles/backs, mini cards in the claim sheet; Settings "Colour-blind marks".
 - **Verified:** 75/75 tests; 30 before/after screenshots (393 px + 1280 px, all 5 maps); physics script (pinch anchor 0.05 units, flick glides on, no jump when a finger lifts); 477/478 route taps.
 - **Open:** real-finger feel on Tim's iPhone; Tim's call on the new look and the colour-blind switch wording.
+
+## 2026-10-20 — real maps (builder under the manager)
+- **Asked:** Tim: "the map of the US in TTR looks nothing like the US. Fix this and any other similar problems accross the games".
+- **Built:** Natural Earth coastlines, lakes and borders for all 5 maps (build-time `tools/geo-art.js`, one thin-plate-spline warp so coasts bend with nudged cities, `maps/<id>.art.json`); faint US state lines; Swiss neighbours darker and lakes widened; land lighter, sea/lakes darker (manager: land must stand out); label keep-out around other cities.
+- **Verified:** 80/80 tests (new art test failed on the old build first); 393 px + 1280 px screenshots of 15 states, no overflow, no console errors; route taps 477/478 before and after; two blind reviewer passes named all 5 maps, second found no major errors.
+- **Open:** Tim's eye on the colours; real iPhone.

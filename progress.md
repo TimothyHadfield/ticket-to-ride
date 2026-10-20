@@ -1,7 +1,7 @@
 # Ticket to Ride — progress
 
 ## START HERE
-Read order: this file → `CLAUDE.md` → `docs/rules-check.md` → `docs/ideas.md`. Last updated: 2026-10-20 (visual design pass 2).
+Read order: this file → `CLAUDE.md` → `docs/rules-check.md` → `docs/ideas.md`. Last updated: 2026-10-20 (real maps).
 
 ## Goal right now
 Tim: "Ticket to Ride and all the variants is something that I think is great". Phase 2 (his words): "build regular play online with a computer or other online players for all the games and their common varients that match exactly the play of the in-person game ... Make sure to get everything right like rules and artwork and specific numbers of cards, routes, details, etc."
@@ -31,6 +31,7 @@ Measured computer strength (data/strength.json, 1000 games per pairing, 2 player
 ## Standing instructions
 - "Phone layout: the map fills the screen, controls in the leftover space."
 - $0, no copyrighted art or rules text, choices live in Settings, short labels, "?" explains why.
+- "the map of the US in TTR looks nothing like the US. Fix this and any other similar problems accross the games" (2026-10-20): every board must read as the real place at a glance; land clearly stands out from sea and lakes.
 
 ## Traps
 - `js/online.js` is a verbatim copy of `../_online/online.js`. Don't edit it here.
@@ -39,6 +40,8 @@ Measured computer strength (data/strength.json, 1000 games per pairing, 2 player
 - phone-view takes its screenshot before `--eval`. For after-eval screenshots use a Playwright script.
 - Headless WebKit logs "firestore ... access control checks" page errors when a page reloads mid-listen. This is noise from the aborted channel.
 - `git worktree remove` hit "Permission denied" on OneDrive. The weekly sweep cleans up leftovers.
+- Map art: `node tools/build-maps.js [ids]` needs Node 22+ and `npm install` (dev deps world-atlas, us-atlas, d3-geo, topojson); Natural Earth lakes are fetched once into `tools/cache/` (gitignored). It prints per map: art size, how far cities were nudged, the warp's min area ratio (must stay > 0, else it folds) and cities whose real spot is in water. `tests/art.test.js` checks every city is on drawn land.
+- Douglas-Peucker on a closed ring (start = end) has no base line and drops the whole ring; `toPath` splits at the farthest point first. That bug silently erased the Nordic mainland once.
 
 ## Decisions
 - Online: the host's browser holds the full state and runs the computers (shared-module design). Each player receives only the public view plus their own hand and tickets.
@@ -61,7 +64,13 @@ Measured computer strength (data/strength.json, 1000 games per pairing, 2 player
 - Cards: cream edges, count badge in the corner, 2+ shows a little pile, card-back deck/ticket piles (tickets warm). Claim sheet: mini cards per payment + chevron; laptop sheets sit low in the panel. Settings → "Colour-blind marks" (off by default): shapes on map spaces (zoomed) and card corners.
 - Measured: 75/75 tests; 393 px + 1280 px screenshots of 15 states incl. all 5 maps (scratchpad `design/ticket-to-ride-2/before|after`, session acb6c2a0), no page scroll, no overflow, no console errors; route taps at 393 px: 477/478 (the miss is India Bombay–Calicut tapped exactly where Guntakal–Mormugao crosses it; LANE kept at 7.5 because 8+ caused New York–Washington misses).
 
+## Real maps (2026-10-20)
+- Every board draws Natural Earth (public domain) coastlines, lakes and country borders (USA also faint states), projected Lambert conic per map; cities sit on their real projected spots, nudged apart a little (mean 1–19 units), and the same thin-plate-spline warp bends the land. Art is `maps/<id>.art.json` (19–84 KB), loaded beside the map JSON; without it the old smooth blob draws.
+- Colours: land #2f3a52, coast #5a6d94, sea #070a11, lakes #080c15, Switzerland's neighbours #1a2130. Swiss lakes widened 7 units (routes run on their shores); Neuchâtel's spot moved ~1.5 km inland for that.
+- Measured: 80/80 tests; route taps 477/478 at 393 px (same as before); screenshots scratchpad `design/ticket-to-ride-maps/before|after|review` (session acb6c2a0); blind reviewer named all 5 maps, no major errors (Kathiawar and parts of Lake Geneva sit under track beds).
+
 ## NOT verified
+- Real maps on a real iPhone screen (land/sea contrast judged in headless WebKit screenshots only); Tim's eye on the new land/sea colours.
 - Design pass 2 on a real iPhone: the flick/pinch feel was measured with synthetic pointer events in WebKit, not real fingers.
 - Online play with a real second iPhone (verified only with two headless WebKit iPhones against the real Firebase project).
 - Online rooms of 3–5 people (only 2 tested end-to-end; the game object is tested for every count in node).
