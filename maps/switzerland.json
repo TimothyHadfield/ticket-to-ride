@@ -93,330 +93,330 @@
  },
  "size": [
   1000,
-  708
+  699
  ],
  "cities": [
   {
    "id": "st-gallen",
    "name": "St. Gallen",
-   "x": 751,
-   "y": 182
+   "x": 748,
+   "y": 179
   },
   {
    "id": "vaduz",
    "name": "Vaduz",
-   "x": 763,
-   "y": 246
+   "x": 762,
+   "y": 242
   },
   {
    "id": "baden",
    "name": "Baden",
    "x": 529,
-   "y": 163
+   "y": 162
   },
   {
    "id": "basel",
    "name": "Basel",
-   "x": 379,
-   "y": 152
+   "x": 383,
+   "y": 151
   },
   {
    "id": "olten",
    "name": "Olten",
-   "x": 453,
-   "y": 202
+   "x": 456,
+   "y": 201
   },
   {
    "id": "zurich",
    "name": "Zürich",
-   "x": 581,
-   "y": 194
+   "x": 582,
+   "y": 192
   },
   {
    "id": "delemont",
    "name": "Delémont",
-   "x": 341,
-   "y": 200
+   "x": 344,
+   "y": 198
   },
   {
    "id": "bellinzona",
    "name": "Bellinzona",
-   "x": 687,
-   "y": 542
+   "x": 688,
+   "y": 537
   },
   {
    "id": "locarno",
    "name": "Locarno",
-   "x": 627,
-   "y": 550
+   "x": 628,
+   "y": 546
   },
   {
    "id": "lugano",
    "name": "Lugano",
-   "x": 669,
-   "y": 600
+   "x": 667,
+   "y": 594
   },
   {
    "id": "wassen",
    "name": "Wassen",
-   "x": 594,
-   "y": 391
+   "x": 595,
+   "y": 387
   },
   {
    "id": "bern",
    "name": "Bern",
-   "x": 363,
-   "y": 320
+   "x": 366,
+   "y": 317
   },
   {
    "id": "fribourg",
    "name": "Fribourg",
-   "x": 305,
-   "y": 362
+   "x": 308,
+   "y": 357
   },
   {
    "id": "interlaken",
    "name": "Interlaken",
-   "x": 445,
-   "y": 397
+   "x": 447,
+   "y": 393
   },
   {
    "id": "luzern",
    "name": "Luzern",
    "x": 530,
-   "y": 296
+   "y": 295
   },
   {
    "id": "neuchatel",
    "name": "Neuchâtel",
-   "x": 262,
-   "y": 319
+   "x": 263,
+   "y": 314
   },
   {
    "id": "solothurn",
    "name": "Solothurn",
-   "x": 382,
-   "y": 245
+   "x": 386,
+   "y": 243
   },
   {
    "id": "brig",
    "name": "Brig",
-   "x": 472,
-   "y": 506
+   "x": 473,
+   "y": 501
   },
   {
    "id": "sion",
    "name": "Sion",
-   "x": 345,
-   "y": 532
+   "x": 346,
+   "y": 527
   },
   {
    "id": "brusio",
    "name": "Brusio",
-   "x": 894,
-   "y": 513
+   "x": 896,
+   "y": 503
   },
   {
    "id": "chur",
    "name": "Chur",
-   "x": 785,
-   "y": 357
+   "x": 783,
+   "y": 352
   },
   {
    "id": "davos",
    "name": "Davos",
-   "x": 845,
-   "y": 365
+   "x": 844,
+   "y": 358
   },
   {
    "id": "sargans",
    "name": "Sargans",
-   "x": 751,
-   "y": 306
+   "x": 749,
+   "y": 301
   },
   {
    "id": "schaffhausen",
    "name": "Schaffhausen",
-   "x": 597,
+   "x": 595,
    "y": 111
   },
   {
    "id": "kreuzlingen",
    "name": "Kreuzlingen",
-   "x": 707,
-   "y": 122
+   "x": 704,
+   "y": 121
   },
   {
    "id": "la-chaux-de-fonds",
    "name": "La Chaux-de-Fonds",
-   "x": 240,
-   "y": 262
+   "x": 245,
+   "y": 256
   },
   {
    "id": "martigny",
    "name": "Martigny",
    "x": 287,
-   "y": 571
+   "y": 564
   },
   {
    "id": "geneve",
    "name": "Genève",
    "x": 111,
-   "y": 541
+   "y": 531
   },
   {
    "id": "lausanne",
    "name": "Lausanne",
-   "x": 198,
-   "y": 447
+   "x": 200,
+   "y": 440
   },
   {
    "id": "yverdon",
    "name": "Yverdon",
-   "x": 200,
-   "y": 370
+   "x": 204,
+   "y": 364
   },
   {
    "id": "winterthur",
    "name": "Winterthur",
    "x": 633,
-   "y": 160
+   "y": 159
   },
   {
    "id": "schwyz",
    "name": "Schwyz",
-   "x": 608,
-   "y": 306
+   "x": 609,
+   "y": 304
   },
   {
    "id": "zug",
    "name": "Zug",
    "x": 574,
-   "y": 254
+   "y": 253
   },
   {
    "id": "pfaffikon",
    "name": "Pfäffikon",
    "x": 635,
-   "y": 246
+   "y": 244
   },
   {
    "id": "osterreich-1",
    "name": "Österreich",
-   "x": 835,
-   "y": 185,
+   "x": 820,
+   "y": 179,
    "country": "osterreich"
   },
   {
    "id": "osterreich-2",
    "name": "Österreich",
-   "x": 824,
-   "y": 245,
+   "x": 823,
+   "y": 240,
    "country": "osterreich"
   },
   {
    "id": "deutschland-1",
    "name": "Deutschland",
-   "x": 423,
-   "y": 110,
+   "x": 427,
+   "y": 109,
    "country": "deutschland"
   },
   {
    "id": "italia-1",
    "name": "Italia",
-   "x": 532,
-   "y": 568,
+   "x": 533,
+   "y": 562,
    "country": "italia"
   },
   {
    "id": "italia-2",
    "name": "Italia",
-   "x": 921,
-   "y": 567,
+   "x": 924,
+   "y": 557,
    "country": "italia"
   },
   {
    "id": "osterreich-3",
    "name": "Österreich",
-   "x": 926,
-   "y": 320,
+   "x": 923,
+   "y": 312,
    "country": "osterreich"
   },
   {
    "id": "italia-3",
    "name": "Italia",
    "x": 950,
-   "y": 453,
+   "y": 443,
    "country": "italia"
   },
   {
    "id": "deutschland-2",
    "name": "Deutschland",
-   "x": 592,
+   "x": 591,
    "y": 50,
    "country": "deutschland"
   },
   {
    "id": "deutschland-3",
    "name": "Deutschland",
-   "x": 672,
-   "y": 72,
+   "x": 669,
+   "y": 71,
    "country": "deutschland"
   },
   {
    "id": "deutschland-4",
    "name": "Deutschland",
-   "x": 749,
-   "y": 77,
+   "x": 744,
+   "y": 75,
    "country": "deutschland"
   },
   {
    "id": "deutschland-5",
    "name": "Deutschland",
-   "x": 804,
-   "y": 132,
+   "x": 826,
+   "y": 118,
    "country": "deutschland"
   },
   {
    "id": "france-1",
    "name": "France",
-   "x": 262,
-   "y": 158,
+   "x": 269,
+   "y": 156,
    "country": "france"
   },
   {
    "id": "france-2",
    "name": "France",
-   "x": 246,
-   "y": 624,
+   "x": 245,
+   "y": 616,
    "country": "france"
   },
   {
    "id": "france-3",
    "name": "France",
    "x": 50,
-   "y": 541,
+   "y": 529,
    "country": "france"
   },
   {
    "id": "france-4",
    "name": "France",
-   "x": 186,
-   "y": 291,
+   "x": 192,
+   "y": 286,
    "country": "france"
   },
   {
    "id": "italia-4",
    "name": "Italia",
-   "x": 691,
-   "y": 657,
+   "x": 694,
+   "y": 649,
    "country": "italia"
   },
   {
    "id": "italia-5",
    "name": "Italia",
-   "x": 608,
-   "y": 608,
+   "x": 596,
+   "y": 600,
    "country": "italia"
   }
  ],

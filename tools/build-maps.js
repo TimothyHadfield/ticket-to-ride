@@ -2,14 +2,18 @@
 // Source lists: fernandomsilva/Ticket-to-Ride-Engine (gameContent), cross-checked
 // against independent lists (see docs/rules-check.md). Corrections made here are
 // listed in docs/rules-check.md too.
-// City positions are OUR OWN: real latitude/longitude, projected, then nudged apart
-// so labels and routes stay readable. Nothing is traced from the printed board.
+// City positions are OUR OWN: real latitude/longitude, projected (Lambert conformal conic, geo-art.js), then
+// nudged apart so labels and routes stay readable; the coastlines get the same nudge (maps/<id>.art.json).
+// Nothing is traced from the printed board.
 //   node tools/build-maps.js
 'use strict';
 const fs = require('fs');
 const path = require('path');
 const ROOT = path.join(__dirname, '..');
 const SRC = path.join(__dirname, 'src');
+const Art = require('./geo-art.js');
+// node tools/build-maps.js [usa,europe]  (default: all maps)
+const ONLY = process.argv[2] ? process.argv[2].split(',') : null;
 
 // ---------------------------------------------------------------- city tables
 // [display name, lat, lon]. Keys are the upper-case names used in the source lists.
@@ -94,7 +98,7 @@ const CITY = {
     'FRIBOURG': ['Fribourg', 46.81, 7.16], 'GENÈVE': ['Genève', 46.2, 6.14], 'INTERLAKEN': ['Interlaken', 46.69, 7.86],
     'KREUZLINGEN': ['Kreuzlingen', 47.65, 9.17], 'LA CHAUX-DE-FONDS': ['La Chaux-de-Fonds', 47.1, 6.83],
     'LAUSANNE': ['Lausanne', 46.52, 6.63], 'LOCARNO': ['Locarno', 46.17, 8.8], 'LUGANO': ['Lugano', 46.0, 8.95],
-    'LUZERN': ['Luzern', 47.05, 8.31], 'MARTIGNY': ['Martigny', 46.1, 7.07], 'NEUCHÂTEL': ['Neuchâtel', 46.99, 6.93],
+    'LUZERN': ['Luzern', 47.05, 8.31], 'MARTIGNY': ['Martigny', 46.1, 7.07], 'NEUCHÂTEL': ['Neuchâtel', 47.0, 6.91], // a little inland: the widened lake would cover the dot
     'OLTEN': ['Olten', 47.35, 7.9], 'PFÄFFIKON': ['Pfäffikon', 47.2, 8.78], 'SARGANS': ['Sargans', 47.05, 9.44],
     'SCHAFFHAUSEN': ['Schaffhausen', 47.7, 8.63], 'SCHWYZ': ['Schwyz', 47.02, 8.65], 'SION': ['Sion', 46.23, 7.36],
     'SOLOTHURN': ['Solothurn', 47.21, 7.54], 'ST.GALLEN': ['St. Gallen', 47.42, 9.38], 'VADUZ': ['Vaduz', 47.14, 9.52],
@@ -112,10 +116,10 @@ const COUNTRIES = {
 const BORDER = {
   'DEUTSCHLAND|BASEL|blue': [47.62, 7.68], 'DEUTSCHLAND|SCHAFFHAUSEN|yellow': [47.8, 8.6],
   'DEUTSCHLAND|KREUZLINGEN|orange': [47.78, 9.0], 'DEUTSCHLAND|KREUZLINGEN|white': [47.76, 9.35],
-  'DEUTSCHLAND|ST.GALLEN|gray': [47.55, 9.68],
+  'DEUTSCHLAND|ST.GALLEN|gray': [47.6, 9.78],
   'ÖSTERREICH|ST.GALLEN|gray': [47.4, 9.75], 'ÖSTERREICH|VADUZ|red': [47.24, 9.65], 'ÖSTERREICH|DAVOS|gray': [46.95, 10.25],
   'ITALIA|BRIG|green': [46.11, 8.29], 'ITALIA|BRUSIO|green': [46.15, 10.2], 'ITALIA|DAVOS|gray': [46.5, 10.37],
-  'ITALIA|LUGANO|white': [45.81, 9.08], 'ITALIA|LOCARNO|orange': [45.98, 8.7],
+  'ITALIA|LUGANO|white': [45.81, 9.08], 'ITALIA|LOCARNO|orange': [45.98, 8.6],
   'FRANCE|DELÉMONT|black': [47.5, 6.95], 'FRANCE|LA CHAUX-DE-FONDS|green': [47.06, 6.6],
   'FRANCE|GENÈVE|yellow': [46.2, 5.95], 'FRANCE|MARTIGNY|gray': [45.92, 6.87],
 };
@@ -138,7 +142,8 @@ const MAPS = [
       { id: 'bigcities', name: 'Big Cities (35)', file: 'usa.bigcities.txt' },
       { id: 'mega', name: 'Mega Game (69)', file: 'usa.mega.txt', setup: { deal: 5, keep: 3 }, draw: { deal: 4, keep: 1 }, globetrotter: 15 },
     ],
-    view: { w: 1000, lat0: 38 },
+    view: { w: 1000 },
+    proj: { lat0: 38, lon0: -96, parallels: [33, 45] }, art: { states: true },
   },
   {
     id: 'europe', key: 'europe', name: 'Europe', routes: 'europe.routes.txt',
@@ -147,7 +152,8 @@ const MAPS = [
     setup: { deal: 3, keep: 2, long: 1 }, draw: { deal: 3, keep: 1 },
     bonuses: { longest: 10 }, longestName: 'European Express',
     ticketDecks: [{ id: 'standard', name: 'Standard (46)', file: 'europe.tickets.txt', longFrom: 20 }],
-    view: { w: 1000, lat0: 48 },
+    view: { w: 1000 },
+    proj: { lat0: 48, lon0: 15, parallels: [40, 58] }, art: {},
   },
   // Loco rules per map (all optional; absent = the USA/Europe rules):
   //   freeLocoDraw  face-up locomotives are drawn like any other card (two per turn OK)
@@ -167,7 +173,8 @@ const MAPS = [
     freeLocoDraw: true, locoFlush: false, locosOn: ['ferry', 'tunnel'], ferryAny: 3, ticketReturn: 'box',
     special: { 'LIEKSA|MURMANSK': { anyFor: 4 } },
     ticketDecks: [{ id: 'standard', name: 'Standard (46)', file: 'nordic_countries.tickets.txt' }],
-    view: { w: 1000, lat0: 63 },
+    view: { w: 1000 },
+    proj: { lat0: 63, lon0: 18, parallels: [58, 68] }, art: {},
   },
   {
     id: 'india', key: 'india', name: 'India', routes: 'india.routes.txt',
@@ -177,7 +184,8 @@ const MAPS = [
     // Mandala: TOTAL bonus by number of qualifying tickets (0, 1, 2, 3, 4, 5 or more)
     bonuses: { longest: 10, mandala: [0, 5, 10, 20, 30, 40] }, longestName: 'Indian Express',
     ticketDecks: [{ id: 'standard', name: 'Standard (58)', file: 'india.tickets.txt' }],
-    view: { w: 1000, lat0: 22 },
+    view: { w: 1000 },
+    proj: { lat0: 22, lon0: 80, parallels: [12, 28] }, art: {},
   },
   {
     id: 'switzerland', key: 'switzerland', name: 'Switzerland', routes: 'switzerland.routes.txt',
@@ -187,7 +195,8 @@ const MAPS = [
     bonuses: { longest: 10 }, longestName: 'Transalpine Express',
     freeLocoDraw: true, locoFlush: true, locosOn: ['tunnel'], ticketReturn: 'box',
     ticketDecks: [{ id: 'standard', name: 'Standard (46)', file: 'switzerland.tickets.txt' }],
-    view: { w: 1000, lat0: 47 },
+    view: { w: 1000 },
+    proj: { lat0: 46.8, lon0: 8.2, parallels: [46, 47.5] }, art: { res: '10', home: 'Switzerland', moreLakes: ['ne_10m_lakes_europe'], lakeRank: 12, lakeArea: 40, lakeGrow: 7 },
   },
 ];
 
@@ -233,9 +242,9 @@ function parseTickets(file) {
 }
 
 // ---------------------------------------------------------------- layout
-function layout(cfg, cityKeys, routes, table) {
-  const lat0 = cfg.view.lat0 * Math.PI / 180;
-  let pts = cityKeys.map(k => { const [, lat, lon] = table[k]; return { k, x: lon * Math.cos(lat0), y: -lat }; });
+// homeXY: each city's real spot, projected (geo-art.js) so the cities span x = 50..950
+function layout(cfg, cityKeys, routes, homeXY) {
+  let pts = cityKeys.map((k, i) => ({ k, x: homeXY[i][0], y: homeXY[i][1] }));
   const idx = Object.fromEntries(pts.map((p, i) => [p.k, i]));
   // normalise to width 1000
   const norm = () => {
@@ -249,7 +258,7 @@ function layout(cfg, cityKeys, routes, table) {
   // relax: keep cities >= MIN apart and >= EDGE away from routes that don't touch them,
   // with a weak spring back to the geographic spot.
   const home = pts.map(p => ({ x: p.x, y: p.y }));
-  const MIN = cfg.view.min || 62, EDGE = cfg.view.edge || 22;
+  const MIN = cfg.view.min || 62, EDGE = cfg.view.edge || 22, SPRING = cfg.view.spring || 0.004;
   for (let it = 0; it < 600; it++) {
     const f = pts.map(() => ({ x: 0, y: 0 }));
     for (let i = 0; i < pts.length; i++) for (let j = i + 1; j < pts.length; j++) {
@@ -266,17 +275,18 @@ function layout(cfg, cityKeys, routes, table) {
         if (d < EDGE) { const push = (EDGE - d) / d * 0.5; f[c].x += dx * push; f[c].y += dy * push; f[a].x -= dx * push * 0.25; f[a].y -= dy * push * 0.25; f[b].x -= dx * push * 0.25; f[b].y -= dy * push * 0.25; }
       }
     }
-    pts.forEach((p, i) => { p.x += f[i].x * 0.5 + (home[i].x - p.x) * 0.004; p.y += f[i].y * 0.5 + (home[i].y - p.y) * 0.004; });
+    pts.forEach((p, i) => { p.x += f[i].x * 0.5 + (home[i].x - p.x) * SPRING; p.y += f[i].y * 0.5 + (home[i].y - p.y) * SPRING; });
   }
   norm();
   const H = Math.ceil(Math.max(...pts.map(p => p.y)) + 50);
-  return { pos: Object.fromEntries(pts.map(p => [p.k, [Math.round(p.x), Math.round(p.y)]])), h: H };
+  return { pos: Object.fromEntries(pts.map(p => [p.k, [Math.round(p.x), Math.round(p.y)]])), h: H, home: home.map(p => [p.x, p.y]) };
 }
 
 // ---------------------------------------------------------------- build
 function slug(k) { return k.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''); }
 
-for (const cfg of MAPS) {
+(async () => { for (const cfg of MAPS) {
+  if (ONLY && !ONLY.includes(cfg.id)) continue;
   const table = Object.assign({}, CITY[cfg.key]);
   const parsed = parseRoutes(cfg.routes);
   const routes = parsed.routes;
@@ -302,7 +312,11 @@ for (const cfg of MAPS) {
   }
   for (const c of cities) if (!table[c]) throw new Error(cfg.id + ': no coords for ' + c);
   for (const r of routes) for (const c of [r.a, r.b]) if (!cities.includes(c)) throw new Error(cfg.id + ': unknown city ' + c);
-  const { pos, h } = layout(cfg, cities, routes, table);
+  const proj = Art.projection(cfg);
+  const lonlats = cities.map(k => [table[k][2], table[k][1]]);
+  const { pos, h, home } = layout(cfg, cities, routes, Art.fitCities(proj, lonlats));
+  const art = await Art.build(cfg, home, cities.map(k => pos[k]), { proj, lonlats, keys: cities });
+  const moved = cities.map((k, i) => Math.hypot(pos[k][0] - home[i][0], pos[k][1] - home[i][1]));
   const countryOf = {};
   for (const [k, dots] of Object.entries(countryDots)) for (const d of dots) countryOf[d] = slug(k);
   const outCities = cities.map(k => {
@@ -353,5 +367,11 @@ for (const cfg of MAPS) {
   if (countries) out.countries = countries;
   Object.assign(out, { size: [1000, h], cities: outCities, routes: outRoutes, ticketDecks });
   fs.writeFileSync(path.join(ROOT, 'maps', cfg.id + '.json'), JSON.stringify(out, null, 1));
-  console.log(cfg.id, outCities.length, 'cities', outRoutes.length, 'routes', ticketDecks.map(d => d.id + ':' + d.tickets.length).join(' '), 'h=' + h);
-}
+  // the board art (coastlines, lakes, borders) in its own file: the game logic never needs it
+  const artFile = path.join(ROOT, 'maps', cfg.id + '.art.json');
+  fs.writeFileSync(artFile, JSON.stringify(art.art));
+  console.log(cfg.id, outCities.length, 'cities', outRoutes.length, 'routes', ticketDecks.map(d => d.id + ':' + d.tickets.length).join(' '), 'h=' + h,
+    '| art', (fs.statSync(artFile).size / 1024).toFixed(1) + 'KB', Object.entries(art.art).map(([k, v]) => k + ':' + (v.length / 1024).toFixed(1)).join(' '),
+    '| nudged max', Math.max(...moved).toFixed(0), 'mean', (moved.reduce((a, b) => a + b, 0) / moved.length).toFixed(0),
+    '| warp min area ratio', art.fold.toFixed(2), art.wet.length ? '| in water: ' + art.wet.join(', ') : '');
+} })().catch(e => { console.error(e); process.exit(1); });

@@ -10,4 +10,4 @@ An unofficial fan site for the board game, with five maps: USA (Classic, 1910, B
 
 To run the tests: `node --test tests/*.test.js`. To measure the computers: `node tools/strength.js 1000 usa,europe,nordic,india,switzerland`.
 
-The board drawings, cards and icon are original. Ticket to Ride is a Days of Wonder game. Rules sources are listed in `docs/rules-check.md`.
+The board drawings, cards and icon are original. Coastlines, lakes and borders: Natural Earth (public domain), drawn at build time by `tools/geo-art.js`. Ticket to Ride is a Days of Wonder game. Rules sources are listed in `docs/rules-check.md`.

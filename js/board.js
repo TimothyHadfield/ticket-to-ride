@@ -1,4 +1,4 @@
-// The board: our own SVG drawing of a map (cities, routes as rows of train cars, land shaped by the network).
+// The board: our own SVG drawing of a map (cities, routes as rows of train cars, real coastlines from map.art).
 // Board.create(el, map, {onRoute, onCity}) -> {render(opts), setMap(map), fit(), focus(ids)}
 (function (root) {
   'use strict';
@@ -83,7 +83,8 @@
       const s = spot(a);
       let hit = 0;
       for (const p of placed) hit += overlap(s.box, p);
-      for (const o of map.cities) if (o !== c) hit += overlap(s.box, [o.x - 9, o.y - 9, o.x + 9, o.y + 9]);
+      // other cities: a wider keep-out, so a name never sits beside the wrong dot (Chicago / Pittsburgh)
+      for (const o of map.cities) if (o !== c) hit += overlap(s.box, [o.x - 9, o.y - 9, o.x + 9, o.y + 9]) + 0.5 * overlap(s.box, [o.x - 20, o.y - 20, o.x + 20, o.y + 20]);
       // mild preference for above / right
       const score = gap + (a === -Math.PI / 2 ? 0.12 : 0) + (a === 0 ? 0.08 : 0) - hit / 40;
       if (score > bestScore) { bestScore = score; best = s; }
@@ -105,9 +106,11 @@
       svg.setAttribute('aria-label', map.name + ' map');
       geo = geometry(map); routeEls = {}; cityEls = {};
       const city = Object.fromEntries(map.cities.map(c => [c.id, c]));
-      // land: thick rounded strokes along overland routes + discs at cities (ferries stay at sea),
-      // with the small gaps between routes filled in (smoothLand); the plain strokes are the fallback
-      if (!smoothLand(map, city)) for (const layer of [{ w: 84, r: 46, fill: 'var(--land-edge)' }, { w: 74, r: 41, fill: 'var(--land)' }]) {
+      // land: the real coastlines, lakes and borders (map.art, made at build time from Natural Earth by
+      // tools/geo-art.js, bent with the same warp as the cities). Without it: a smooth shape around the routes
+      // (smoothLand), and plain strokes as the last fallback.
+      if (map.art) drawArt(map.art);
+      else if (!smoothLand(map, city)) for (const layer of [{ w: 84, r: 46, fill: 'var(--land-edge)' }, { w: 74, r: 41, fill: 'var(--land)' }]) {
         const g = el('g', { fill: layer.fill, stroke: layer.fill }, gLand);
         for (const r of map.routes) {
           if (r.kind === 'ferry') continue;
@@ -171,6 +174,18 @@
       labelBox = { x: lx0, y: ly0, width: Math.max(...bx.map(q => q[2])) - lx0, height: Math.max(...bx.map(q => q[3])) - ly0 };
       full = { x: -10, y: -10, w: map.size[0] + 20, h: map.size[1] + 20 }; measured = false;
       fit();
+    }
+
+    // Real geography: a faint shelf in the sea along the coast, the land, lakes, then state and country borders.
+    // A map with a home country (Switzerland) draws its neighbours darker so the border reads at a glance.
+    function drawArt(a) {
+      const p = (cls, d) => d && el('path', { class: cls, d }, gLand);
+      p('geo-shelf', a.land);
+      p(a.home ? 'geo-land far' : 'geo-land', a.land);
+      p('geo-home', a.home);
+      p('geo-lake', a.lakes);
+      p('geo-states', a.states);
+      p('geo-border', a.borders);
     }
 
     // Land as one smooth shape: draw the route strokes on a small canvas, blur, and cut at a threshold.

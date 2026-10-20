@@ -3,7 +3,7 @@
 (function () {
   'use strict';
   const T = window.TTR, G = window.TTRGraph, AI = window.TTRAI, O = window.TTROdds, B = window.Board;
-  const VERSION = '1.4';
+  const VERSION = '1.5';
   const MAP_IDS = ['usa', 'europe', 'nordic', 'india', 'switzerland'];
   const MAP_NAMES = { usa: 'USA', europe: 'Europe', nordic: 'Nordic Countries', india: 'India', switzerland: 'Switzerland' };
   const LEVELS = ['easy', 'medium', 'hard'];
@@ -35,8 +35,10 @@
   const mapCache = {};
   function getMap(id) {
     if (mapCache[id]) return Promise.resolve(mapCache[id]);
-    return fetch('maps/' + id + '.json?v=' + VERSION).then(r => { if (!r.ok) throw new Error('map ' + id); return r.json(); })
-      .then(m => { mapCache[id] = T.register(m); return m; });
+    // the board art (real coastlines, lakes, borders) is a separate file; without it the board draws the plain land
+    const art = fetch('maps/' + id + '.art.json?v=' + VERSION).then(r => r.ok ? r.json() : null).catch(() => null);
+    return Promise.all([fetch('maps/' + id + '.json?v=' + VERSION).then(r => { if (!r.ok) throw new Error('map ' + id); return r.json(); }), art])
+      .then(([m, a]) => { if (a) Object.defineProperty(m, 'art', { value: a }); mapCache[id] = T.register(m); return m; });
   }
   const cityName = (map, id) => G.index(map).cityById[id].name;
   // place = a city, or a country (Switzerland's border tickets)
@@ -1116,7 +1118,7 @@
         <div class="row"><span class="seg" role="group">${MAP_IDS.map(id => `<button type="button" data-sm="${id}" aria-pressed="${(Settings.sm || 'usa') === id}">${MAP_NAMES[id].split(' ')[0]}</button>`).join('')}</span></div>
         <div id="s-strength"></div>
         <div class="sec">About</div>
-        <p class="note">Maps: USA (Classic, 1910, Big Cities, Mega Game tickets), Europe, Nordic Countries, India, Switzerland. Board drawings are our own. Every route, ticket and rule is checked in <a href="https://github.com/TimothyHadfield/ticket-to-ride/blob/main/docs/rules-check.md" target="_blank" rel="noopener">rules-check</a>. Ticket to Ride is a Days of Wonder game; this is an unofficial fan tool.</p>
+        <p class="note">Maps: USA (Classic, 1910, Big Cities, Mega Game tickets), Europe, Nordic Countries, India, Switzerland. Board drawings are our own; coastlines, lakes and borders come from Natural Earth (public domain). Every route, ticket and rule is checked in <a href="https://github.com/TimothyHadfield/ticket-to-ride/blob/main/docs/rules-check.md" target="_blank" rel="noopener">rules-check</a>. Ticket to Ride is a Days of Wonder game; this is an unofficial fan tool.</p>
         <div class="row" style="margin-top:10px"><button class="btn small" id="s-reset">Clear saved games</button><span class="grow"></span><span class="small muted">v${VERSION}</span></div>`;
       Strength.note($('#s-strength'), Settings.sm || 'usa');
       panel.querySelectorAll('[data-speed]').forEach(b => b.onclick = () => { st.speed = b.dataset.speed; save(); Settings.show(); });

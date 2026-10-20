@@ -48,224 +48,224 @@
  "nordicLocos": false,
  "size": [
   1000,
-  650
+  697
  ],
  "cities": [
   {
    "id": "vancouver",
    "name": "Vancouver",
-   "x": 50,
-   "y": 75
+   "x": 114,
+   "y": 50
   },
   {
    "id": "calgary",
    "name": "Calgary",
-   "x": 213,
-   "y": 50
+   "x": 260,
+   "y": 58
   },
   {
    "id": "winnipeg",
    "name": "Winnipeg",
-   "x": 503,
-   "y": 75
+   "x": 510,
+   "y": 112
   },
   {
    "id": "sault-st-marie",
    "name": "Sault St. Marie",
-   "x": 722,
-   "y": 149
+   "x": 714,
+   "y": 180
   },
   {
    "id": "montreal",
    "name": "Montréal",
-   "x": 907,
-   "y": 171
+   "x": 891,
+   "y": 170
   },
   {
    "id": "seattle",
    "name": "Seattle",
-   "x": 85,
-   "y": 126
+   "x": 126,
+   "y": 111
   },
   {
    "id": "toronto",
    "name": "Toronto",
-   "x": 807,
-   "y": 211
+   "x": 806,
+   "y": 233
   },
   {
    "id": "boston",
    "name": "Boston",
    "x": 950,
-   "y": 239
+   "y": 230
   },
   {
    "id": "helena",
    "name": "Helena",
-   "x": 248,
-   "y": 147
+   "x": 271,
+   "y": 167
   },
   {
    "id": "duluth",
    "name": "Duluth",
    "x": 590,
-   "y": 143
+   "y": 184
   },
   {
    "id": "portland",
    "name": "Portland",
-   "x": 61,
-   "y": 182
+   "x": 91,
+   "y": 161
   },
   {
    "id": "new-york",
    "name": "New York",
-   "x": 899,
-   "y": 275
+   "x": 910,
+   "y": 280
   },
   {
    "id": "pittsburgh",
    "name": "Pittsburgh",
-   "x": 797,
-   "y": 280
+   "x": 809,
+   "y": 308
   },
   {
    "id": "chicago",
    "name": "Chicago",
-   "x": 666,
-   "y": 249
+   "x": 672,
+   "y": 293
   },
   {
    "id": "omaha",
    "name": "Omaha",
-   "x": 522,
-   "y": 259
+   "x": 527,
+   "y": 311
   },
   {
    "id": "washington",
    "name": "Washington",
-   "x": 848,
-   "y": 314
+   "x": 867,
+   "y": 333
   },
   {
    "id": "saint-louis",
    "name": "Saint Louis",
-   "x": 622,
-   "y": 320
+   "x": 632,
+   "y": 371
   },
   {
    "id": "kansas-city",
    "name": "Kansas City",
-   "x": 549,
-   "y": 314
+   "x": 554,
+   "y": 367
   },
   {
    "id": "denver",
    "name": "Denver",
-   "x": 369,
-   "y": 296
+   "x": 367,
+   "y": 341
   },
   {
    "id": "salt-lake-city",
    "name": "Salt Lake City",
-   "x": 251,
-   "y": 274
+   "x": 250,
+   "y": 301
   },
   {
    "id": "san-francisco",
    "name": "San Francisco",
-   "x": 70,
-   "y": 339
+   "x": 50,
+   "y": 325
   },
   {
    "id": "raleigh",
    "name": "Raleigh",
-   "x": 820,
-   "y": 382
+   "x": 852,
+   "y": 410
   },
   {
    "id": "nashville",
    "name": "Nashville",
-   "x": 681,
-   "y": 374
+   "x": 700,
+   "y": 423
   },
   {
    "id": "little-rock",
    "name": "Little Rock",
-   "x": 586,
-   "y": 404
+   "x": 598,
+   "y": 463
   },
   {
    "id": "oklahoma-city",
    "name": "Oklahoma City",
-   "x": 497,
-   "y": 388
+   "x": 499,
+   "y": 448
   },
   {
    "id": "santa-fe",
    "name": "Santa Fe",
-   "x": 353,
-   "y": 384
+   "x": 340,
+   "y": 433
   },
   {
    "id": "las-vegas",
    "name": "Las Vegas",
-   "x": 195,
-   "y": 373
+   "x": 171,
+   "y": 394
   },
   {
    "id": "los-angeles",
    "name": "Los Angeles",
-   "x": 141,
-   "y": 421
+   "x": 102,
+   "y": 431
   },
   {
    "id": "phoenix",
    "name": "Phoenix",
-   "x": 249,
-   "y": 426
+   "x": 221,
+   "y": 459
   },
   {
    "id": "el-paso",
    "name": "El Paso",
-   "x": 343,
-   "y": 471
+   "x": 319,
+   "y": 525
   },
   {
    "id": "dallas",
    "name": "Dallas",
-   "x": 509,
-   "y": 448
+   "x": 512,
+   "y": 511
   },
   {
    "id": "atlanta",
    "name": "Atlanta",
-   "x": 722,
-   "y": 426
+   "x": 752,
+   "y": 474
   },
   {
    "id": "charleston",
    "name": "Charleston",
-   "x": 798,
-   "y": 447
+   "x": 841,
+   "y": 483
   },
   {
    "id": "miami",
    "name": "Miami",
-   "x": 794,
-   "y": 600
+   "x": 864,
+   "y": 646
   },
   {
    "id": "new-orleans",
    "name": "New Orleans",
-   "x": 624,
-   "y": 509
+   "x": 648,
+   "y": 573
   },
   {
    "id": "houston",
    "name": "Houston",
-   "x": 534,
-   "y": 513
+   "x": 540,
+   "y": 581
   }
  ],
  "routes": [

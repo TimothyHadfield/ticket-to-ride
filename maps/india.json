@@ -56,242 +56,242 @@
  "nordicLocos": false,
  "size": [
   1000,
-  997
+  1034
  ],
  "cities": [
   {
    "id": "peshawar",
    "name": "Peshawar",
-   "x": 201,
+   "x": 219,
    "y": 50
   },
   {
    "id": "lahore",
    "name": "Lahore",
-   "x": 291,
-   "y": 133
+   "x": 301,
+   "y": 142
   },
   {
    "id": "jacobabad",
    "name": "Jacobabad",
-   "x": 87,
-   "y": 240
+   "x": 97,
+   "y": 243
   },
   {
    "id": "bhatinda",
    "name": "Bhatinda",
-   "x": 314,
-   "y": 191
+   "x": 320,
+   "y": 201
   },
   {
    "id": "ambala",
    "name": "Ambala",
-   "x": 375,
-   "y": 179
+   "x": 381,
+   "y": 191
   },
   {
    "id": "rohri",
    "name": "Rohri",
-   "x": 123,
-   "y": 290
+   "x": 129,
+   "y": 296
   },
   {
    "id": "delhi",
    "name": "Delhi",
-   "x": 387,
-   "y": 241
+   "x": 391,
+   "y": 256
   },
   {
    "id": "bareilly",
    "name": "Bareilly",
-   "x": 461,
-   "y": 251
+   "x": 464,
+   "y": 267
   },
   {
    "id": "karachi",
    "name": "Karachi",
    "x": 50,
-   "y": 377
+   "y": 380
   },
   {
    "id": "jodhpur",
    "name": "Jodhpur",
-   "x": 249,
-   "y": 327
+   "x": 252,
+   "y": 341
   },
   {
    "id": "jaipur",
    "name": "Jaipur",
-   "x": 341,
-   "y": 303
+   "x": 344,
+   "y": 320
   },
   {
    "id": "agra",
    "name": "Agra",
-   "x": 415,
-   "y": 296
+   "x": 418,
+   "y": 312
   },
   {
    "id": "lucknow",
    "name": "Lucknow",
-   "x": 511,
-   "y": 306
+   "x": 514,
+   "y": 323
   },
   {
    "id": "katni",
    "name": "Katni",
-   "x": 493,
-   "y": 413
+   "x": 496,
+   "y": 435
   },
   {
    "id": "patna",
    "name": "Patna",
-   "x": 650,
-   "y": 351
+   "x": 653,
+   "y": 367
   },
   {
    "id": "dhubri",
    "name": "Dhubri",
-   "x": 810,
-   "y": 335
+   "x": 813,
+   "y": 344
   },
   {
    "id": "jarhat",
    "name": "Jarhat",
    "x": 950,
-   "y": 309
+   "y": 307
   },
   {
    "id": "chittagong",
    "name": "Chittagong",
-   "x": 870,
-   "y": 466
+   "x": 882,
+   "y": 475
   },
   {
    "id": "calcutta",
    "name": "Calcutta",
-   "x": 757,
-   "y": 458
+   "x": 766,
+   "y": 474
   },
   {
    "id": "bilaspur",
    "name": "Bilaspur",
-   "x": 558,
-   "y": 464
+   "x": 562,
+   "y": 487
   },
   {
    "id": "bhopal",
    "name": "Bhopal",
-   "x": 394,
-   "y": 434
+   "x": 396,
+   "y": 455
   },
   {
    "id": "ratiam",
    "name": "Ratiam",
    "x": 316,
-   "y": 431
+   "y": 451
   },
   {
    "id": "ahmadabad",
    "name": "Ahmadabad",
-   "x": 234,
-   "y": 442
+   "x": 232,
+   "y": 459
   },
   {
    "id": "khandwa",
    "name": "Khandwa",
    "x": 359,
-   "y": 485
+   "y": 507
   },
   {
    "id": "raipur",
    "name": "Raipur",
-   "x": 527,
-   "y": 518
+   "x": 532,
+   "y": 541
   },
   {
    "id": "bombay",
    "name": "Bombay",
-   "x": 238,
-   "y": 574
+   "x": 230,
+   "y": 595
   },
   {
    "id": "manmad",
    "name": "Manmad",
-   "x": 296,
-   "y": 541
+   "x": 292,
+   "y": 563
   },
   {
    "id": "indur",
    "name": "Indur",
    "x": 417,
-   "y": 598
+   "y": 623
   },
   {
    "id": "waltain",
    "name": "Waltain",
-   "x": 587,
-   "y": 633
+   "x": 595,
+   "y": 659
   },
   {
    "id": "bezwada",
    "name": "Bezwada",
-   "x": 501,
-   "y": 675
+   "x": 506,
+   "y": 703
   },
   {
    "id": "wadi",
    "name": "Wadi",
-   "x": 380,
-   "y": 655
+   "x": 377,
+   "y": 682
   },
   {
    "id": "poona",
    "name": "Poona",
-   "x": 287,
-   "y": 611
+   "x": 279,
+   "y": 633
   },
   {
    "id": "mormugau",
    "name": "Mormugau",
-   "x": 267,
-   "y": 717
+   "x": 257,
+   "y": 741
   },
   {
    "id": "guntakal",
    "name": "Guntakal",
-   "x": 393,
-   "y": 723
+   "x": 390,
+   "y": 752
   },
   {
    "id": "madras",
    "name": "Madras",
-   "x": 489,
-   "y": 797
+   "x": 493,
+   "y": 829
   },
   {
    "id": "mangalore",
    "name": "Mangalore",
-   "x": 300,
-   "y": 807
+   "x": 290,
+   "y": 835
   },
   {
    "id": "erode",
    "name": "Erode",
-   "x": 405,
-   "y": 859
+   "x": 400,
+   "y": 893
   },
   {
    "id": "calicut",
    "name": "Calicut",
-   "x": 344,
-   "y": 861
+   "x": 333,
+   "y": 893
   },
   {
    "id": "quilon",
    "name": "Quilon",
-   "x": 368,
-   "y": 947
+   "x": 358,
+   "y": 983
   }
  ],
  "routes": [
