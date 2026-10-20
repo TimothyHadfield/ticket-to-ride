@@ -3,7 +3,7 @@
   "private": true,
   "description": "Ticket to Ride companion, computer opponents and route lab. Dev scripts only; the site has no dependencies.",
   "scripts": {
-    "test": "node --test tests/",
+    "test": "node --test",
     "maps": "node tools/build-maps.js",
     "sim": "node tools/sim.js"
   }
