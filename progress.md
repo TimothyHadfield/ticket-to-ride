@@ -45,6 +45,10 @@ Measured computer strength (data/strength.json, 1000 games per pairing, 2 player
 - Online seats that are left open become computers at the level picked when the room is created.
 - Study mode is off in online games: it would show other players' cards.
 
+## QA (fresh agent, 2026-10-20, live site)
+- Fixed: phone taps on 28–59 short routes per map were swallowed by city taps (now 0 of 478 fail, measured by tapping every route's middle in WebKit); routes under the zoom buttons; Start racing a map load; Table's first "Drew tickets" capped at 3; 4–5 player chips cut off; online lobby/join polish.
+- Left as is (low): Table final score with "Just mine" ranks a rival on 0 above you on a negative score (the note says rivals' tickets are missing).
+
 ## NOT verified
 - Online play with a real second iPhone (verified only with two headless WebKit iPhones against the real Firebase project).
 - Online rooms of 3–5 people (only 2 tested end-to-end; the game object is tested for every count in node).
