@@ -4,7 +4,7 @@
 (function (G) {
 'use strict';
 if (G.FX && G.FX.version) return;
-const VERSION = '1.0.0';
+const VERSION = '1.0.3';
 const DEFAULTS = { sound: true, volume: 60, moves: true, alerts: true, ui: true, celebrations: true, animations: true, animSpeed: 'normal' };
 const CATS = ['moves', 'alerts', 'ui', 'celebrations'];
 let key = 'fx:settings', S = Object.assign({}, DEFAULTS), subs = [], accent = '#6ea8fe';
@@ -282,18 +282,20 @@ function celebrate(o) {
   life *= sp();
   const t0 = G.performance ? G.performance.now() : Date.now();
   return new Promise(res => {
-    let ended = false;
+    let ended = false, last = t0;
     const end = () => { if (ended) return; ended = true; c.remove(); res(); };
     const frame = now => {
       if (ended) return;
       const t = (now - t0) / life;
+      // Time-based motion: k = frames' worth of 60 fps elapsed, so confetti moves at the same speed on 30, 60 or 120 Hz screens.
+      const k = Math.max(0, Math.min(4, (now - last) / (1000 / 60))); last = now;
       x.clearRect(0, 0, W, H);
       if (t >= 1) return end();
       if (kind === 'lose') { x.fillStyle = `rgba(0,0,0,${0.35 * Math.sin(Math.PI * t)})`; x.fillRect(0, 0, W, H); }
       const fade = t > 0.75 ? (1 - t) / 0.25 : 1;
       for (const p of P) {
-        if (p.star) { p.vx *= 0.94; p.vy *= 0.94; } else { p.vx *= 0.985; p.vy = p.vy * 0.985 + 0.32; }
-        p.x += p.vx; p.y += p.vy; p.r += p.vr;
+        if (p.star) { const d = Math.pow(0.94, k); p.vx *= d; p.vy *= d; } else { const d = Math.pow(0.985, k); p.vx *= d; p.vy = p.vy * d + 0.32 * k; }
+        p.x += p.vx * k; p.y += p.vy * k; p.r += p.vr * k;
         x.globalAlpha = fade; x.fillStyle = p.c;
         x.save(); x.translate(p.x, p.y); x.rotate(p.r);
         if (p.star) { const s = p.w * (1 - t * 0.6); x.beginPath(); for (let i = 0; i < 8; i++) { const rr = i % 2 ? s * 0.35 : s, a = i * Math.PI / 4; x.lineTo(Math.cos(a) * rr, Math.sin(a) * rr); } x.closePath(); x.fill(); }
@@ -341,12 +343,12 @@ function renderSettings(box) {
     `<div class="fx-why" hidden>Sounds follow your phone's volume. The iPhone silent switch may mute them.</div>` +
     `<div class="set-row fx-row" data-row="volume"><label class="fx-lab" for="${id}-vol">Volume</label><input type="range" class="fx-vol" id="${id}-vol" min="0" max="100" step="5" aria-label="Volume"><button type="button" class="fx-test">Test</button></div>` +
     sw('moves', 'Game sounds') + sw('alerts', 'Alerts') + sw('ui', 'Button clicks') + sw('celebrations', 'Celebrations') + sw('animations', 'Animations') +
-    `<div class="set-row fx-row" data-row="animSpeed"><span class="fx-lab">Speed</span><div class="seg" role="group" aria-label="Animation speed"><button type="button" data-speed="normal">Normal</button><button type="button" data-speed="fast">Fast</button></div></div>`;
+    `<div class="set-row fx-row" data-row="animSpeed"><span class="fx-lab">Effects speed</span><div class="seg" role="group" aria-label="Animation speed"><button type="button" data-fxspeed="normal">Normal</button><button type="button" data-fxspeed="fast">Fast</button></div></div>`;
   const q = s => wrap.querySelector(s), qa = s => Array.from(wrap.querySelectorAll(s));
   const sync = () => {
     qa('input[data-fx]').forEach(i => { i.checked = !!S[i.dataset.fx]; const l = i.parentNode; if (l.classList) l.classList.toggle('on', i.checked); });
     q('.fx-vol').value = S.volume;
-    qa('[data-speed]').forEach(b => b.setAttribute('aria-pressed', String(S.animSpeed === b.dataset.speed)));
+    qa('[data-fxspeed]').forEach(b => b.setAttribute('aria-pressed', String(S.animSpeed === b.dataset.fxspeed)));
     ['volume', 'moves', 'alerts', 'ui'].forEach(k => q(`[data-row="${k}"]`).classList.toggle('dim', !S.sound));
     q('[data-row="animSpeed"]').classList.toggle('dim', !S.animations);
   };
@@ -355,7 +357,7 @@ function renderSettings(box) {
   q('.fx-vol').addEventListener('change', () => play('ding', { force: true }));
   wrap.addEventListener('click', e => {
     const t = e.target;
-    if (t.dataset && t.dataset.speed) { set('animSpeed', t.dataset.speed); pop(t); }
+    if (t.dataset && t.dataset.fxspeed) { set('animSpeed', t.dataset.fxspeed); pop(t); }
     else if (t.classList && t.classList.contains('fx-test')) { unlock(); play('turn', { force: true }); pop(t); }
     else if (t.classList && t.classList.contains('q')) { const w = q('.fx-why'); w.hidden = !w.hidden; t.setAttribute('aria-expanded', String(!w.hidden)); }
   });

@@ -4,7 +4,8 @@
   'use strict';
   const T = window.TTR, G = window.TTRGraph, AI = window.TTRAI, O = window.TTROdds, B = window.Board;
   const FX = window.FX, SFX = window.TTRSfx; // sounds + animations (js/fx.js is the shared library, js/sfx.js maps game events to it)
-  const VERSION = '1.7';
+  const TABLE = window.TABLE, TT = window.TTRTable; // the real-table kit (js/table.js, shared) + this game's board frame and cards
+  const VERSION = '1.8';
   const MAP_IDS = ['usa', 'europe', 'nordic', 'india', 'switzerland'];
   const MAP_NAMES = { usa: 'USA', europe: 'Europe', nordic: 'Nordic Countries', india: 'India', switzerland: 'Switzerland' };
   const LEVELS = ['easy', 'medium', 'hard'];
@@ -115,15 +116,18 @@
   // sounds and animations for one board: where the chips, cards and route cars are on screen
   const fxColors = B.PLAYER.map(c => c === '#2b2f3a' ? '#e8eaf0' : c); // the black player's colour can't be read on the dark page
   function fxCtx(view, me) {
-    const panel = $('#v-' + view + ' .panel'), wrap = $('#v-' + view + ' .board-wrap');
+    const v = $('#v-' + view), panel = v.querySelector('.panel'), wrap = v.querySelector('.board-wrap');
+    const stack = sel => { const e = v.querySelector(sel); return e && (e.querySelector('.tbl-back') || e); };
     return {
       me, colors: fxColors,
-      chip: i => panel.querySelector(`.players [data-seat="${i}"]`),
-      score: i => panel.querySelector(`.players [data-seat="${i}"] .sc`),
-      deck: () => panel.querySelector('#p-deck'), tix: () => panel.querySelector('#p-tix'),
-      face: i => panel.querySelector(`[data-face="${i}"]`),
-      hand: c => (c && panel.querySelector(`.hand [data-color="${c}"]`)) || panel.querySelector('.hand'),
-      ticketRow: i => panel.querySelector(`.tlist [data-tix="${i}"]`),
+      chip: i => v.querySelector(`[data-seat="${i}"]`),
+      score: i => v.querySelector(`[data-seat="${i}"] .sc`),
+      deck: () => stack('#p-deck'), tix: () => stack('#p-tix'),
+      face: i => v.querySelector(`[data-face="${i}"] .ttr-card`) || v.querySelector(`[data-face="${i}"]`),
+      hand: c => (c && v.querySelector(`.hand [data-color="${c}"]`)) || v.querySelector('.hand'),
+      ticketRow: i => v.querySelector(`[data-tix="${i}"]`),
+      discard: () => v.querySelector('.disc'),
+      cardFace: c => TT.trainCard(c),
       status: () => panel.querySelector('.status'),
       cars: id => Array.from(wrap.querySelectorAll(`[data-route="${id}"] rect.car`)),
       sheet: () => document.querySelector('.sheet'),
@@ -163,12 +167,24 @@
       const v = $('#v-' + id), wrap = v.querySelector('.board-wrap'), b = boards[id];
       if (!b) continue;
       if (!v.classList.contains('active')) continue;
-      if (wide) { wrap.style.height = ''; b.ready(); continue; }
+      // laptop, or a phone on its side during a game: the board takes its grid cell
+      const game = v.classList.contains('game');
+      if (wide || (game && window.innerWidth > window.innerHeight)) { wrap.style.height = ''; b.ready(); continue; }
       if (!wrap.style.height) wrap.style.height = '200px'; // on screen so it can be measured
       const box = b.ready();
-      const W = v.clientWidth || window.innerWidth;
-      const maxH = Math.round((v.clientHeight || window.innerHeight) * (id === 'lab' ? 0.56 : 0.52));
-      wrap.style.height = Math.min(Math.round(W * box.h / box.w), maxH) + 'px';
+      // the map sits inside the board's printed frame (the score track)
+      const F = parseFloat(getComputedStyle(wrap).getPropertyValue('--frame')) || 0;
+      const W = wrap.clientWidth || v.clientWidth || window.innerWidth;
+      let maxH = Math.round((v.clientHeight || window.innerHeight) * (id === 'lab' ? 0.56 : 0.52));
+      if (game) {
+        // the rest of the table (rivals, supply, my seat, status) keeps its size; the board gets what is left
+        const cs = getComputedStyle(v), gap = parseFloat(cs.rowGap) || 0;
+        let rest = parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom), n = 0;
+        for (const e of v.children) if (e !== wrap && e.offsetParent) { const m = getComputedStyle(e); rest += e.offsetHeight + parseFloat(m.marginTop) + parseFloat(m.marginBottom); n++; }
+        const wm = getComputedStyle(wrap);
+        maxH = Math.floor(v.clientHeight - rest - gap * n - parseFloat(wm.marginTop) - parseFloat(wm.marginBottom));
+      }
+      wrap.style.height = Math.max(120, Math.min(Math.round((W - 2 * F) * box.h / box.w + 2 * F), maxH)) + 'px';
     }
   }
   window.addEventListener('resize', sizeBoards);
@@ -179,6 +195,7 @@
     const h = Object.assign({}, handlers);
     const b = B.create(wrap, map, { onRoute: r => h.onRoute && h.onRoute(r), onCity: c => h.onCity && h.onCity(c), onEmpty: () => h.onEmpty && h.onEmpty() });
     b.handlers = h;
+    b.frame = TT.frame(wrap); // the board's printed edge with the score track and the players' markers
     boards[id] = b;
     return b;
   }
@@ -193,6 +210,41 @@
   }
   function cardHTML(color, n, cls) {
     return `<div class="tcard ${cls || ''}${n === 0 ? ' zero' : ''}${n > 1 ? ' pile' : ''}" data-color="${color}" title="${color === 'loco' ? 'Locomotive' : color}">${window.Cards.svg(color)}${n != null ? `<span class="n">${n}</span>` : ''}</div>`;
+  }
+  // ---- real-table pieces (js/table.js is the shared kit, js/tabletop.js the board frame + cards)
+  // a rival's seat: name plate with the score, the backs of the cards they hold, their face-down tickets, their train heap
+  function seatHTML(q, i, score, turn, wide) {
+    const n = q.handCount != null ? q.handCount : T.handSize(q.hand);
+    const nt = typeof q.tickets === 'number' ? q.tickets : (q.tickets || []).length;
+    const W = wide ? 70 : 30, cw = wide ? 19 : 11, ch = cw * 67 / 44, k = Math.min(n, wide ? 14 : 8);
+    const L = k ? TABLE.fanLayout(k, { width: W, cardW: cw, cardH: ch, spread: 0.45, maxRot: 16 }) : [];
+    const drop = L.length ? Math.max(...L.map(p => p.y)) : 0;
+    const backs = L.map((p, j) => `<span class="tbl-card tbl-mini tbl-back tbl-sunburst ttr-back" style="--x:${p.x}px;--y:${(p.y - drop).toFixed(1)}px;--r:${p.r}deg;z-index:${j + 1}"></span>`).join('');
+    return `<div class="seat${turn ? ' turn' : ''}" data-seat="${i}" role="button" tabindex="0" aria-label="${esc(q.name)}: ${score} points, ${q.trains} trains, ${n} cards, ${nt} tickets">
+      <div class="tbl-plate"><i style="background:${B.PLAYER[i]}"></i><span class="nm">${esc(q.name)}</span><b class="sc">${score}</b></div>
+      <div class="seat-stuff"><span class="backs" style="width:${W}px;height:${Math.ceil(ch + drop + 1)}px" title="${n} cards">${backs}<b>${n}</b></span><span class="tixb" title="${nt} tickets">${nt ? TT.ticketBack() : ''}<b>${nt}</b></span>${TT.heap(B.PLAYER[i], q.trains, 'r' + i, wide)}</div></div>`;
+  }
+  // a destination ticket lying in front of me: the two places, the points, a little map with the line, and the chance
+  function landDefs(map) {
+    if (!map.art || !map.art.land || document.getElementById('tkland-' + map.id)) return;
+    const d = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    d.setAttribute('width', '0'); d.setAttribute('height', '0'); d.style.position = 'absolute'; d.setAttribute('aria-hidden', 'true');
+    d.innerHTML = `<defs><path id="tkland-${map.id}" d="${map.art.land}"/></defs>`;
+    document.body.appendChild(d);
+  }
+  function ticketCard(map, t, c, i, sel) {
+    c = c || {};
+    landDefs(map);
+    const ix = G.index(map).cityById, ends = [t.a, t.b].map(id => ix[id]).filter(Boolean), [w, h] = map.size;
+    let cls = 'tkt', st = '';
+    if (c.done) { st = '<span class="tk-ch ok">✓</span>'; cls += ' done'; }
+    else if (c.need === Infinity || c.chance === 0) { st = '<span class="tk-ch bad">✗</span>'; cls += ' dead'; }
+    else if (c.need != null) st = `<span class="tk-ch" style="color:${c.chance >= 0.75 ? '#1d7a45' : c.chance >= 0.45 ? '#a2660c' : '#b3261e'}">${pct(c.chance)}</span>`;
+    const nm = ticketName(map, t).split(/ [–→] /);
+    const r = Math.max(w, h) * 0.03;
+    return `<button type="button" class="${cls}${sel ? ' sel' : ''}${(t.orig || t).long ? ' long' : ''}" data-tix="${i}" aria-label="${esc(ticketName(map, t))}, ${ticketPts(t)} points">
+      <svg class="tk-map" viewBox="0 0 ${w} ${h}" aria-hidden="true"><use href="#tkland-${map.id}"/>${ends.length === 2 ? `<line x1="${ends[0].x}" y1="${ends[0].y}" x2="${ends[1].x}" y2="${ends[1].y}" stroke-width="${(r * 0.8).toFixed(1)}"/>` : ''}${ends.map(e => `<circle cx="${e.x}" cy="${e.y}" r="${r.toFixed(1)}"/>`).join('')}</svg>
+      <span class="tk-c">${nm.map(esc).join('<br>')}</span><span class="tk-p">${ticketPts(t)}</span>${st}</button>`;
   }
   function chip(seat, name, score, meta, on, turn) {
     return `<button type="button" class="pchip${on ? ' on' : ''}${turn ? ' turn' : ''}" data-seat="${seat}"><span class="nm"><i style="background:${B.PLAYER[seat]}"></i>${esc(name)}</span><span class="sc">${score}</span><span class="mt">${meta}</span></button>`;
@@ -272,6 +324,7 @@
         owner: tb.claims, stations: tb.stations,
         path: new Set(tix ? tix.path : []), endCities: tix ? [tix.t.a, tix.t.b] : [],
       });
+      if (Table.board.frame) Table.board.frame.scores(routePts, B.PLAYER); // markers on the board's score track
       // events
       panel.querySelectorAll('[data-seat]').forEach(b => b.onclick = () => { tb.active = +b.dataset.seat; save(); Table.render(); });
       panel.querySelectorAll('[data-mode]').forEach(b => b.onclick = () => { tb.mode = b.dataset.mode; save(); Table.render(); });
@@ -297,6 +350,7 @@
         <div class="names" style="margin-top:8px">${Array.from({ length: k0 }, (_, s) => `<div class="row"><i style="background:${B.PLAYER[s]}"></i><input type="text" data-name="${s}" value="${esc(names[s] || (s === 0 ? 'Me' : PNAME[s]))}" maxlength="14" class="grow" aria-label="Player ${s + 1} name"></div>`).join('')}</div>
         <div class="row" style="margin-top:10px"><button class="btn primary grow" id="t-start">Start</button></div>`;
       Table.board.render({});
+      if (Table.board.frame) Table.board.frame.scores([]);
       panel.querySelector('[name=map]').onchange = async e => { panel.querySelectorAll('button').forEach(b => { b.disabled = true; }); Table.setupMap = e.target.value; Table.setupDeck = null; await Table.show(); };
       const dk = panel.querySelector('[name=deck]'); if (dk) dk.onchange = e => { Table.setupDeck = e.target.value; };
       panel.querySelectorAll('[data-n]').forEach(b => b.onclick = () => { Table.saveNames(panel); Table.setupN = +b.dataset.n; Table.renderSetup(panel); });
@@ -504,9 +558,6 @@
       const myTurn = s.turn === me && s.phase === 'main';
       const deck = T.deckFor(map, s).tickets;
       const pl = s.players[me];
-      // chips
-      const chips = s.players.map((q, i) => chip(i, q.name, T.liveRoutePoints(s, i),
-        `${q.trains} trains · ${q.handCount != null ? q.handCount : T.handSize(q.hand)} cards`, false, s.turn === i && s.phase !== 'over')).join('');
       // status
       let status = '';
       if (s.phase === 'over') status = 'Game over';
@@ -521,42 +572,75 @@
       const pos = Play.pos(s, me);
       const odds = pl.tickets.length ? O.ticketChances(map, Object.assign(pos, { tickets: pl.tickets.map(i => pos.deckTickets[i]), myCards: T.handSize(pl.hand) })) : { tickets: [] };
       Play.lastOdds = odds;
-      const market = s.faceUp.map((c, i) => c ? `<button type="button" class="tcard face" data-face="${i}" aria-label="Take ${c === 'loco' ? 'locomotive' : c}">${window.Cards.svg(c)}</button>` : '<div class="tdeck">—</div>').join('');
-      const hand = T.COLORS.concat('loco').map(c => cardHTML(c, pl.hand[c])).join('');
       const studyHTML = study ? s.players.map((q, i) => i === me ? '' : `<div class="small" style="margin-top:6px"><b style="color:${B.PLAYER[i]}">${esc(q.name)}</b> <span class="muted">${LEVEL_NAME[q.level] || ''}</span> · ${T.COLORS.concat('loco').filter(c => q.hand[c]).map(c => `<span class="pip" style="background:${B.COLOR[c]};vertical-align:middle"></span>${q.hand[c]}`).join(' ')}<br>${q.tickets.map(t => esc(ticketName(map, deck[t])) + ' ' + ticketPts(deck[t]) + (T.ticketOutcome(map, q.routes, deck[t]).ok ? ' ✓' : '')).join(' · ') || 'no tickets'}</div>`).join('') : '';
       const logLines = s.log.slice(-4).reverse().map(l => `<div>${esc(l.text)}</div>`).join('');
-      panel.innerHTML = `
-        <div class="players">${chips}</div>
-        <div class="status" style="margin-top:8px"><span class="dot" style="background:${B.PLAYER[s.turn]}"></span><span class="grow">${status}</span>
-          ${s.phase === 'main' && myTurn ? '<button class="btn small" id="p-hint">Hint</button>' : ''}
-          ${s.phase === 'over' ? '<button class="btn small primary" id="p-score">Scores</button>' : ''}</div>
-        ${Play.hint ? `<div class="hint" style="margin-top:6px">${esc(Play.hint)}</div>` : ''}
-        <div class="sec" style="margin-top:10px">Cards</div>
-        <div class="market">${market}
-          <button type="button" class="tdeck" id="p-deck" ${legal.includes('draw') ? '' : 'disabled'}><b>${s.trainDeck.length}</b>deck</button>
-          <button type="button" class="tdeck tix" id="p-tix" ${legal.includes('drawTickets') ? '' : 'disabled'}><b>${s.ticketDeck.length}</b>tickets</button></div>
-        <div class="sec">My hand · ${pl.trains} trains${map.stations ? ' · ' + pl.stations + ' stations' : ''}</div>
-        <div class="hand">${hand}</div>
-        ${map.stations && myTurn && !s.drew && pl.stations > 0 ? `<div class="row" style="margin-top:8px"><button class="btn small${Play.stationMode ? ' warm' : ''}" id="p-station">${Play.stationMode ? 'Cancel station' : 'Build a station (' + T.stationCost(s, me) + ' cards)'}</button><button class="q" data-help="stations" aria-label="About stations">?</button></div>` : ''}
-        <div class="sec">My tickets <button class="q" data-help="chance" aria-label="About chance">?</button></div>
-        <div class="tlist">${odds.tickets.map((x, i) => ticketRow(map, x.t, x, `data-tix="${i}"`)).join('') || '<div class="empty">None yet.</div>'}</div>
-        <div class="small muted" style="margin-top:10px">${Play.unseenHTML(s, me)} <button class="q" data-help="unseen" aria-label="About unseen cards">?</button></div>
-        <div class="small muted" style="margin-top:4px">Longest: ${s.players.map((q, i) => `<b style="color:${B.PLAYER[i]}">${G.longestTrail(map, q.routes).len}</b>`).join(' · ')} <button class="q" data-help="longest" aria-label="About longest route">?</button></div>
+      const view = $('#v-play'), wide = window.innerWidth >= 900;
+      view.classList.add('game');
+      const scores = s.players.map((_, i) => s.phase === 'over' && s.result ? s.result.rows[i].total : T.liveRoutePoints(s, i));
+      const turnOf = i => s.turn === i && s.phase !== 'over';
+      // ---- the far side of the table: each rival's seat (name plate, held card backs, face-down tickets, train heap)
+      view.querySelector('.rivals').innerHTML = s.players.map((q, i) => i === me ? '' : seatHTML(q, i, scores[i], turnOf(i), wide)).join('');
+      // ---- beside the board: ticket deck, the five face-up cards, the train deck, the discard pile
+      const sup = view.querySelector('.supply');
+      sup.innerHTML = `
+        <button type="button" class="stk-btn" id="p-tix" aria-label="Draw tickets (${s.ticketDeck.length} left)" ${legal.includes('drawTickets') ? '' : 'disabled'}><span class="stk"></span></button>
+        <div class="row5">${s.faceUp.map((c, i) => c ? `<button type="button" class="slot" data-face="${i}" aria-label="Take ${c === 'loco' ? 'locomotive' : c}">${TT.trainCard(c)}</button>` : '<span class="tbl-spot"></span>').join('')}</div>
+        <button type="button" class="stk-btn" id="p-deck" aria-label="Draw from the deck (${s.trainDeck.length} left)" ${legal.includes('draw') ? '' : 'disabled'}><span class="stk"></span></button>
+        <div class="disc" aria-label="Discard pile"></div>`;
+      const thick = { perCard: wide ? 0.12 : 0.1, max: wide ? 10 : 8 };
+      TABLE.deck(sup.querySelector('#p-tix .stk'), s.ticketDeck.length, Object.assign({ pattern: 'lattice', cls: 'tbl-mini ttr-tback' }, thick));
+      TABLE.deck(sup.querySelector('#p-deck .stk'), s.trainDeck.length, Object.assign({ pattern: 'sunburst', cls: 'tbl-mini ttr-back' }, thick));
+      const disc = Array.isArray(s.discard) ? s.discard : [];
+      TABLE.pile(sup.querySelector('.disc'), disc.slice(-5).map(c => TT.trainCard(c)), { seed: 'disc' + (disc.length - Math.min(5, disc.length)), max: 5, rot: 11, off: 3 });
+      // ---- my seat: plate + train heap, my tickets laid in front of me, my hand of cards held in a fan
+      const mine = view.querySelector('.mine');
+      const tix = odds.tickets.map((x, i) => ticketCard(map, x.t, x, i, Play.sel === i)).join('');
+      mine.innerHTML = `
+        <div class="me-seat${turnOf(me) ? ' turn' : ''}" data-seat="${me}">
+          <div class="tbl-plate"><i style="background:${B.PLAYER[me]}"></i><span class="nm">${esc(pl.name)}</span><b class="sc">${scores[me]}</b></div>
+          <div class="me-stuff">${TT.heap(B.PLAYER[me], pl.trains, 'me', wide)}${map.stations ? `<button type="button" class="st-btn${Play.stationMode ? ' on' : ''}" id="p-station" ${myTurn && !s.drew && pl.stations > 0 ? '' : 'disabled'} aria-pressed="${Play.stationMode}" title="Build a station (${T.stationCost(s, me)} cards)"><svg viewBox="0 0 18 18" aria-hidden="true"><path d="M2 9l7-7 7 7v7H2z" fill="${B.PLAYER[me]}"/></svg>${pl.stations}</button><button class="q" data-help="stations" aria-label="About stations">?</button>` : ''}</div>
+        </div>
+        <div class="mytix">${tix || '<span class="empty">No tickets yet</span>'}${tix ? '<button class="q" data-help="chance" aria-label="About chance">?</button>' : ''}</div>
+        <div class="hand" aria-label="My hand"></div>`;
+      if (Play.fan && Play.fan.disconnect) Play.fan.disconnect();
+      const groups = T.COLORS.concat('loco').filter(c => pl.hand[c] > 0);
+      Play.fan = TABLE.fan(mine.querySelector('.hand'), groups.map(c => TT.trainCard(c, 'held' + (pl.hand[c] > 2 ? ' p3' : pl.hand[c] > 1 ? ' p2' : ''), `title="${pl.hand[c]} ${c === 'loco' ? 'locomotive' : c}"`).replace('</div>', `<span class="idx">${pl.hand[c]}</span></div>`)), { pick: false, spread: 0.66, maxRot: 10, lift: 0, minHeight: 40 });
+      const notes = `
+        <div class="small muted">${Play.unseenHTML(s, me)} <button class="q" data-help="unseen" aria-label="About unseen cards">?</button></div>
+        <div class="small muted" style="margin-top:4px">Longest: ${s.players.map((q, i) => `<b style="color:${fxColors[i]}">${G.longestTrail(map, q.routes).len}</b>`).join(' · ')} <button class="q" data-help="longest" aria-label="About longest route">?</button></div>
         ${study ? `<div class="sec">Study: computers' hands</div>${studyHTML}` : ''}
         <div class="sec">Log</div><div class="log">${logLines}</div>
         <div class="row" style="margin-top:10px"><button class="btn small" id="p-new">${p.online ? 'Leave room' : 'New game'}</button>${p.online ? `<span class="grow small muted">Room ${esc(Play.net && Play.net.snap ? Play.net.snap.code : '')}</span>` : ''}</div>`;
+      panel.innerHTML = `
+        <div class="status"><span class="dot" style="background:${fxColors[s.turn]}"></span><span class="grow st-text">${status}</span>
+          ${s.phase === 'main' && myTurn ? '<button class="btn small" id="p-hint">Hint</button>' : ''}
+          ${s.phase === 'over' ? '<button class="btn small primary" id="p-score">Scores</button>' : ''}
+          <button class="btn small notes-btn" id="p-notes" aria-label="Notes: unseen cards, longest, log">Notes</button></div>
+        <div class="notes">${notes}</div>`;
+      // the hint is written on a note laid on the board, so nothing below it moves
+      let note = Play.board && view.querySelector('.board-wrap .board-note');
+      if (!note) { note = document.createElement('div'); note.className = 'board-note'; view.querySelector('.board-wrap').appendChild(note); }
+      note.textContent = Play.hint || ''; note.classList.toggle('show', !!Play.hint);
+      if (boards.play && boards.play.frame) boards.play.frame.scores(scores, B.PLAYER);
       Play.renderBoard();
       // events
-      panel.querySelectorAll('[data-face]').forEach(b => b.onclick = () => Play.act({ type: 'draw', from: +b.dataset.face }));
-      panel.querySelectorAll('.players [data-seat]').forEach(b => b.onclick = () => { const i = +b.dataset.seat; if (i !== me) Play.guess(i); });
-      const on = (id, f) => { const e = panel.querySelector(id); if (e) e.onclick = f; };
+      const newGame = () => { if (S.play && S.play.online) Play.confirmLeave(); else if (S.play && S.play.state.phase !== 'over') { Play.confirmNew(); } else { S.play = null; save(); Play.render(); } };
+      view.querySelectorAll('[data-face]').forEach(b => b.onclick = () => Play.act({ type: 'draw', from: +b.dataset.face }));
+      view.querySelectorAll('.rivals [data-seat]').forEach(b => b.onclick = () => Play.guess(+b.dataset.seat));
+      const on = (id, f) => { const e = view.querySelector(id); if (e) e.onclick = f; };
       on('#p-deck', () => Play.act({ type: 'draw', from: 'deck' }));
       on('#p-tix', () => Play.act({ type: 'drawTickets' }));
       on('#p-hint', Play.showHint);
       on('#p-score', Play.scores);
-      on('#p-new', () => { if (S.play && S.play.online) Play.confirmLeave(); else if (S.play && S.play.state.phase !== 'over') { Play.confirmNew(); } else { S.play = null; save(); Play.render(); } });
+      on('#p-new', newGame);
+      on('#p-notes', () => {
+        const sh = openSheet(`<h2>Notes</h2><div class="notes-sheet">${notes}</div><div class="acts"><button class="btn" data-x>Close</button></div>`);
+        sh.querySelector('[data-x]').onclick = () => closeSheet();
+        sh.querySelector('#p-new').onclick = () => { closeSheet(true); newGame(); };
+      });
       on('#p-station', () => { Play.stationMode = !Play.stationMode; Play.render(); });
-      panel.querySelectorAll('[data-tix]').forEach(b => b.onclick = () => { Play.sel = Play.sel === +b.dataset.tix ? null : +b.dataset.tix; Play.render(); });
+      view.querySelectorAll('[data-tix]').forEach(b => b.onclick = () => { Play.sel = Play.sel === +b.dataset.tix ? null : +b.dataset.tix; Play.render(); });
+      sizeBoards();
       // sheets that the state demands
       if (pl.pending && (s.phase === 'setup' || myTurn) && !sheetEl) Play.ticketSheet();
       if (s.pendingTunnel && s.turn === me && !sheetEl) Play.tunnelSheet();
@@ -645,7 +729,18 @@
       sh.querySelector('[data-x]').onclick = () => closeSheet();
       sh.querySelector('[data-ok]').onclick = () => { closeSheet(true); Play.gen++; S.play = null; save(); Play.render(); };
     },
+    // no game on the table (setup, online lobby): just the board, the rest of the table is cleared
+    idle() {
+      const v = $('#v-play'), was = v.classList.contains('game');
+      v.classList.remove('game');
+      ['.rivals', '.supply', '.mine'].forEach(s => { v.querySelector(s).innerHTML = ''; });
+      const n = v.querySelector('.board-note'); if (n) n.classList.remove('show');
+      if (boards.play && boards.play.frame) boards.play.frame.scores([]);
+      if (Play.fan && Play.fan.disconnect) { Play.fan.disconnect(); Play.fan = null; }
+      if (was) setTimeout(sizeBoards, 0);
+    },
     renderSetup(panel) {
+      Play.idle();
       const map = Play.map;
       const maxOpp = map.players[1] - 1;
       const k = Math.min(Play.setupOpp || 1, maxOpp);
@@ -677,6 +772,11 @@
     fx(prev, next) {
       if (!prev || !next || S.tab !== 'play' || !Play.map || next.mapId !== Play.map.id) return;
       const ev = SFX.diff(prev, next, S.play.me, Play.map);
+      // face-up slots refilled from the deck turn over (a 3-D flip) — set before the next render
+      if (FX.settings.animations) {
+        const slots = []; for (let i = 0; i < 5; i++) if (next.faceUp[i] && next.faceUp[i] !== prev.faceUp[i]) slots.push(i);
+        if (slots.length) { $('#v-play').querySelectorAll('.supply [data-face]').forEach(b => { if (slots.includes(+b.dataset.face)) { const c = b.querySelector('.ttr-card'); if (c) { c.classList.remove('turn-up'); void c.offsetWidth; c.classList.add('turn-up'); } } }); }
+      }
       if (ev.length) SFX.fire(ev, fxCtx('play', S.play.me));
     },
     act(a) {
@@ -879,6 +979,7 @@
       sh.querySelector('[data-ok]').onclick = () => { closeSheet(true); Play.netLeave(); };
     },
     renderLobby(panel) {
+      Play.idle();
       const snap = Play.net.snap, map = Play.map;
       if (!snap || !snap.code || snap.status === 'joining') {
         panel.innerHTML = `<div class="sec">Online</div><p class="note">Connecting…</p><div class="row" style="margin-top:12px"><button class="btn" id="n-leave">Cancel</button></div>`;
@@ -1158,7 +1259,7 @@
       $('#s-study').onchange = e => { st.study = e.target.checked; save(); };
       $('#s-cb').onchange = e => { st.cb = e.target.checked; save(); applyCb(); };
       $('#s-longest').onchange = e => { st.longest = e.target.checked; save(); };
-      FX.renderSettings($('#s-fx')); // after the [data-speed] buttons above are wired: its own Normal/Fast use the same attribute
+      FX.renderSettings($('#s-fx')); // its Effects speed buttons use data-fxspeed, so they never touch Computer speed
       $('#s-reset').onclick = () => {
         const sh = openSheet(`<h2>Clear saved games?</h2><p class="note">The table game and the game against the computers are deleted.</p><div class="acts"><button class="btn" data-x>Cancel</button><button class="btn primary" data-ok>Clear</button></div>`);
         sh.querySelector('[data-x]').onclick = () => closeSheet();

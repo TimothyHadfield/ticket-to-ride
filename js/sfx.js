@@ -23,6 +23,9 @@
     for (let i = 0; i < 5; i++) if ((prev.faceUp[i] || null) !== (next.faceUp[i] || null)) changed.push(i);
     const flush = changed.length >= 4;
     let faceLeft = flush ? [] : changed.slice();
+    // the cards just put on the discard pile (what a claim was paid with)
+    const dp = Array.isArray(prev.discard) ? prev.discard : [], dn = Array.isArray(next.discard) ? next.discard : [];
+    let paid = dn.length > dp.length ? dn.slice(dp.length) : [];
     next.players.forEach((q, seat) => {
       const p = prev.players[seat];
       // a tunnel attempt turned three cards over
@@ -46,7 +49,8 @@
       for (const id of q.routes) if (!p.routes.includes(id)) {
         const r = ix.routeById[id];
         if (r.kind === 'tunnel' && !prev.pendingTunnel) ev.push({ type: 'tunnel', seat, shown: [] });
-        ev.push({ type: 'claim', seat, route: id, len: r.len, pts: T.routePoints(map, r.len), before: T.liveRoutePoints(prev, seat), after: T.liveRoutePoints(next, seat) });
+        ev.push({ type: 'claim', seat, route: id, len: r.len, pts: T.routePoints(map, r.len), before: T.liveRoutePoints(prev, seat), after: T.liveRoutePoints(next, seat), paid });
+        paid = [];
       }
       for (const c of q.stationCities || []) if (!(p.stationCities || []).includes(c)) ev.push({ type: 'station', seat, city: c });
     });
@@ -80,13 +84,22 @@
   const fly = F('flyTo'), pop = F('pop'), floatText = F('floatText'), flash = F('flash'), pulse = F('pulse');
 
   // a short-lived card face at a spot on screen, for flying a card whose slot was just refilled
-  function ghostCard(color, from) {
+  function ghostCard(color, from, ctx) {
     if (!animOn() || !from || !root.Cards) return null;
-    const a = from.getBoundingClientRect(), g = root.document.createElement('div');
-    g.className = 'tcard'; g.innerHTML = root.Cards.svg(color);
-    g.style.cssText = `position:fixed;left:${a.left}px;top:${a.top}px;width:${a.width}px;height:${a.height}px;margin:0;pointer-events:none;z-index:2147483000`;
+    const a = from.getBoundingClientRect(), t = root.document.createElement('template');
+    t.innerHTML = ctx && ctx.cardFace ? ctx.cardFace(color) : `<div class="tcard">${root.Cards.svg(color)}</div>`;
+    const g = t.content.firstElementChild;
+    g.style.cssText += `;position:fixed;left:${a.left}px;top:${a.top}px;width:${a.width}px;height:${a.height}px;margin:0;pointer-events:none;z-index:2147483000;--card-w:${a.width}px`;
     root.document.body.appendChild(g);
     return g;
+  }
+  // a card dealt off the top of the deck: a card back flies from the stack (the real-table kit, js/table.js)
+  function dealFrom(src, to, mine, color, ctx) {
+    const TB = root.TABLE;
+    if (TB && src && src.classList && src.classList.contains('tbl-back')) {
+      return TB.deal(src, to, { duration: 380, face: mine && color && ctx.cardFace ? ctx.cardFace(color) : undefined });
+    }
+    return fly(src, to, { duration: 380, fade: !mine });
   }
   // train cars of a claimed route drop into place one by one (SVG rects: transform + opacity only)
   function clackCar(rect, i, gap) {
@@ -113,12 +126,20 @@
         play('cardDeal', { vol });
         const src = e.from === 'deck' ? q('deck') : q('face', e.from);
         const to = mine ? q('hand', e.color || null) : q('chip', e.seat);
-        if (e.from === 'deck' || !src) fly(src, to, { duration: 380, fade: !mine }).then(() => mine && pop(to));
-        else { const g = ghostCard(e.color, src); if (g) fly(g, to, { clone: false, duration: 380, fade: !mine }).then(() => { g.remove(); if (mine) pop(to); }); }
+        if (e.from === 'deck' || !src) dealFrom(src, to, mine, e.color, ctx).then(() => mine && pop(to));
+        else { const g = ghostCard(e.color, src, ctx); if (g) fly(g, to, { clone: false, duration: 380, fade: !mine }).then(() => { g.remove(); if (mine) pop(to); }); }
         await wait(140);
       } else if (e.type === 'tunnel') {
         for (let k = 0; k < 3; k++) { play('cardFlip', { vol, pitch: 0.95 + k * 0.05 }); await wait(150); }
       } else if (e.type === 'claim') {
+        // the cards paid go onto the discard pile (from my hand, or from the rival's seat)
+        const pile = q('discard');
+        if (pile && e.paid && e.paid.length) {
+          const from = mine ? q('hand', null) : q('chip', e.seat);
+          e.paid.slice(0, 4).forEach((c, k) => setTimeout(() => {
+            const g = ghostCard(c, from, ctx); if (g) fly(g, pile, { clone: false, duration: 360 }).then(() => g.remove());
+          }, k * 70));
+        }
         const cars = q('cars', e.route) || [], gap = Math.round(75 * speed());
         cars.forEach((c, i) => clackCar(c, i, gap));
         for (let k = 0; k < e.len; k++) { play('place', { vol: vol * 0.85, pitch: 0.92 + k * 0.035 }); await wait(gap); }

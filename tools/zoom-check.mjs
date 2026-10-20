@@ -27,7 +27,8 @@ const probe = view => `(() => {
   const gs = svg.querySelectorAll(':scope > g');
   const rs = [gs[2].getBoundingClientRect(), gs[4].getBoundingClientRect()];
   const b = { l: Math.min(...rs.map(r => r.left)), t: Math.min(...rs.map(r => r.top)), r: Math.max(...rs.map(r => r.right)), b: Math.max(...rs.map(r => r.bottom)) };
-  const a = wrap.getBoundingClientRect();
+  // the board area is the map inside the board's printed frame (the score track round the edge), not the whole wrap (2026-10-20)
+  const a = svg.getBoundingClientRect();
   const fitB = wrap.querySelector('.zoom [data-z=fit]');
   return { a: { l: a.left, t: a.top, r: a.right, b: a.bottom }, b, vb: svg.getAttribute('viewBox'),
     lit: !!(fitB && fitB.classList.contains('lit')), scroll: document.scrollingElement.scrollHeight - innerHeight };

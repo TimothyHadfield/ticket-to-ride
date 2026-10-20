@@ -47,3 +47,9 @@
 - **Built:** shared `js/fx.js` + `js/sfx.js` (state diff → events → sounds/animations) for vs computer, online and Table; Settings "Sound & effects"; score count-up, longest-route sparkle, win/lose. v1.7.
 - **Verified:** tests/fx.test.js (fail-first) + 85/85; WebKit 393 px + 1280 px screenshots of settings, mid-game, win (confetti), no console errors/overflow.
 - **Open:** Tim's ear on the sounds; real iPhone.
+
+## 2026-10-20 — real-table look (builder under the manager)
+- **Asked:** Tim: make every game look like the real board/cards laid out on a real table, "like you're looking through a camera that is connected to a user's glasses" (full quote in progress.md Standing instructions).
+- **Built:** wooden table, framed board with 0–100 score track + markers, parchment map, rival seats (backs fan, tickets, train heaps), supply (decks with thickness, 5 face-up, messy discard), my seat (tickets as cards, hand fanned by colour); deal / pay-to-discard / flip animations; fx.js 1.0.3 re-copied; `_table` kit copied. v1.8, cache ?v=9.
+- **Verified:** 85/85 tests; zoom-check 196/201 under load (main 193/201 same run), 201/201 with 4× waits; WebKit shots at 320/393/659-landscape/1280, no scroll/overflow/errors; Effects speed taps leave Computer speed alone; deck draw + face-up take in WebKit, no errors; two reviewer passes.
+- **Open:** real iPhone; route-points chart; ticket stack past 3.
