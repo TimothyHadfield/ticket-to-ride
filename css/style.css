@@ -102,8 +102,10 @@ main { min-height: 0; position: relative; }
   font: 600 15px system-ui, sans-serif; fill: #f4efe4; paint-order: stroke; stroke: #0f1117;
   stroke-width: 4px; stroke-linejoin: round; pointer-events: none;
 }
-.city.sel circle.dot { fill: var(--accent-warm); }
-.city.end circle.dot { fill: var(--accent); }
+.city rect.dot { fill: #f4efe4; stroke: #0f1117; stroke-width: 2.5; }
+.city[data-border] rect.dot { fill: #c1563f; stroke: #f4efe4; stroke-width: 1.6; }
+.city.sel .dot { fill: var(--accent-warm); }
+.city.end .dot { fill: var(--accent); }
 .car { stroke: rgba(10,12,18,.85); stroke-width: 1.4; }
 .car.tunnel { stroke: #0f1117; stroke-dasharray: 3 2; stroke-width: 2.2; }
 .loco-mark { fill: none; stroke: #0f1117; stroke-width: 1.6; }

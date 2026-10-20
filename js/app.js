@@ -4,8 +4,8 @@
   'use strict';
   const T = window.TTR, G = window.TTRGraph, AI = window.TTRAI, O = window.TTROdds, B = window.Board;
   const VERSION = '1.0';
-  const MAP_IDS = ['usa', 'europe', 'nordic', 'india'];
-  const MAP_NAMES = { usa: 'USA', europe: 'Europe', nordic: 'Nordic Countries', india: 'India' };
+  const MAP_IDS = ['usa', 'europe', 'nordic', 'india', 'switzerland'];
+  const MAP_NAMES = { usa: 'USA', europe: 'Europe', nordic: 'Nordic Countries', india: 'India', switzerland: 'Switzerland' };
   const LEVELS = ['easy', 'medium', 'hard'];
   const LEVEL_NAME = { easy: 'Easy', medium: 'Medium', hard: 'Hard' };
   const PNAME = B.PLAYER_NAME;
@@ -39,7 +39,22 @@
       .then(m => { mapCache[id] = T.register(m); return m; });
   }
   const cityName = (map, id) => G.index(map).cityById[id].name;
-  const ticketName = (map, t) => cityName(map, t.a) + ' – ' + cityName(map, t.b);
+  // place = a city, or a country (Switzerland's border tickets)
+  const placeName = (map, id) => map.countries && map.countries[id] ? map.countries[id].name : cityName(map, id);
+  const ticketName = (map, t) => {
+    t = t.orig || t;
+    if (t.opts) return placeName(map, t.a) + ' → ' + (t.opts.length > 3 ? 'a country' : t.opts.map(o => placeName(map, o.to)).join(' / '));
+    return placeName(map, t.a) + ' – ' + placeName(map, t.b);
+  };
+  const ticketPts = t => { t = t.orig || t; if (!t.opts) return String(t.pts); const v = t.opts.map(o => o.pts); return Math.min(...v) + '–' + Math.max(...v); };
+  // tickets as plain city pairs for the numbers (country tickets become their best pair); .orig keeps the card for display
+  function plainDeck(map, deckId) {
+    const d = (map.ticketDecks.find(x => x.id === deckId) || map.ticketDecks[0]).tickets, P = T.plainTickets(map, deckId || map.ticketDecks[0].id);
+    P.forEach((t, i) => { if (t !== d[i]) t.orig = d[i]; });
+    return P;
+  }
+  // the cards a payment uses, as coloured pips
+  const payLabel = o => Object.entries(T.cardsOf(o)).map(([c, k]) => `<span class="pip" style="background:${B.COLOR[c]}"></span>${k} ${c === 'loco' ? 'locomotive' + (k > 1 ? 's' : '') : c}`).join(' + ');
 
   // ---------------------------------------------------------------- shell: tabs, sheets, toasts
   const TABS = [['table', 'Table', 'i-table'], ['play', 'Play', 'i-play'], ['lab', 'Lab', 'i-lab'], ['settings', 'Settings', 'i-gear']];
@@ -167,7 +182,7 @@
       if (c.chance === 0) cls += ' dead';
     }
     if (t.long) cls += ' long';
-    return `<button type="button" class="${cls}" ${extra || ''}><span class="cities">${esc(ticketName(map, t))}</span><span class="pts">${t.pts}</span><span class="info">${status}</span>${bar}</button>`;
+    return `<button type="button" class="${cls}" ${extra || ''}><span class="cities">${esc(ticketName(map, t))}</span><span class="pts">${ticketPts(t)}</span><span class="info">${status}</span>${bar}</button>`;
   }
   function delay() { return { slow: 1100, normal: 650, fast: 250 }[S.settings.speed] || 650; }
 
@@ -195,10 +210,11 @@
       const routePts = tb.players.map((_, s) => Object.entries(tb.claims).filter(([, o]) => o === s).reduce((a, [id]) => a + T.routePoints(map, G.index(map).routeById[id].len), 0));
       const stationsLeft = tb.players.map((_, s) => map.stations - Object.values(tb.stations || {}).filter(o => o === s).length);
       const viewer = Table.viewer != null ? Table.viewer : tb.me;
-      const myTickets = (tb.tickets[viewer] || []).map(i => deck[i]);
+      const P = plainDeck(map, tb.deckId);
+      const myTickets = (tb.tickets[viewer] || []).map(i => P[i]);
       const pos = {
         owner: tb.claims, me: viewer, bothDoubles, myTrains: trainsLeft[viewer],
-        rivalTrains: trainsLeft.filter((_, s) => s !== viewer), tickets: myTickets, deckTickets: deck,
+        rivalTrains: trainsLeft.filter((_, s) => s !== viewer), tickets: myTickets, deckTickets: P,
         stationCities: Object.entries(tb.stations || {}).filter(([, o]) => o === viewer).map(([c]) => c),
       };
       const odds = myTickets.length ? O.ticketChances(map, pos) : { tickets: [] };
@@ -366,11 +382,12 @@
       const tb = S.table, map = Table.map, deck = T.deckFor(map, { deckId: tb.deckId }).tickets;
       const n = tb.players.length;
       const trainsLeft = tb.players.map((_, s) => map.trains - Object.entries(tb.claims).filter(([, o]) => o === s).reduce((a, [id]) => a + G.index(map).routeById[id].len, 0));
-      const pos = { owner: tb.claims, me: seat, bothDoubles: n >= map.bothDoublesFrom, myTrains: trainsLeft[seat], rivalTrains: trainsLeft.filter((_, s) => s !== seat), tickets: (tb.tickets[seat] || []).map(i => deck[i]), deckTickets: deck };
+      const P = plainDeck(map, tb.deckId);
+      const pos = { owner: tb.claims, me: seat, bothDoubles: n >= map.bothDoublesFrom, myTrains: trainsLeft[seat], rivalTrains: trainsLeft.filter((_, s) => s !== seat), tickets: (tb.tickets[seat] || []).map(i => P[i]), deckTickets: P };
       const first = !(tb.tickets[seat] || []).length;
       const R = T.deckFor(map, { deckId: tb.deckId });
       const min = Math.min(drawnIdx.length, first ? (R.setup || map.setup).keep : (R.draw || map.draw).keep);
-      const adv = O.keepAdvice(map, pos, drawnIdx.map(i => deck[i]), min);
+      const adv = O.keepAdvice(map, pos, drawnIdx.map(i => P[i]), min);
       let keep = adv.best.map(k => drawnIdx[k]);
       const sh = openSheet(`<h2>Keep or toss <button class="q" data-help="keep" aria-label="About keep or toss">?</button></h2>
         <p class="note">Keep at least ${min}. Best set is selected.</p>
@@ -463,11 +480,11 @@
       if (s.lastRound != null && s.phase !== 'over') status += ' · last round';
       // odds for my tickets
       const pos = Play.pos(s, me);
-      const odds = pl.tickets.length ? O.ticketChances(map, Object.assign(pos, { tickets: pl.tickets.map(i => deck[i]), myCards: T.handSize(pl.hand) })) : { tickets: [] };
+      const odds = pl.tickets.length ? O.ticketChances(map, Object.assign(pos, { tickets: pl.tickets.map(i => pos.deckTickets[i]), myCards: T.handSize(pl.hand) })) : { tickets: [] };
       Play.lastOdds = odds;
       const market = s.faceUp.map((c, i) => c ? `<button type="button" class="tcard face" data-face="${i}" aria-label="Take ${c === 'loco' ? 'locomotive' : c}">${window.Cards.svg(c)}</button>` : '<div class="tdeck">—</div>').join('');
       const hand = T.COLORS.concat('loco').map(c => cardHTML(c, pl.hand[c])).join('');
-      const studyHTML = study ? s.players.map((q, i) => i === me ? '' : `<div class="small" style="margin-top:6px"><b style="color:${B.PLAYER[i]}">${esc(q.name)}</b> <span class="muted">${LEVEL_NAME[q.level] || ''}</span> · ${T.COLORS.concat('loco').filter(c => q.hand[c]).map(c => `<span class="pip" style="background:${B.COLOR[c]};vertical-align:middle"></span>${q.hand[c]}`).join(' ')}<br>${q.tickets.map(t => esc(ticketName(map, deck[t])) + ' ' + deck[t].pts + (G.connected(map, q.routes, deck[t].a, deck[t].b) ? ' ✓' : '')).join(' · ') || 'no tickets'}</div>`).join('') : '';
+      const studyHTML = study ? s.players.map((q, i) => i === me ? '' : `<div class="small" style="margin-top:6px"><b style="color:${B.PLAYER[i]}">${esc(q.name)}</b> <span class="muted">${LEVEL_NAME[q.level] || ''}</span> · ${T.COLORS.concat('loco').filter(c => q.hand[c]).map(c => `<span class="pip" style="background:${B.COLOR[c]};vertical-align:middle"></span>${q.hand[c]}`).join(' ')}<br>${q.tickets.map(t => esc(ticketName(map, deck[t])) + ' ' + ticketPts(deck[t]) + (T.ticketOutcome(map, q.routes, deck[t]).ok ? ' ✓' : '')).join(' · ') || 'no tickets'}</div>`).join('') : '';
       const logLines = s.log.slice(-4).reverse().map(l => `<div>${esc(l.text)}</div>`).join('');
       panel.innerHTML = `
         <div class="players">${chips}</div>
@@ -551,7 +568,7 @@
     // which tickets a rival probably holds: tickets whose cheapest path their track already covers most
     guess(seat) {
       const p = S.play, s = p.state, map = Play.map, me = p.me, q = s.players[seat];
-      const deck = T.deckFor(map, s).tickets, mine = new Set(s.players[me].tickets);
+      const deck = plainDeck(map, s.deckId), mine = new Set(s.players[me].tickets);
       const theirs = new Set(q.routes);
       const rows = [];
       deck.forEach((t, i) => {
@@ -567,7 +584,7 @@
       const real = S.settings.study ? new Set(q.tickets) : null;
       const sh = openSheet(`<h2>${esc(q.name)}'s likely tickets <button class="q" data-help="guess" aria-label="About the guess">?</button></h2>
         <p class="note">${q.tickets.length} ticket${q.tickets.length === 1 ? '' : 's'} held · ${q.routes.length} routes claimed</p>
-        ${top.length ? `<table class="lab-table" style="margin-top:8px"><tr><th>Ticket</th><th>Pts</th><th>Built</th></tr>${top.map(r => `<tr><td>${esc(ticketName(map, r.t))}${real && real.has(r.i) ? ' <span style="color:var(--good)">holds</span>' : ''}</td><td>${r.t.pts}</td><td style="color:${r.share >= 0.75 ? 'var(--bad)' : r.share >= 0.4 ? 'var(--accent-warm)' : 'var(--muted)'}">${r.done ? 'done' : pct(r.share)}</td></tr>`).join('')}</table>` : '<p class="empty">No track yet, so no clues.</p>'}
+        ${top.length ? `<table class="lab-table" style="margin-top:8px"><tr><th>Ticket</th><th>Pts</th><th>Built</th></tr>${top.map(r => `<tr><td>${esc(ticketName(map, r.t))}${real && real.has(r.i) ? ' <span style="color:var(--good)">holds</span>' : ''}</td><td>${ticketPts(r.t)}</td><td style="color:${r.share >= 0.75 ? 'var(--bad)' : r.share >= 0.4 ? 'var(--accent-warm)' : 'var(--muted)'}">${r.done ? 'done' : pct(r.share)}</td></tr>`).join('')}</table>` : '<p class="empty">No track yet, so no clues.</p>'}
         <div class="acts"><button class="btn" data-x>Close</button></div>`);
       sh.querySelector('[data-x]').onclick = () => closeSheet();
     },
@@ -575,7 +592,7 @@
       const map = Play.map;
       return {
         owner: s.owner, me, bothDoubles: T.rules(s).bothDoubles, myTrains: s.players[me].trains,
-        rivalTrains: s.players.filter((_, i) => i !== me).map(q => q.trains), deckTickets: T.deckFor(map, s).tickets,
+        rivalTrains: s.players.filter((_, i) => i !== me).map(q => q.trains), deckTickets: plainDeck(map, s.deckId),
         stationCities: s.players[me].stationCities, tickets: [],
       };
     },
@@ -681,7 +698,7 @@
       const map = Play.map, r = G.index(map).routeById[id];
       const sh = openSheet(`<h2>${esc(cityName(map, r.a))} – ${esc(cityName(map, r.b))}</h2>
         <p class="note">${r.len} trains · +${T.routePoints(map, r.len)} points${r.kind === 'tunnel' ? ' · tunnel: 3 cards are turned over and each match costs one more' : ''}${r.locos ? ' · needs ' + r.locos + ' locomotive' + (r.locos > 1 ? 's' : '') : ''}</p>
-        <div class="paylist">${opts.map((o, i) => `<button type="button" class="payopt" data-o="${i}">${o.n ? `<span class="pip" style="background:${B.COLOR[o.color]}"></span>${o.n} ${o.color}` : ''}${o.n && o.locos ? ' + ' : ''}${o.locos ? `<span class="pip" style="background:${B.COLOR.loco}"></span>${o.locos} locomotive${o.locos > 1 ? 's' : ''}` : ''}</button>`).join('')}</div>
+        <div class="paylist">${opts.map((o, i) => `<button type="button" class="payopt" data-o="${i}">${payLabel(o)}${o.any ? ' <span class="muted small">(swap)</span>' : ''}</button>`).join('')}</div>
         <div class="acts"><button class="btn" data-x>Cancel</button></div>`);
       sh.querySelectorAll('[data-o]').forEach(b => b.onclick = () => { closeSheet(true); Play.act({ type: 'claim', route: id, pay: opts[+b.dataset.o] }); });
       sh.querySelector('[data-x]').onclick = () => closeSheet();
@@ -696,7 +713,7 @@
       if (h.loco >= cost) opts.push({ color: null, n: 0, locos: cost });
       if (!opts.length) return toast('A station costs ' + cost + ' cards of one colour');
       const sh = openSheet(`<h2>Station in ${esc(cityName(map, id))}</h2><p class="note">Lets you use one rival route into this city for your tickets.</p>
-        <div class="paylist">${opts.map((o, i) => `<button type="button" class="payopt" data-o="${i}">${o.n ? `<span class="pip" style="background:${B.COLOR[o.color]}"></span>${o.n} ${o.color}` : ''}${o.n && o.locos ? ' + ' : ''}${o.locos ? `<span class="pip" style="background:${B.COLOR.loco}"></span>${o.locos} loco` : ''}</button>`).join('')}</div>
+        <div class="paylist">${opts.map((o, i) => `<button type="button" class="payopt" data-o="${i}">${payLabel(o)}</button>`).join('')}</div>
         <div class="acts"><button class="btn" data-x>Cancel</button></div>`);
       sh.querySelectorAll('[data-o]').forEach(b => b.onclick = () => { closeSheet(true); Play.act({ type: 'station', city: id, pay: opts[+b.dataset.o] }); });
       sh.querySelector('[data-x]').onclick = () => closeSheet();
@@ -705,8 +722,9 @@
       const p = S.play, s = p.state, me = p.me, map = Play.map, pl = s.players[me];
       const deck = T.deckFor(map, s).tickets;
       const drawn = pl.pending.tickets, min = Math.min(pl.pending.min, drawn.length);
-      const pos = Object.assign(Play.pos(s, me), { tickets: pl.tickets.map(i => deck[i]), myCards: T.handSize(pl.hand) });
-      const adv = O.keepAdvice(map, pos, drawn.map(i => deck[i]), min);
+      const pos = Object.assign(Play.pos(s, me), { myCards: T.handSize(pl.hand) });
+      pos.tickets = pl.tickets.map(i => pos.deckTickets[i]);
+      const adv = O.keepAdvice(map, pos, drawn.map(i => pos.deckTickets[i]), min);
       let keep = S.settings.study || Play.wantHint ? adv.best.map(k => drawn[k]) : [];
       const sh = openSheet(`<h2>Choose tickets <button class="q" data-help="keep" aria-label="About keep or toss">?</button></h2>
         <p class="note">Keep at least ${min}. Numbers: trains more, chance, value.</p>
@@ -763,7 +781,7 @@
         ${rows.map((r, i) => `<tr class="${i === 0 ? 'win' : ''}"><td>${esc(r.name)}${s.players[r.seat].level ? ' <span class="muted small">' + LEVEL_NAME[s.players[r.seat].level] + '</span>' : ''}</td>${cols.map(c => `<td>${r[c[1]]}</td>`).join('')}<td><b>${r.total}</b></td></tr>`).join('')}</table>
         <div class="sec">Score race</div>${Play.raceSVG(s, res)}
         <div class="sec">Tickets</div>
-        ${rows.map(r => `<div class="small" style="margin-bottom:4px"><b style="color:${B.PLAYER[r.seat]}">${esc(r.name)}</b> ${r.tickets.map(x => `<span style="color:${x.ok ? 'var(--good)' : 'var(--bad)'}">${esc(ticketName(map, deck[x.t]))} ${x.ok ? '+' : '−'}${deck[x.t].pts}</span>`).join(' · ')}</div>`).join('')}
+        ${rows.map(r => `<div class="small" style="margin-bottom:4px"><b style="color:${B.PLAYER[r.seat]}">${esc(r.name)}</b> ${r.tickets.map(x => `<span style="color:${x.ok ? 'var(--good)' : 'var(--bad)'}">${esc(ticketName(map, deck[x.t]))} ${x.pts >= 0 ? '+' : '−'}${Math.abs(x.pts)}</span>`).join(' · ')}</div>`).join('')}
         <div class="acts"><button class="btn" data-x>Close</button><button class="btn primary" data-again>Play again</button></div>`);
       sh.querySelector('[data-x]').onclick = () => closeSheet();
       sh.querySelector('[data-again]').onclick = () => { closeSheet(true); Play.gen++; Play.setupMap = map.id; Play.setupDeck = s.deckId; Play.setupOpp = s.players.length - 1; Play.setupLevels = s.players.slice(1).map(q => q.level); S.play = null; save(); Play.render(); };
@@ -782,9 +800,10 @@
       sizeBoards();
     },
     deck() { const m = Lab.map; return (m.ticketDecks.find(d => d.id === S.settings.labDeck) || m.ticketDecks[0]); },
+    plain() { return plainDeck(Lab.map, Lab.deck().id); },
     render() {
       const map = Lab.map, L = S.lab, panel = $('#v-lab .panel');
-      const deck = Lab.deck().tickets;
+      const deck = Lab.plain();
       const blocked = new Set((L.blocked || []).filter(id => G.index(map).routeById[id]));
       const cost = r => blocked.has(r.id) ? Infinity : r.len;
       const H = O.heat(map, deck);
@@ -832,7 +851,7 @@
         const sel = rows.find(r => r.i === L.ticket);
         body = `<div class="sec">${deck.length} tickets <button class="q" data-help="ppt" aria-label="About points per train">?</button></div>
           <table class="lab-table"><tr><th data-s="name">Ticket</th><th data-s="pts">Pts</th><th data-s="trains">Trains</th><th data-s="ppt">Per train</th></tr>
-          ${rows.map(r => `<tr data-t="${r.i}"${r.i === L.ticket ? ' style="background:var(--card)"' : ''}><td>${esc(ticketName(map, r.t))}${r.t.long ? ' <span style="color:var(--accent-warm)">long</span>' : ''}</td><td>${r.t.pts}</td><td>${r.trains === Infinity ? '—' : r.trains}</td><td style="color:${r.ppt >= 2.2 ? 'var(--good)' : r.ppt >= 1.7 ? 'var(--accent-warm)' : 'var(--bad)'}">${r.ppt.toFixed(2)}</td></tr>`).join('')}</table>`;
+          ${rows.map(r => `<tr data-t="${r.i}"${r.i === L.ticket ? ' style="background:var(--card)"' : ''}><td>${esc(ticketName(map, r.t))}${r.t.long ? ' <span style="color:var(--accent-warm)">long</span>' : ''}</td><td>${ticketPts(r.t)}</td><td>${r.trains === Infinity ? '—' : r.trains}</td><td style="color:${r.ppt >= 2.2 ? 'var(--good)' : r.ppt >= 1.7 ? 'var(--accent-warm)' : 'var(--bad)'}">${r.ppt.toFixed(2)}</td></tr>`).join('')}</table>`;
         if (sel) { boardOpts.path = new Set(sel.path); boardOpts.endCities = [sel.t.a, sel.t.b]; boardOpts.dimOthers = true; }
       } else {
         const list = map.routes.slice().filter(r => !r.twin || r.lane === -1).sort((x, y) => H.raw[y.id] - H.raw[x.id]).slice(0, 15);

@@ -108,11 +108,19 @@
         });
         routeEls[r.id] = grp;
       }
-      const placed = [];
+      const placed = [], labelled = new Set();
       for (const c of map.cities) {
-        const grp = el('g', { class: 'city', 'data-city': c.id }, gCities);
-        el('circle', { class: 'ring', cx: c.x, cy: c.y, r: 10 }, grp);
-        el('circle', { class: 'dot', cx: c.x, cy: c.y, r: 6.5 }, grp);
+        const grp = el('g', Object.assign({ class: 'city', 'data-city': c.id }, c.country ? { 'data-border': c.country } : {}), gCities);
+        if (c.country) {
+          // a border point of a neighbouring country: a square, and the country's name once
+          el('rect', { class: 'dot', x: c.x - 7, y: c.y - 7, width: 14, height: 14, rx: 3 }, grp);
+          cityEls[c.id] = grp;
+          if (labelled.has(c.country)) continue;
+          labelled.add(c.country);
+        } else {
+          el('circle', { class: 'ring', cx: c.x, cy: c.y, r: 10 }, grp);
+          el('circle', { class: 'dot', cx: c.x, cy: c.y, r: 6.5 }, grp);
+        }
         const ls = labelSpot(map, c, placed);
         const t = el('text', { x: ls.x.toFixed(1), y: ls.y.toFixed(1), 'text-anchor': ls.anchor }, grp);
         t.textContent = c.name;
