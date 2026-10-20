@@ -35,6 +35,7 @@
       longest: map.bonuses.longest || 0, globetrotter: d.globetrotter || map.bonuses.globetrotter || 0,
       mandala: map.bonuses.mandala || null, stations: map.stations, stationPoints: map.stationPoints,
       bothDoubles: s.players.length >= map.bothDoublesFrom,
+      ticketReturn: map.ticketReturn || 'bottom', // 'box' = unkept tickets leave the game
     };
     // USA 1910 deck plays Globetrotter instead of Longest Route; Mega Game plays both.
     if (map.id === 'usa' && s.deckId === '1910') r.longest = 0;
@@ -100,9 +101,9 @@
         if (!c) break;
         if (slot >= 0) s.faceUp[slot] = c; else s.faceUp.push(c);
       }
-      // Three or more locomotives face up: discard all five and deal again (not on Nordic, where locos are plenty).
+      // Three or more locomotives face up: discard all five and deal again (not on maps with locoFlush false: Nordic).
       const locos = s.faceUp.filter(c => c === LOCO).length;
-      if (map.nordicLocos || locos < 3) break;
+      if (map.locoFlush === false || locos < 3) break;
       // stop if what's left can't fix it (avoid an endless loop)
       const left = s.trainDeck.concat(s.discard);
       if (left.filter(c => c !== LOCO).length < 3) break;
@@ -125,23 +126,61 @@
     return null;
   }
 
-  // Ways to pay for a route from a hand. Returns [{color, n, locos}] (color null = all locomotives).
+  // Are locomotives wild on this route? (Nordic: ferries and tunnels only; Switzerland: tunnels only.)
+  function locosWild(map, r) { return !map.locosOn || map.locosOn.includes(r.kind || 'train'); }
+  // Card swaps: any N cards stand in for one card. Nordic ferries: any 3 for a locomotive;
+  // Nordic Murmansk–Lieksa (route.anyFor = 4): any 4 for one card of the chosen colour.
+  function swapSize(map, r) { return r.anyFor || (r.kind === 'ferry' && map.ferryAny) || 0; }
+  const anyCount = any => any ? Object.values(any).reduce((a, b) => a + b, 0) : 0;
+  // Pick `count` cards for a swap from what is left in the hand: most plentiful other colours first,
+  // then the colour being played, then (only if allowed) locomotives.
+  function pickAny(rest, count, avoid, withLocos) {
+    const order = COLORS.filter(c => c !== avoid).sort((a, b) => rest[b] - rest[a]).concat(avoid ? [avoid] : [], withLocos ? [LOCO] : []);
+    const any = {}; let left = count;
+    for (const c of order) { const k = Math.min(rest[c] || 0, left); if (k > 0) { any[c] = k; left -= k; } if (!left) break; }
+    return left ? null : any;
+  }
+
+  // Ways to pay for a route from a hand. Returns [{color, n, locos, any?}]:
+  //   color  the colour played (null = no coloured cards), n = how many of it, locos = locomotive cards,
+  //   any    optional {colour or 'loco': count} of extra cards used in swaps (see swapSize).
   function payOptions(s, seat, routeId) {
-    const map = mapOf(s), r = G.index(map).routeById[routeId], p = s.players[seat];
+    const map = mapOf(s), r = G.index(map).routeById[routeId], p = s.players[seat], h = p.hand;
     const out = [];
-    const need = r.len, minLoco = r.locos || 0;
+    const L = r.len, k = r.locos || 0, wild = locosWild(map, r), swap = swapSize(map, r);
+    const myLocos = wild ? h.loco : 0;
     const colors = r.color === 'gray' ? COLORS : [r.color];
     for (const c of colors) {
-      const have = p.hand[c];
+      const have = h[c];
       if (!have) continue;
       // use as many coloured cards as possible, then locos
-      const n = Math.min(have, need - minLoco);
-      const locos = need - n;
-      if (n > 0 && locos <= p.hand.loco) out.push({ color: c, n, locos });
+      const n = Math.min(have, L - k);
+      const locos = L - n;
+      if (n > 0 && locos <= myLocos) out.push({ color: c, n, locos });
+      if (!swap) continue;
+      if (r.anyFor) {
+        // every missing card of the colour = any `swap` cards (locomotives included)
+        const n2 = Math.min(have, L), u = L - n2;
+        if (!u) continue;
+        const rest = Object.assign({}, h); rest[c] -= n2;
+        const any = pickAny(rest, u * swap, c, true);
+        if (any) out.push({ color: c, n: n2, locos: 0, any });
+      } else {
+        // ferry: replace 1..k locomotive symbols with any `swap` cards each
+        const fill = L - k - n; // colour spaces still empty: locomotives
+        for (let u = 1; u <= k; u++) {
+          const locos2 = fill + (k - u);
+          if (locos2 > myLocos) continue;
+          const rest = Object.assign({}, h); rest[c] -= n; rest.loco -= locos2;
+          const any = pickAny(rest, u * swap, c, false);
+          if (any) out.push({ color: c, n, locos: locos2, any });
+        }
+      }
     }
-    if (p.hand.loco >= need) out.push({ color: null, n: 0, locos: need });
-    // Nordic: on ferries, any 3 cards may stand in for one locomotive.
-    return out;
+    if (wild && h.loco >= L) out.push({ color: null, n: 0, locos: L });
+    // no coloured cards played -> colour null; drop duplicates
+    const seen = new Set();
+    return out.map(o => (o.n === 0 ? Object.assign(o, { color: null }) : o)).filter(o => { const key = JSON.stringify(o); if (seen.has(key)) return false; seen.add(key); return true; });
   }
 
   function canClaim(s, seat, routeId, pay) {
@@ -150,17 +189,35 @@
     const why = routeOpen(s, r, seat); if (why) return why;
     if (p.trains < r.len) return 'not enough trains';
     if (!pay) return payOptions(s, seat, routeId).length ? null : 'not enough cards';
-    const { color, n, locos } = pay;
-    if (n + locos !== r.len) return 'wrong number of cards';
-    if (n < 0 || locos < 0) return 'bad payment';
-    if (locos < (r.locos || 0)) return 'ferry needs ' + r.locos + ' locomotive' + (r.locos > 1 ? 's' : '');
+    const { color, n, locos } = pay, any = pay.any || null;
+    if (!Number.isInteger(n) || !Number.isInteger(locos) || n < 0 || locos < 0) return 'bad payment';
+    if (any) for (const [c, k] of Object.entries(any)) if (!(COLORS.includes(c) || c === LOCO) || !Number.isInteger(k) || k < 0) return 'bad payment';
+    const A = anyCount(any), swap = swapSize(map, r);
+    if (A) {
+      if (!swap) return 'no card swaps on this route';
+      if (A % swap) return 'swap cards come in groups of ' + swap;
+    }
+    const u = A ? A / swap : 0;
+    if (n + locos + u !== r.len) return 'wrong number of cards';
+    if (locos > 0 && !locosWild(map, r)) return 'locomotives can only be used on ' + map.locosOn.map(k => k === 'ferry' ? 'ferries' : k + 's').join(' and ');
+    if (r.locos && locos + (r.anyFor ? 0 : u) < r.locos) return 'ferry needs ' + r.locos + ' locomotive' + (r.locos > 1 ? 's' : '');
     if (n > 0) {
       if (!COLORS.includes(color)) return 'bad colour';
       if (r.color !== 'gray' && r.color !== color) return 'wrong colour';
-      if (p.hand[color] < n) return 'not enough cards';
     }
-    if (p.hand.loco < locos) return 'not enough locomotives';
+    const use = cardsOf(pay);
+    for (const c of Object.keys(use)) if ((p.hand[c] || 0) < use[c]) return c === LOCO ? 'not enough locomotives' : 'not enough cards';
     return null;
+  }
+
+  // All cards a payment takes from the hand: {colour: count}.
+  function cardsOf(pay) {
+    const use = {};
+    const add = (c, k) => { if (k > 0) use[c] = (use[c] || 0) + k; };
+    if (pay.n > 0) add(pay.color, pay.n);
+    add(LOCO, pay.locos);
+    if (pay.any) for (const [c, k] of Object.entries(pay.any)) add(c, k);
+    return use;
   }
 
   function stationCost(s, seat) { return mapOf(s).stations - s.players[seat].stations + 1; }
@@ -203,6 +260,7 @@
       p.tickets.push(...keep);
       for (const t of p.pending.tickets) if (!keep.includes(t)) {
         if (tickets[t].long) continue; // unkept long tickets leave the game
+        if (R.ticketReturn === 'box') continue; // Nordic, Switzerland: unkept tickets leave the game
         s.ticketDeck.unshift(t); // bottom of the deck
       }
       log(s, seat, p.name + ' kept ' + keep.length + ' ticket' + (keep.length === 1 ? '' : 's') + '.');
@@ -238,6 +296,7 @@
     if (p.pending) fail('choose tickets first');
 
     if (a.type === 'draw') {
+      const free = freeLocoDraw(map);
       if (a.from === 'deck') {
         const c = drawOne(s);
         if (!c) fail('no cards left');
@@ -248,15 +307,15 @@
         const i = a.from;
         const c = s.faceUp[i];
         if (!c) fail('no card there');
-        if (c === LOCO && s.drew === 1 && !map.nordicLocos) fail('a face-up locomotive must be your only draw');
+        if (c === LOCO && s.drew === 1 && !free) fail('a face-up locomotive must be your only draw');
         p.hand[c]++;
         s.faceUp[i] = null;
         refillFaceUp(s);
-        s.drew += (c === LOCO && !map.nordicLocos) ? 2 : 1;
+        s.drew += (c === LOCO && !free) ? 2 : 1;
         log(s, seat, p.name + ' took a face-up ' + (c === LOCO ? 'locomotive' : c) + '.');
       }
       // If nothing can be drawn as a second card, the turn ends.
-      const nothingLeft = !s.trainDeck.length && !s.discard.length && !s.faceUp.some(c => c && !(c === LOCO && !map.nordicLocos));
+      const nothingLeft = !s.trainDeck.length && !s.discard.length && !s.faceUp.some(c => c && !(c === LOCO && !free));
       if (s.drew >= 2 || nothingLeft) return endTurn(s);
       return s;
     }
@@ -315,10 +374,11 @@
     fail('unknown action ' + a.type);
   }
 
+  function freeLocoDraw(map) { return !!(map.freeLocoDraw || map.nordicLocos); }
+
   function finishClaim(s, seat, routeId, pay, extra) {
     const map = mapOf(s), r = G.index(map).routeById[routeId], p = s.players[seat];
-    if (pay.n > 0) { p.hand[pay.color] -= pay.n; for (let k = 0; k < pay.n; k++) s.discard.push(pay.color); }
-    p.hand.loco -= pay.locos; for (let k = 0; k < pay.locos; k++) s.discard.push(LOCO);
+    for (const [c, k] of Object.entries(cardsOf(pay))) { p.hand[c] -= k; for (let i = 0; i < k; i++) s.discard.push(c); }
     s.owner[routeId] = seat; p.routes.push(routeId); p.trains -= r.len;
     const cn = G.index(map).cityById;
     log(s, seat, p.name + ' claimed ' + cn[r.a].name + '–' + cn[r.b].name + ' (' + r.len + ')' + (extra ? ' paying ' + extra + ' extra' : '') + '.');
@@ -346,11 +406,47 @@
   // ---------------------------------------------------------------- scoring
   function routePoints(map, len) { return map.points[len] || 0; }
 
+  // Ticket shapes: city–city {a, b, pts}; country ticket (Switzerland) {a, opts:[{to, pts}]} where `a` is a
+  // city or country id and each `to` a country id. A country id stands for all its border dots (map.countries).
+  function ticketEnds(map, id) { return map.countries && map.countries[id] ? map.countries[id].cities.slice() : [id]; }
+
+  // Outcome of one ticket for a set of route ids: {ok, pts} with pts signed (+ completed, − not).
+  // Country tickets score the best option completed, else lose the lowest option.
+  function ticketOutcome(map, ids, t) {
+    if (!t.opts) { const ok = G.connected(map, ids, t.a, t.b); return { ok, pts: ok ? t.pts : -t.pts }; }
+    const from = ticketEnds(map, t.a);
+    let best = null;
+    for (const o of t.opts) if ((best == null || o.pts > best) && G.connectedAny(map, ids, from, ticketEnds(map, o.to))) best = o.pts;
+    return best != null ? { ok: true, pts: best } : { ok: false, pts: -Math.min(...t.opts.map(o => o.pts)) };
+  }
+
+  // Every ticket as a plain {a, b, pts} pair, for planners (computers, odds) that think in city pairs.
+  // A country ticket becomes its most attractive single pair: highest points minus half the trains needed.
+  const plainCache = new WeakMap();
+  function plainTickets(map, sOrDeckId) {
+    const d = typeof sOrDeckId === 'string' ? (map.ticketDecks.find(x => x.id === sOrDeckId) || map.ticketDecks[0]) : deckFor(map, sOrDeckId);
+    if (!d.tickets.some(t => t.opts)) return d.tickets;
+    let byDeck = plainCache.get(map); if (!byDeck) plainCache.set(map, byDeck = {});
+    if (byDeck[d.id]) return byDeck[d.id];
+    return (byDeck[d.id] = d.tickets.map(t => {
+      if (!t.opts) return t;
+      let best = null;
+      for (const o of t.opts) for (const a of ticketEnds(map, t.a)) for (const b of ticketEnds(map, o.to)) {
+        const sp = G.shortest(map, a, b, r => r.len);
+        if (!sp) continue;
+        const v = o.pts - sp.dist / 2;
+        if (!best || v > best.v) best = { v, a, b, pts: o.pts };
+      }
+      return { a: best.a, b: best.b, pts: best.pts, country: true };
+    }));
+  }
+
   // Tickets completed for one player, letting each station borrow one rival route into its city.
+  // Returns [{t, ok, pts}] (pts signed).
   function ticketResult(s, seat, borrow) {
     const map = mapOf(s), tickets = deckFor(map, s).tickets, p = s.players[seat];
     const ids = p.routes.concat(borrow || []);
-    return p.tickets.map(t => ({ t, ok: G.connected(map, ids, tickets[t].a, tickets[t].b) }));
+    return p.tickets.map(t => Object.assign({ t }, ticketOutcome(map, ids, tickets[t])));
   }
 
   function bestBorrow(s, seat) {
@@ -360,7 +456,7 @@
     const rec = (i, cur) => {
       if (i === choices.length) {
         const res = ticketResult(s, seat, cur);
-        const pts = res.reduce((a, x) => a + (x.ok ? tickets[x.t].pts : -tickets[x.t].pts), 0);
+        const pts = res.reduce((a, x) => a + x.pts, 0);
         if (pts > best.pts) best = { pts, borrow: cur.slice() };
         return;
       }
@@ -376,11 +472,11 @@
       const routePts = p.routes.reduce((a, id) => a + routePoints(map, G.index(map).routeById[id].len), 0);
       const borrow = p.stationCities.length ? bestBorrow(s, seat) : [];
       const res = ticketResult(s, seat, borrow);
-      const ticketPts = res.reduce((a, x) => a + (x.ok ? tickets[x.t].pts : -tickets[x.t].pts), 0);
+      const ticketPts = res.reduce((a, x) => a + x.pts, 0);
       const done = res.filter(x => x.ok).length;
       const longest = G.longestTrail(map, p.routes);
       let mandalas = 0;
-      if (R.mandala) for (const x of res) if (x.ok && G.disjointPaths(map, p.routes, tickets[x.t].a, tickets[x.t].b, 2) >= 2) mandalas++;
+      if (R.mandala) for (const x of res) if (x.ok && !tickets[x.t].opts && G.disjointPaths(map, p.routes, tickets[x.t].a, tickets[x.t].b, 2) >= 2) mandalas++;
       return {
         seat, name: p.name, routePts, ticketPts, tickets: res, done, borrow,
         longest: longest.len, longestPath: longest.path,
@@ -421,6 +517,7 @@
   const api = {
     COLORS, LOCO, register, maps: MAPS, mapOf, newGame, apply, view, legal, rules, payOptions, canClaim,
     routeOpen, score, liveRoutePoints, routePoints, stationCost, deckFor, handSize, emptyHand, clone,
+    locosWild, swapSize, cardsOf, freeLocoDraw, ticketEnds, ticketOutcome, plainTickets,
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = api; else root.TTR = api;
 })(typeof window !== 'undefined' ? window : globalThis);

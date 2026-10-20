@@ -74,6 +74,18 @@
     return false;
   }
 
+  // Is any city in list `as` joined to any city in list `bs` using only the given route ids?
+  function connectedAny(map, routeIds, as, bs) {
+    const goal = new Set(bs);
+    if (as.some(a => goal.has(a))) return true;
+    const ix = index(map);
+    const nb = {};
+    routeIds.forEach(id => { const r = ix.routeById[id]; (nb[r.a] = nb[r.a] || []).push(r.b); (nb[r.b] = nb[r.b] || []).push(r.a); });
+    const seen = new Set(as), stack = as.slice();
+    while (stack.length) { const c = stack.pop(); for (const x of nb[c] || []) if (!seen.has(x)) { if (goal.has(x)) return true; seen.add(x); stack.push(x); } }
+    return false;
+  }
+
   // Longest continuous trail (no route used twice; cities may repeat) through the given routes.
   function longestTrail(map, routeIds) {
     const ix = index(map);
@@ -145,6 +157,6 @@
     return { cost, routes: [...chosen], failed };
   }
 
-  const api = { index, shortest, allPairs, connected, longestTrail, disjointPaths, plan };
+  const api = { index, shortest, allPairs, connected, connectedAny, longestTrail, disjointPaths, plan };
   if (typeof module !== 'undefined' && module.exports) module.exports = api; else root.TTRGraph = api;
 })(typeof window !== 'undefined' ? window : globalThis);
