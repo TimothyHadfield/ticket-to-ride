@@ -139,7 +139,11 @@
         const a = gRoutes.getBBox(), b = gCities.getBBox();
         if (!a.width || !b.width) return;
         const x0 = Math.min(a.x, b.x) - 6, y0 = Math.min(a.y, b.y) - 6;
-        const x1 = Math.max(a.x + a.width, b.x + b.width) + 6, y1 = Math.max(a.y + a.height, b.y + b.height) + 6;
+        let x1 = Math.max(a.x + a.width, b.x + b.width) + 6;
+        // keep the right edge clear of the zoom buttons (~40 screen px) so no route sits under them
+        const W = svg.clientWidth || 390;
+        x1 += 40 * (x1 - x0) / Math.max(200, W - 40);
+        const y1 = Math.max(a.y + a.height, b.y + b.height) + 6;
         full = { x: x0, y: y0, w: x1 - x0, h: y1 - y0 }; measured = true;
       } catch (e) { /* not rendered yet */ }
     }
@@ -254,7 +258,6 @@
       const tol = 16 / p.s; // ~16 screen px
       let bestCity = null, bc = Infinity;
       for (const c of map.cities) { const d = Math.hypot(c.x - p.x, c.y - p.y); if (d < bc) { bc = d; bestCity = c.id; } }
-      if (handlers.onCity && bc < Math.max(tol, 13)) { handlers.onCity(bestCity); return; }
       let best = null, bd = Infinity;
       for (const g of geo) {
         const vx = g.ex - g.sx, vy = g.ey - g.sy, L2 = vx * vx + vy * vy;
@@ -262,7 +265,10 @@
         const d = Math.hypot(p.x - (g.sx + t * vx), p.y - (g.sy + t * vy));
         if (d < bd) { bd = d; best = g.r.id; }
       }
-      if (handlers.onRoute && bd < Math.max(tol, 9)) handlers.onRoute(best);
+      const routeHit = handlers.onRoute && bd < Math.max(tol, 9);
+      // a city wins only when the tap is nearer to it than to any route (short routes sit close to their cities)
+      if (handlers.onCity && bc < Math.max(tol, 13) && (!routeHit || bc < bd)) { handlers.onCity(bestCity); return; }
+      if (routeHit) handlers.onRoute(best);
       else if (handlers.onCity && bc < tol * 2.2) handlers.onCity(bestCity);
       else if (handlers.onEmpty) handlers.onEmpty();
     }

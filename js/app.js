@@ -3,7 +3,7 @@
 (function () {
   'use strict';
   const T = window.TTR, G = window.TTRGraph, AI = window.TTRAI, O = window.TTROdds, B = window.Board;
-  const VERSION = '1.1';
+  const VERSION = '1.2';
   const MAP_IDS = ['usa', 'europe', 'nordic', 'india', 'switzerland'];
   const MAP_NAMES = { usa: 'USA', europe: 'Europe', nordic: 'Nordic Countries', india: 'India', switzerland: 'Switzerland' };
   const LEVELS = ['easy', 'medium', 'hard'];
@@ -272,7 +272,7 @@
         <div class="names" style="margin-top:8px">${Array.from({ length: k0 }, (_, s) => `<div class="row"><i style="background:${B.PLAYER[s]}"></i><input type="text" data-name="${s}" value="${esc(names[s] || (s === 0 ? 'Me' : PNAME[s]))}" maxlength="14" class="grow" aria-label="Player ${s + 1} name"></div>`).join('')}</div>
         <div class="row" style="margin-top:10px"><button class="btn primary grow" id="t-start">Start</button></div>`;
       Table.board.render({});
-      panel.querySelector('[name=map]').onchange = async e => { Table.setupMap = e.target.value; Table.setupDeck = null; await Table.show(); };
+      panel.querySelector('[name=map]').onchange = async e => { panel.querySelectorAll('button').forEach(b => { b.disabled = true; }); Table.setupMap = e.target.value; Table.setupDeck = null; await Table.show(); };
       const dk = panel.querySelector('[name=deck]'); if (dk) dk.onchange = e => { Table.setupDeck = e.target.value; };
       panel.querySelectorAll('[data-n]').forEach(b => b.onclick = () => { Table.saveNames(panel); Table.setupN = +b.dataset.n; Table.renderSetup(panel); });
       panel.querySelector('#t-start').onclick = () => {
@@ -343,8 +343,10 @@
     pickTickets(seat, advise) {
       const tb = S.table, map = Table.map, deck = T.deckFor(map, { deckId: tb.deckId }).tickets;
       const held = new Set(Object.values(tb.tickets).flat());
-      const R = deck.findIndex(() => true) >= 0 ? (T.deckFor(map, { deckId: tb.deckId }).draw || map.draw) : map.draw;
-      const max = advise ? R.deal : 99;
+      // first draw = the starting tickets (Nordic and Switzerland deal 5, Europe 3 + 1 long); later draws use the draw rule
+      const D = T.deckFor(map, { deckId: tb.deckId }), first = !(tb.tickets[seat] || []).length;
+      const R = first ? (D.setup || map.setup) : (D.draw || map.draw);
+      const max = advise ? R.deal + (first ? R.long || 0 : 0) : 99;
       let chosen = [];
       const sh = openSheet(`<h2>${advise ? 'Which tickets did you draw?' : 'Add a ticket'}</h2>
         <input type="text" placeholder="Search a city" aria-label="Search" style="width:100%;margin:8px 0">
@@ -619,7 +621,7 @@
       Play.board.render({});
       panel.querySelector('#p-online').onclick = () => Play.onlineSheet();
       Strength.note($('#p-strength'), map.id, true);
-      panel.querySelector('[name=map]').onchange = async e => { Play.setupMap = e.target.value; Play.setupDeck = null; await Play.show(); };
+      panel.querySelector('[name=map]').onchange = async e => { panel.querySelectorAll('button').forEach(b => { b.disabled = true; }); Play.setupMap = e.target.value; Play.setupDeck = null; await Play.show(); };
       const dk = panel.querySelector('[name=deck]'); if (dk) dk.onchange = e => { Play.setupDeck = e.target.value; };
       panel.querySelectorAll('[data-opp]').forEach(b => b.onclick = () => { Play.setupOpp = +b.dataset.opp; Play.renderSetup(panel); });
       panel.querySelectorAll('[data-lv]').forEach(b => b.onclick = () => { levels[+b.dataset.lv] = b.dataset.l; Play.setupLevels = levels; Play.renderSetup(panel); });
@@ -824,6 +826,7 @@
     },
     async netLeave() {
       const net = Play.net; if (!net) return;
+      toast('Leaving…');
       await net.room.leave();
       Play.netEnd();
     },
@@ -843,7 +846,7 @@
       const seats = snap.seats.map((x, i) => `<div class="row"><i style="width:14px;height:14px;border-radius:4px;background:${B.PLAYER[i]};flex:none"></i>
           <span class="grow">${x.kind === 'empty' ? '<span class="muted">Open seat</span>' : esc(x.name || (x.kind === 'computer' ? 'Computer' : 'Player'))}${i === snap.mySeat ? ' <span class="muted small">you</span>' : ''}</span>
           ${snap.isHost && i !== snap.mySeat && x.kind !== 'human' ? `<span class="seg" role="group"><button type="button" data-seat-k="${i}" data-k="empty" aria-pressed="${x.kind === 'empty'}">Friend</button><button type="button" data-seat-k="${i}" data-k="computer" aria-pressed="${x.kind === 'computer'}">Computer</button></span>`
-            : `<span class="small muted">${x.kind === 'computer' ? 'computer' : x.kind === 'human' ? (x.online ? 'here' : 'away') : ''}</span>`}</div>`).join('');
+            : `<span class="small muted">${x.kind === 'computer' ? 'computer' : x.kind === 'human' ? (x.online || i === snap.mySeat ? 'here' : 'away') : ''}</span>`}</div>`).join('');
       panel.innerHTML = `
         <div class="sec">Online room <button class="q" data-help="online" aria-label="About online play">?</button></div>
         <div class="code-big" aria-label="Room code">${esc(snap.code)}</div>
@@ -898,20 +901,20 @@
         if (!r.ok) Play.netEnd();
       };
     },
-    joinSheet() {
-      const sh = openSheet(`<h2>Join a room</h2><div class="sec">Code</div><input type="text" id="n-code" class="text code-in" maxlength="5" autocapitalize="characters" autocomplete="off" spellcheck="false" placeholder="ABCDE">
+    joinSheet(code0) {
+      const sh = openSheet(`<h2>Join a room</h2><div class="sec">Code</div><input type="text" id="n-code" class="text code-in" maxlength="5" autocapitalize="characters" autocomplete="off" spellcheck="false" placeholder="ABCDE" value="${esc(code0 || '')}">
         <div class="sec">Name</div>${Play.nameField('n-name')}
         <div class="acts"><button class="btn" data-x>Cancel</button><button class="btn primary" data-ok>Join</button></div>`);
       sh.querySelector('[data-x]').onclick = () => closeSheet();
       sh.querySelector('[data-ok]').onclick = async () => {
         const code = (sh.querySelector('#n-code').value || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
-        if (code.length !== 5) return toast('The code has 5 letters');
+        if (code.length !== 5) return toast('The code has 5 characters');
         const name = Play.takeName(sh, 'n-name');
         closeSheet(true);
         const room = await Play.netRoom();
         Play.render();
         const r = await room.joinRoom(code, name);
-        if (!r.ok) Play.netEnd();
+        if (!r.ok) { Play.netEnd(); Play.joinSheet(code); } // keep the code so a typo is easy to fix
       };
     },
     scores() {
