@@ -69,7 +69,9 @@
     document.body.append(scrimEl, sheetEl);
     sheetOnClose = onClose || null;
     scrimEl.addEventListener('click', () => { if (!sheetEl.dataset.modal) closeSheet(); });
-    requestAnimationFrame(() => { scrimEl.classList.add('show'); sheetEl.classList.add('show'); });
+    // force a layout so the slide-in transition runs, without waiting on an animation frame
+    void sheetEl.offsetHeight;
+    scrimEl.classList.add('show'); sheetEl.classList.add('show');
     return sheetEl;
   }
   function closeSheet(instant) {
@@ -99,6 +101,9 @@
     if (q) { e.stopPropagation(); const h = HELP[q.dataset.help]; if (h) help(h[0], h[1]); }
   });
   const HELP = {
+    unseen: ['Unseen cards', 'Every train card not in your hand, the face-up row or the discard pile. They are in the deck or in rivals\' hands. When a colour runs low, routes of that colour get harder for everyone.'],
+    longest: ['Longest route', 'The longest unbroken line of each player\'s trains (cities may repeat, routes may not). The longest gets the bonus at the end; ties all get it.'],
+    guess: ['Likely tickets', 'For every ticket you don\'t hold, how much of its cheapest path this player\'s track already covers. Players build toward their tickets, so a high share is a strong clue.'],
     table: ['Real-table game', 'For playing the board game at a real table. The first player is you. Tap each route on the map as a player claims it: scores, trains left and your ticket chances update live. Add your tickets with "+ Ticket" so the app can track them.'],
     chance: ['Chance', 'How often you would still finish this ticket in 200 simulated futures. Rivals keep claiming routes (busy routes more often), and the game ends a few turns after someone runs low on trains. It uses the cheapest open path, so a blocked route lowers it at once.'],
     keep: ['Keep or toss', 'Value = points × (2 × chance − 1): a finished ticket adds its points, an unfinished one takes them away. The best set also checks that all your tickets together fit in your trains and the turns likely left.'],
@@ -198,7 +203,8 @@
       };
       const odds = myTickets.length ? O.ticketChances(map, pos) : { tickets: [] };
       Table.lastOdds = odds;
-      const chips = tb.players.map((p, s) => chip(s, p.name, routePts[s], `${trainsLeft[s]} trains${map.stations ? ' · ' + stationsLeft[s] + ' st' : ''}`, s === tb.active, false)).join('');
+      const longest = tb.players.map((_, s) => G.longestTrail(map, Object.keys(tb.claims).filter(id => tb.claims[id] === s)).len);
+      const chips = tb.players.map((p, s) => chip(s, p.name, routePts[s], `${trainsLeft[s]} trains · long ${longest[s]}${map.stations ? ' · ' + stationsLeft[s] + ' st' : ''}`, s === tb.active, false)).join('');
       const last = tb.history[tb.history.length - 1];
       const station = tb.mode === 'station';
       const showTickets = S.settings.privacy === 'mine' || Table.viewer != null;
@@ -475,6 +481,8 @@
           <button type="button" class="tdeck" id="p-tix" ${legal.includes('drawTickets') ? '' : 'disabled'}><b>${s.ticketDeck.length}</b>tickets</button></div>
         <div class="sec">My hand · ${pl.trains} trains${map.stations ? ' · ' + pl.stations + ' stations' : ''}</div>
         <div class="hand">${hand}</div>
+        <div class="small muted" style="margin-top:6px">${Play.unseenHTML(s, me)} <button class="q" data-help="unseen" aria-label="About unseen cards">?</button></div>
+        <div class="small muted" style="margin-top:4px">Longest: ${s.players.map((q, i) => `<b style="color:${B.PLAYER[i]}">${G.longestTrail(map, q.routes).len}</b>`).join(' · ')} <button class="q" data-help="longest" aria-label="About longest route">?</button></div>
         ${map.stations && myTurn && !s.drew && pl.stations > 0 ? `<div class="row" style="margin-top:8px"><button class="btn small${Play.stationMode ? ' warm' : ''}" id="p-station">${Play.stationMode ? 'Cancel station' : 'Build a station (' + T.stationCost(s, me) + ' cards)'}</button><button class="q" data-help="stations" aria-label="About stations">?</button></div>` : ''}
         <div class="sec">My tickets <button class="q" data-help="chance" aria-label="About chance">?</button></div>
         <div class="tlist">${odds.tickets.map((x, i) => ticketRow(map, x.t, x, `data-tix="${i}"`)).join('') || '<div class="empty">None yet.</div>'}</div>
@@ -490,6 +498,7 @@
       });
       // events
       panel.querySelectorAll('[data-face]').forEach(b => b.onclick = () => Play.act({ type: 'draw', from: +b.dataset.face }));
+      panel.querySelectorAll('.players [data-seat]').forEach(b => b.onclick = () => { const i = +b.dataset.seat; if (i !== me) Play.guess(i); });
       const on = (id, f) => { const e = panel.querySelector(id); if (e) e.onclick = f; };
       on('#p-deck', () => Play.act({ type: 'draw', from: 'deck' }));
       on('#p-tix', () => Play.act({ type: 'drawTickets' }));
@@ -502,6 +511,65 @@
       if (pl.pending && (s.phase === 'setup' || myTurn) && !sheetEl) Play.ticketSheet();
       if (s.pendingTunnel && s.turn === me && !sheetEl) Play.tunnelSheet();
       if (s.phase === 'over' && !p.shownScores && !sheetEl) { p.shownScores = true; save(); Play.scores(); }
+    },
+    // score race: route points after every turn
+    record() {
+      const p = S.play; if (!p) return;
+      const s = p.state; p.race = p.race || [];
+      const last = p.race[p.race.length - 1];
+      if (last && last.t === s.turnNo) return;
+      p.race.push({ t: s.turnNo, pts: s.players.map((_, i) => T.liveRoutePoints(s, i)) });
+    },
+    raceSVG(s, res) {
+      const race = (S.play.race || []).filter(x => x.t > 0);
+      if (race.length < 2) return '<p class="note">No turns recorded.</p>';
+      const W = 420, H = 150, pad = 6, n = s.players.length;
+      const finals = s.players.map((_, i) => res.rows[i].total);
+      const maxY = Math.max(10, ...finals, ...race.flatMap(x => x.pts));
+      const minY = Math.min(0, ...finals);
+      const X = i => pad + i / race.length * (W - 2 * pad - 30), Y = v => H - pad - (v - minY) / (maxY - minY) * (H - 2 * pad);
+      let out = `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block" role="img" aria-label="Score race chart">`;
+      out += `<line x1="${pad}" x2="${W - pad}" y1="${Y(0)}" y2="${Y(0)}" stroke="var(--line)"/>`;
+      for (let k = 0; k < n; k++) {
+        const pts = race.map((x, i) => `${X(i).toFixed(1)},${Y(x.pts[k]).toFixed(1)}`);
+        // final jump: tickets and bonuses are added at the end
+        pts.push(`${(W - pad - 22).toFixed(1)},${Y(finals[k]).toFixed(1)}`);
+        out += `<polyline points="${pts.join(' ')}" fill="none" stroke="${B.PLAYER[k]}" stroke-width="2.5" stroke-linejoin="round"/>`;
+        out += `<circle cx="${W - pad - 22}" cy="${Y(finals[k]).toFixed(1)}" r="4" fill="${B.PLAYER[k]}"/>`;
+      }
+      return out + '</svg><p class="note">Route points turn by turn; the last step adds tickets and bonuses.</p>';
+    },
+    // cards I haven't seen: the whole deck minus my hand, the face-up row and the discard pile
+    unseenHTML(s, me) {
+      const map = Play.map, h = s.players[me].hand;
+      return 'Unseen: ' + T.COLORS.concat('loco').map(c => {
+        const total = c === 'loco' ? map.deck.loco : map.deck.colors[c];
+        const seen = h[c] + s.faceUp.filter(x => x === c).length + s.discard.filter(x => x === c).length;
+        return `<span style="white-space:nowrap"><span class="pip" style="width:9px;height:12px;vertical-align:-1px;background:${B.COLOR[c]}"></span>${Math.max(0, total - seen)}</span>`;
+      }).join(' ');
+    },
+    // which tickets a rival probably holds: tickets whose cheapest path their track already covers most
+    guess(seat) {
+      const p = S.play, s = p.state, map = Play.map, me = p.me, q = s.players[seat];
+      const deck = T.deckFor(map, s).tickets, mine = new Set(s.players[me].tickets);
+      const theirs = new Set(q.routes);
+      const rows = [];
+      deck.forEach((t, i) => {
+        if (mine.has(i) || t.a == null || t.b == null) return;
+        const base = G.shortest(map, t.a, t.b, r => r.len);
+        const withThem = G.shortest(map, t.a, t.b, r => theirs.has(r.id) ? 0 : r.len);
+        if (!base || !withThem || !base.dist) return;
+        const share = (base.dist - withThem.dist) / base.dist;
+        if (share > 0) rows.push({ t, i, share, done: withThem.dist === 0 });
+      });
+      rows.sort((x, y) => y.share - x.share || y.t.pts - x.t.pts);
+      const top = rows.slice(0, 6);
+      const real = S.settings.study ? new Set(q.tickets) : null;
+      const sh = openSheet(`<h2>${esc(q.name)}'s likely tickets <button class="q" data-help="guess" aria-label="About the guess">?</button></h2>
+        <p class="note">${q.tickets.length} ticket${q.tickets.length === 1 ? '' : 's'} held · ${q.routes.length} routes claimed</p>
+        ${top.length ? `<table class="lab-table" style="margin-top:8px"><tr><th>Ticket</th><th>Pts</th><th>Built</th></tr>${top.map(r => `<tr><td>${esc(ticketName(map, r.t))}${real && real.has(r.i) ? ' <span style="color:var(--good)">holds</span>' : ''}</td><td>${r.t.pts}</td><td style="color:${r.share >= 0.75 ? 'var(--bad)' : r.share >= 0.4 ? 'var(--accent-warm)' : 'var(--muted)'}">${r.done ? 'done' : pct(r.share)}</td></tr>`).join('')}</table>` : '<p class="empty">No track yet, so no clues.</p>'}
+        <div class="acts"><button class="btn" data-x>Close</button></div>`);
+      sh.querySelector('[data-x]').onclick = () => closeSheet();
     },
     pos(s, me) {
       const map = Play.map;
@@ -549,7 +617,7 @@
       a.seat = me;
       try {
         const before = s;
-        p.state = T.apply(s, a);
+        p.state = T.apply(s, a); Play.record();
         Play.hint = null; Play.hintRoute = null;
         if (a.type === 'claim' || a.type === 'station') Play.stationMode = false;
         if (a.type === 'claim' && p.state.owner[a.route] === me) Play.flashRoute(a.route);
@@ -588,6 +656,7 @@
         const st = S.play.state;
         const a = AI.choose(T.view(st, seat), seat, st.players[seat].level);
         try { S.play.state = T.apply(st, a); } catch (e) { console.error('computer move refused', a, e); S.play.state = T.apply(st, { type: st.drew ? 'draw' : 'pass', seat, from: 'deck' }); }
+        Play.record();
         if (a.type === 'claim' && S.play.state.owner[a.route] === seat) Play.flashRoute(a.route);
         save();
         if (S.tab === 'play') Play.render();
@@ -692,6 +761,7 @@
       const sh = openSheet(`<h2>${won ? 'You win!' : esc(s.players[res.winner].name) + ' wins'}</h2>
         <table class="scores"><tr><th>Player</th>${cols.map(c => `<th>${c[0]}</th>`).join('')}<th>Total</th></tr>
         ${rows.map((r, i) => `<tr class="${i === 0 ? 'win' : ''}"><td>${esc(r.name)}${s.players[r.seat].level ? ' <span class="muted small">' + LEVEL_NAME[s.players[r.seat].level] + '</span>' : ''}</td>${cols.map(c => `<td>${r[c[1]]}</td>`).join('')}<td><b>${r.total}</b></td></tr>`).join('')}</table>
+        <div class="sec">Score race</div>${Play.raceSVG(s, res)}
         <div class="sec">Tickets</div>
         ${rows.map(r => `<div class="small" style="margin-bottom:4px"><b style="color:${B.PLAYER[r.seat]}">${esc(r.name)}</b> ${r.tickets.map(x => `<span style="color:${x.ok ? 'var(--good)' : 'var(--bad)'}">${esc(ticketName(map, deck[x.t]))} ${x.ok ? '+' : '−'}${deck[x.t].pts}</span>`).join(' · ')}</div>`).join('')}
         <div class="acts"><button class="btn" data-x>Close</button><button class="btn primary" data-again>Play again</button></div>`);
