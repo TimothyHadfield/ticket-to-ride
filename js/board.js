@@ -38,7 +38,8 @@
   }
 
   // label spot: the side of the city with the widest gap between its routes
-  function labelSpot(map, c) {
+  // ...and away from labels already placed and from other cities (so close cities don't print over each other).
+  function labelSpot(map, c, placed) {
     const angs = [];
     const city = Object.fromEntries(map.cities.map(x => [x.id, x]));
     for (const r of map.routes) {
@@ -46,18 +47,30 @@
       const o = city[r.a === c.id ? r.b : r.a];
       angs.push(Math.atan2(o.y - c.y, o.x - c.x));
     }
+    const W = c.name.length * 8.4, H = 15;
+    const spot = a => {
+      const ca = Math.cos(a), sa = Math.sin(a);
+      const anchor = ca > 0.3 ? 'start' : ca < -0.3 ? 'end' : 'middle';
+      const x = c.x + ca * 15, y = c.y + sa * 15 + (sa > 0.3 ? 11 : sa < -0.3 ? -1 : 5);
+      const x0 = anchor === 'start' ? x : anchor === 'end' ? x - W : x - W / 2;
+      return { x, y, anchor, box: [x0, y - 12, x0 + W, y - 12 + H] };
+    };
+    const overlap = (p, q) => Math.max(0, Math.min(p[2], q[2]) - Math.max(p[0], q[0])) * Math.max(0, Math.min(p[3], q[3]) - Math.max(p[1], q[1]));
     const cands = [-Math.PI / 2, -Math.PI / 4, 0, Math.PI / 4, Math.PI / 2, 3 * Math.PI / 4, Math.PI, -3 * Math.PI / 4];
-    let best = cands[0], bestGap = -1;
+    let best = null, bestScore = -Infinity;
     for (const a of cands) {
       let gap = Math.PI;
       for (const b of angs) { let d = Math.abs(a - b) % (2 * Math.PI); if (d > Math.PI) d = 2 * Math.PI - d; gap = Math.min(gap, d); }
+      const s = spot(a);
+      let hit = 0;
+      for (const p of placed) hit += overlap(s.box, p);
+      for (const o of map.cities) if (o !== c) hit += overlap(s.box, [o.x - 9, o.y - 9, o.x + 9, o.y + 9]);
       // mild preference for above / right
-      const pref = (a === -Math.PI / 2 ? 0.12 : 0) + (a === 0 ? 0.08 : 0);
-      if (gap + pref > bestGap) { bestGap = gap + pref; best = a; }
+      const score = gap + (a === -Math.PI / 2 ? 0.12 : 0) + (a === 0 ? 0.08 : 0) - hit / 40;
+      if (score > bestScore) { bestScore = score; best = s; }
     }
-    const ca = Math.cos(best), sa = Math.sin(best);
-    const anchor = ca > 0.3 ? 'start' : ca < -0.3 ? 'end' : 'middle';
-    return { x: c.x + ca * 15, y: c.y + sa * 15 + (sa > 0.3 ? 11 : sa < -0.3 ? -1 : 5), anchor };
+    placed.push(best.box);
+    return best;
   }
 
   function create(wrap, map, handlers) {
@@ -89,25 +102,41 @@
           const cg = el('g', { transform: `translate(${c.x.toFixed(1)},${c.y.toFixed(1)}) rotate(${g.ang.toFixed(1)})` }, grp);
           const rect = el('rect', { class: 'car' + (r.kind === 'tunnel' ? ' tunnel' : ''), x: -g.carL / 2, y: -CAR_W / 2, width: g.carL, height: CAR_W, rx: 2, fill: COLOR[r.color] }, cg);
           if (r.locos && i < r.locos) el('path', { class: 'loco-mark', d: `M${-g.carL / 2 + 2} 0 h${g.carL - 4} M0 ${-CAR_W / 2 + 2} v${CAR_W - 4}` }, cg);
+          // a claimed space shows a little train piece: windows + wheels (hidden until claimed)
+          el('path', { class: 'train-mark', d: `M${-g.carL / 2 + 3} -1.6 h${g.carL - 6} v2.6 h${-(g.carL - 6)} z` }, cg);
           return rect;
         });
         routeEls[r.id] = grp;
       }
+      const placed = [];
       for (const c of map.cities) {
         const grp = el('g', { class: 'city', 'data-city': c.id }, gCities);
         el('circle', { class: 'ring', cx: c.x, cy: c.y, r: 10 }, grp);
         el('circle', { class: 'dot', cx: c.x, cy: c.y, r: 6.5 }, grp);
-        const ls = labelSpot(map, c);
+        const ls = labelSpot(map, c, placed);
         const t = el('text', { x: ls.x.toFixed(1), y: ls.y.toFixed(1), 'text-anchor': ls.anchor }, grp);
         t.textContent = c.name;
         cityEls[c.id] = grp;
       }
-      full = { x: -10, y: -10, w: map.size[0] + 20, h: map.size[1] + 20 };
+      full = { x: -10, y: -10, w: map.size[0] + 20, h: map.size[1] + 20 }; measured = false;
       fit();
     }
 
+    // The whole-map view hugs the drawn routes and labels (names at the edge stay inside).
+    // getBBox needs the board on screen, so it is measured the first time it is visible.
+    let measured = false;
+    function measure() {
+      if (measured) return;
+      try {
+        const a = gRoutes.getBBox(), b = gCities.getBBox();
+        if (!a.width || !b.width) return;
+        const x0 = Math.min(a.x, b.x) - 6, y0 = Math.min(a.y, b.y) - 6;
+        const x1 = Math.max(a.x + a.width, b.x + b.width) + 6, y1 = Math.max(a.y + a.height, b.y + b.height) + 6;
+        full = { x: x0, y: y0, w: x1 - x0, h: y1 - y0 }; measured = true;
+      } catch (e) { /* not rendered yet */ }
+    }
     function setVB(v) { vb = v; svg.setAttribute('viewBox', `${v.x.toFixed(1)} ${v.y.toFixed(1)} ${v.w.toFixed(1)} ${v.h.toFixed(1)}`); }
-    function fit() { setVB(Object.assign({}, full)); }
+    function fit() { measure(); setVB(Object.assign({}, full)); }
 
     // ------------------------------------------------------------ render state
     function render(o) {
@@ -244,6 +273,8 @@
     build(map);
     return {
       render, fit, setMap(m) { if (m !== map) build(m); }, get map() { return map; },
+      // first time on screen: measure and show the whole map; returns the whole-map box
+      ready() { if (!measured) fit(); return full; },
       focus(cityIds) {
         if (!cityIds || !cityIds.length) return fit();
         const cs = map.cities.filter(c => cityIds.includes(c.id));

@@ -99,6 +99,7 @@
     if (q) { e.stopPropagation(); const h = HELP[q.dataset.help]; if (h) help(h[0], h[1]); }
   });
   const HELP = {
+    table: ['Real-table game', 'For playing the board game at a real table. The first player is you. Tap each route on the map as a player claims it: scores, trains left and your ticket chances update live. Add your tickets with "+ Ticket" so the app can track them.'],
     chance: ['Chance', 'How often you would still finish this ticket in 200 simulated futures. Rivals keep claiming routes (busy routes more often), and the game ends a few turns after someone runs low on trains. It uses the cheapest open path, so a blocked route lowers it at once.'],
     keep: ['Keep or toss', 'Value = points × (2 × chance − 1): a finished ticket adds its points, an unfinished one takes them away. The best set also checks that all your tickets together fit in your trains and the turns likely left.'],
     heat: ['Busy routes', 'For every ticket in the deck we find its cheapest path. A route\'s heat is how many of those paths use it. Hot routes are the ones rivals are most likely to need, so they go early and blocking them hurts most.'],
@@ -116,11 +117,13 @@
     for (const id of ['table', 'play', 'lab']) {
       const v = $('#v-' + id), wrap = v.querySelector('.board-wrap'), b = boards[id];
       if (!b) continue;
-      if (wide) { wrap.style.height = ''; continue; }
-      const [w, h] = b.map.size;
+      if (!v.classList.contains('active')) continue;
+      if (wide) { wrap.style.height = ''; b.ready(); continue; }
+      if (!wrap.style.height) wrap.style.height = '200px'; // on screen so it can be measured
+      const box = b.ready();
       const W = v.clientWidth || window.innerWidth;
-      const maxH = Math.round((v.clientHeight || window.innerHeight) * (id === 'lab' ? 0.56 : 0.5));
-      wrap.style.height = Math.min(Math.round(W * (h + 20) / (w + 20)), maxH) + 'px';
+      const maxH = Math.round((v.clientHeight || window.innerHeight) * (id === 'lab' ? 0.56 : 0.52));
+      wrap.style.height = Math.min(Math.round(W * box.h / box.w), maxH) + 'px';
     }
   }
   window.addEventListener('resize', sizeBoards);
@@ -238,13 +241,12 @@
       const map = Table.map;
       const n = Table.setupN || 2;
       const names = Table.setupNames || [];
+      const k0 = Math.min(Math.max(n, map.players[0]), map.players[1]);
       panel.innerHTML = `
-        <div class="sec">New table game</div>
-        <div class="row wrap">${mapSelect('map', map.id)}${deckSelect(map, 'deck', Table.setupDeck)}</div>
-        <div class="sec">Players</div>
-        <div class="row"><span class="seg" role="group">${Array.from({ length: map.players[1] - map.players[0] + 1 }, (_, i) => map.players[0] + i).map(k => `<button type="button" data-n="${k}" aria-pressed="${k === Math.min(Math.max(n, map.players[0]), map.players[1])}">${k}</button>`).join('')}</span></div>
-        <div class="tlist" style="margin-top:8px">${Array.from({ length: Math.min(Math.max(n, map.players[0]), map.players[1]) }, (_, s) => `<div class="row"><i style="width:14px;height:14px;border-radius:4px;background:${B.PLAYER[s]};flex:none"></i><input type="text" data-name="${s}" value="${esc(names[s] || (s === 0 ? 'Me' : PNAME[s]))}" maxlength="14" class="grow" aria-label="Player ${s + 1} name"></div>`).join('')}</div>
-        <p class="note">The first player is you. Tap routes as players claim them; scores and your ticket chances update live.</p>
+        <div class="sec">Real-table game <button class="q" data-help="table" aria-label="About the table">?</button></div>
+        <div class="row">${mapSelect('map', map.id).replace('<select', '<select class="grow"')}${deckSelect(map, 'deck', Table.setupDeck).replace('<select', '<select class="grow"')}</div>
+        <div class="row" style="margin-top:8px"><span class="muted small grow">Players</span><span class="seg" role="group">${Array.from({ length: map.players[1] - map.players[0] + 1 }, (_, i) => map.players[0] + i).map(k => `<button type="button" data-n="${k}" aria-pressed="${k === k0}">${k}</button>`).join('')}</span></div>
+        <div class="names" style="margin-top:8px">${Array.from({ length: k0 }, (_, s) => `<div class="row"><i style="background:${B.PLAYER[s]}"></i><input type="text" data-name="${s}" value="${esc(names[s] || (s === 0 ? 'Me' : PNAME[s]))}" maxlength="14" class="grow" aria-label="Player ${s + 1} name"></div>`).join('')}</div>
         <div class="row" style="margin-top:10px"><button class="btn primary grow" id="t-start">Start</button></div>`;
       Table.board.render({});
       panel.querySelector('[name=map]').onchange = async e => { Table.setupMap = e.target.value; Table.setupDeck = null; await Table.show(); };
@@ -442,7 +444,7 @@
       const pl = s.players[me];
       // chips
       const chips = s.players.map((q, i) => chip(i, q.name, T.liveRoutePoints(s, i),
-        `${q.trains}🚃 ${T.handSize(q.hand)} cards · ${q.tickets.length} tix`.replace('🚃', ' trains ·'), false, s.turn === i && s.phase !== 'over')).join('');
+        `${q.trains} trains · ${T.handSize(q.hand)} cards`, false, s.turn === i && s.phase !== 'over')).join('');
       // status
       let status = '';
       if (s.phase === 'over') status = 'Game over';
@@ -875,5 +877,5 @@
   const start = (location.hash || '').slice(1);
   history.replaceState({ tab: TABS.some(t => t[0] === start) ? start : S.tab }, '', location.hash || '#' + S.tab);
   showTab(TABS.some(t => t[0] === start) ? start : S.tab, false);
-  window.TTRApp = { S, Table, Play, Lab, save }; // for tests / debugging
+  window.TTRApp = { S, Table, Play, Lab, save, closeSheet }; // for tests / debugging
 })();
