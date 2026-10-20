@@ -22,6 +22,9 @@ function playGame(map, levels, seed, deckId, opts) {
     if (!a) throw new Error('no action');
     try { s = T.apply(s, a); }
     catch (e) { throw new Error('illegal ' + JSON.stringify(a) + ': ' + e.message + ' seed ' + seed); }
+    // apply() and view() deep-copy the whole state; the 400-line log was most of that copy. Self-play
+    // never reads the log, so drop it (pass opts.keepLog to keep it).
+    if (!(opts && opts.keepLog)) s.log.length = 0;
     if (opts && opts.check) opts.check(s);
   }
   return s;
