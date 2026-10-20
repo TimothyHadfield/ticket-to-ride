@@ -3,7 +3,7 @@
 (function () {
   'use strict';
   const T = window.TTR, G = window.TTRGraph, AI = window.TTRAI, O = window.TTROdds, B = window.Board;
-  const VERSION = '1.0';
+  const VERSION = '1.1';
   const MAP_IDS = ['usa', 'europe', 'nordic', 'india', 'switzerland'];
   const MAP_NAMES = { usa: 'USA', europe: 'Europe', nordic: 'Nordic Countries', india: 'India', switzerland: 'Switzerland' };
   const LEVELS = ['easy', 'medium', 'hard'];
@@ -23,13 +23,13 @@
     try { d = JSON.parse(localStorage.getItem(KEY)); } catch (e) { d = null; }
     d = d && typeof d === 'object' ? d : {};
     d.tab = d.tab || 'table';
-    d.settings = Object.assign({ speed: 'normal', study: false, privacy: 'mine', labMap: 'usa', labDeck: null }, d.settings || {});
+    d.settings = Object.assign({ speed: 'normal', study: false, longest: true, privacy: 'mine', labMap: 'usa', labDeck: null }, d.settings || {});
     d.table = d.table || null;
     d.play = d.play || null;
     d.lab = Object.assign({ mode: 'path', a: null, b: null, blocked: [], sort: 'ppt' }, d.lab || {});
     return d;
   }
-  function save() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { /* storage full or blocked: keep going */ } }
+  function save() { try { localStorage.setItem(KEY, JSON.stringify(S.play && S.play.online ? Object.assign({}, S, { play: null }) : S)); } catch (e) { /* storage full or blocked: keep going */ } }
 
   // ---------------------------------------------------------------- maps
   const mapCache = {};
@@ -127,6 +127,7 @@
     detour: ['If it\'s taken', 'How many more trains the cheapest way between the two cities costs if this route (and its twin) is gone.'],
     strength: ['How strong?', 'Each level played thousands of games against the others with seats rotated. The numbers show how often the stronger side won.'],
     privacy: ['Ticket privacy', '"Just mine" shows only your tickets. "Pass the phone" lets every player keep tickets in the app behind a cover screen, so final scores count everyone.'],
+    online: ['Online', 'One phone creates the room and gets a 5-letter code. Friends open this page, tap Join and type the code. Seats left empty play as computers, run on the host\'s phone. Your cards and tickets are sent only to you. If you reload, the game picks up where it was.'],
     stations: ['Stations', 'Europe only. Each player has 3. A station lets you use one rival route into that city for your tickets. Each unused station is worth 4 points at the end.'],
   };
 
@@ -414,7 +415,7 @@
       const tb = S.table, map = Table.map;
       // build an engine state from the table and score it
       const s = {
-        mapId: map.id, deckId: tb.deckId, options: {}, owner: tb.claims, stationAt: tb.stations || {},
+        mapId: map.id, deckId: tb.deckId, options: { noLongest: S.settings.longest === false }, owner: tb.claims, stationAt: tb.stations || {},
         players: tb.players.map((p, seat) => ({
           name: p.name, routes: Object.keys(tb.claims).filter(id => tb.claims[id] === seat), tickets: tb.tickets[seat] || [],
           stationCities: Object.keys(tb.stations || {}).filter(c => tb.stations[c] === seat),
@@ -453,21 +454,22 @@
       Play.render();
       sizeBoards();
       Play.pump();
+      if (!Play.net && !S.play && Play.netFlag()) Play.netRoom().then(r => r.resume()).then(ok => { if (!ok) Play.netEnd(); }).catch(() => Play.netEnd());
     },
     render() {
       const panel = $('#v-play .panel'), map = Play.map;
       const p = S.play;
+      if (Play.net && (!p || !p.online || (Play.net.snap && Play.net.snap.status === 'lobby'))) return Play.renderLobby(panel);
       if (!p || p.state.mapId !== map.id) return Play.renderSetup(panel);
       const s = p.state, me = p.me;
-      const v = T.view(s, me);
-      const study = S.settings.study;
+      const study = S.settings.study && !p.online;
       const legal = T.legal(s, me);
       const myTurn = s.turn === me && s.phase === 'main';
       const deck = T.deckFor(map, s).tickets;
       const pl = s.players[me];
       // chips
       const chips = s.players.map((q, i) => chip(i, q.name, T.liveRoutePoints(s, i),
-        `${q.trains} trains · ${T.handSize(q.hand)} cards`, false, s.turn === i && s.phase !== 'over')).join('');
+        `${q.trains} trains · ${q.handCount != null ? q.handCount : T.handSize(q.hand)} cards`, false, s.turn === i && s.phase !== 'over')).join('');
       // status
       let status = '';
       if (s.phase === 'over') status = 'Game over';
@@ -505,7 +507,7 @@
         <div class="tlist">${odds.tickets.map((x, i) => ticketRow(map, x.t, x, `data-tix="${i}"`)).join('') || '<div class="empty">None yet.</div>'}</div>
         ${study ? `<div class="sec">Study: computers' hands</div>${studyHTML}` : ''}
         <div class="sec">Log</div><div class="log">${logLines}</div>
-        <div class="row" style="margin-top:10px"><button class="btn small" id="p-new">New game</button></div>`;
+        <div class="row" style="margin-top:10px"><button class="btn small" id="p-new">${p.online ? 'Leave room' : 'New game'}</button>${p.online ? `<span class="grow small muted">Room ${esc(Play.net && Play.net.snap ? Play.net.snap.code : '')}</span>` : ''}</div>`;
       const tix = Play.sel != null && odds.tickets[Play.sel];
       Play.board.render({
         owner: s.owner, stations: s.stationAt,
@@ -521,7 +523,7 @@
       on('#p-tix', () => Play.act({ type: 'drawTickets' }));
       on('#p-hint', Play.showHint);
       on('#p-score', Play.scores);
-      on('#p-new', () => { if (S.play && S.play.state.phase !== 'over') { Play.confirmNew(); } else { S.play = null; save(); Play.render(); } });
+      on('#p-new', () => { if (S.play && S.play.online) Play.confirmLeave(); else if (S.play && S.play.state.phase !== 'over') { Play.confirmNew(); } else { S.play = null; save(); Play.render(); } });
       on('#p-station', () => { Play.stationMode = !Play.stationMode; Play.render(); });
       panel.querySelectorAll('[data-tix]').forEach(b => b.onclick = () => { Play.sel = Play.sel === +b.dataset.tix ? null : +b.dataset.tix; Play.render(); });
       // sheets that the state demands
@@ -581,7 +583,7 @@
       });
       rows.sort((x, y) => y.share - x.share || y.t.pts - x.t.pts);
       const top = rows.slice(0, 6);
-      const real = S.settings.study ? new Set(q.tickets) : null;
+      const real = S.settings.study && !p.online ? new Set(q.tickets) : null;
       const sh = openSheet(`<h2>${esc(q.name)}'s likely tickets <button class="q" data-help="guess" aria-label="About the guess">?</button></h2>
         <p class="note">${q.tickets.length} ticket${q.tickets.length === 1 ? '' : 's'} held · ${q.routes.length} routes claimed</p>
         ${top.length ? `<table class="lab-table" style="margin-top:8px"><tr><th>Ticket</th><th>Pts</th><th>Built</th></tr>${top.map(r => `<tr><td>${esc(ticketName(map, r.t))}${real && real.has(r.i) ? ' <span style="color:var(--good)">holds</span>' : ''}</td><td>${ticketPts(r.t)}</td><td style="color:${r.share >= 0.75 ? 'var(--bad)' : r.share >= 0.4 ? 'var(--accent-warm)' : 'var(--muted)'}">${r.done ? 'done' : pct(r.share)}</td></tr>`).join('')}</table>` : '<p class="empty">No track yet, so no clues.</p>'}
@@ -613,16 +615,17 @@
         <div class="row"><span class="seg" role="group">${Array.from({ length: maxOpp }, (_, i) => i + 1).map(n => `<button type="button" data-opp="${n}" aria-pressed="${n === k}">${n}</button>`).join('')}</span></div>
         <div class="tlist" style="margin-top:8px">${Array.from({ length: k }, (_, i) => `<div class="row"><i style="width:14px;height:14px;border-radius:4px;background:${B.PLAYER[i + 1]};flex:none"></i><span class="grow">${PNAME[i + 1]}</span><span class="seg" role="group">${LEVELS.map(l => `<button type="button" data-lv="${i}" data-l="${l}" aria-pressed="${levels[i] === l}">${LEVEL_NAME[l]}</button>`).join('')}</span></div>`).join('')}</div>
         <div id="p-strength"></div>
-        <div class="row" style="margin-top:12px"><button class="btn primary grow" id="p-start">Start</button></div>`;
+        <div class="row" style="margin-top:12px"><button class="btn primary grow" id="p-start">Start</button><button class="btn" id="p-online">Online</button></div>`;
       Play.board.render({});
-      Strength.note($('#p-strength'), map.id);
+      panel.querySelector('#p-online').onclick = () => Play.onlineSheet();
+      Strength.note($('#p-strength'), map.id, true);
       panel.querySelector('[name=map]').onchange = async e => { Play.setupMap = e.target.value; Play.setupDeck = null; await Play.show(); };
       const dk = panel.querySelector('[name=deck]'); if (dk) dk.onchange = e => { Play.setupDeck = e.target.value; };
       panel.querySelectorAll('[data-opp]').forEach(b => b.onclick = () => { Play.setupOpp = +b.dataset.opp; Play.renderSetup(panel); });
       panel.querySelectorAll('[data-lv]').forEach(b => b.onclick = () => { levels[+b.dataset.lv] = b.dataset.l; Play.setupLevels = levels; Play.renderSetup(panel); });
       panel.querySelector('#p-start').onclick = () => {
         const seats = [{ name: 'You', kind: 'human' }].concat(Array.from({ length: k }, (_, i) => ({ name: PNAME[i + 1], kind: 'cpu', level: levels[i] })));
-        const state = T.newGame(map, { seed: (Math.random() * 2 ** 31) >>> 0, deckId: Play.setupDeck || map.ticketDecks[0].id, seats });
+        const state = T.newGame(map, { seed: (Math.random() * 2 ** 31) >>> 0, deckId: Play.setupDeck || map.ticketDecks[0].id, seats, options: { noLongest: S.settings.longest === false } });
         S.play = { me: 0, state };
         Play.gen++; Play.hint = null; Play.sel = null; Play.stationMode = false;
         save(); Play.render(); Play.pump();
@@ -632,6 +635,14 @@
       const p = S.play; if (!p) return;
       const s = p.state, me = p.me;
       a.seat = me;
+      if (p.online) {
+        try { T.apply(T.clone(s), Object.assign({}, a)); } catch (e) { if (e.rule) return toast(e.message.charAt(0).toUpperCase() + e.message.slice(1)); }
+        Play.hint = null; Play.hintRoute = null;
+        if (a.type === 'claim' || a.type === 'station') Play.stationMode = false;
+        if (a.type === 'draw' && typeof a.from === 'number') Play.flyCard(s.faceUp[a.from], a.from);
+        Play.net.room.act(a); // a refusal arrives as an 'error' event (toast)
+        return;
+      }
       try {
         const before = s;
         p.state = T.apply(s, a); Play.record();
@@ -658,7 +669,7 @@
     },
     // computers move one action at a time, with a pause so you can follow
     pump() {
-      const p = S.play; if (!p || Play.busy) return;
+      const p = S.play; if (!p || p.online || Play.busy) return;
       const s = p.state;
       if (s.phase === 'over') return;
       let seat = null;
@@ -760,10 +771,148 @@
     },
     showHint() {
       const p = S.play, s = p.state, me = p.me;
-      const a = AI.choose(T.view(s, me), me, 'hard');
-      Play.hint = 'Hint: ' + AI.explain(T.view(s, me), me, a) + (a && a.why ? ' — ' + a.why : '');
+      const v = p.online ? p.view : T.view(s, me);
+      const a = AI.choose(v, me, 'hard');
+      Play.hint = 'Hint: ' + AI.explain(v, me, a) + (a && a.why ? ' — ' + a.why : '');
       Play.hintRoute = a && a.type === 'claim' ? a.route : null;
       Play.render();
+    },
+    // ---------------------------------------------------------------- online rooms (js/online.js, shared by Tim's game sites)
+    net: null, // { room, snap }
+    netFlag(v) {
+      try { if (v === undefined) return localStorage.getItem('ttr:online') === '1'; if (v) localStorage.setItem('ttr:online', '1'); else localStorage.removeItem('ttr:online'); } catch (e) { return false; }
+    },
+    async netRoom() {
+      if (Play.net) return Play.net.room;
+      const mod = await import(new URL('js/online.js?v=' + VERSION, location.href).href);
+      const room = mod.createOnline({ game: window.TTROnlineGame.game, gameId: 'ticket-to-ride', botDelayMs: delay() });
+      Play.net = { room, snap: null };
+      room.on('change', snap => Play.onSnap(snap));
+      room.on('error', msg => toast(msg));
+      Play.netFlag(true);
+      return room;
+    },
+    async onSnap(snap) {
+      const net = Play.net; if (!net) return;
+      net.snap = snap;
+      if (snap.status === 'closed' || snap.status === 'left' || snap.status === 'none') return Play.netEnd(snap.status === 'closed' ? 'The room was closed' : null);
+      const mapId = snap.options && snap.options.mapId;
+      if (mapId && (!Play.map || Play.map.id !== mapId)) {
+        const map = await getMap(mapId);
+        if (Play.net !== net) return;
+        Play.map = map;
+        Play.board = makeBoard('play', map, { onRoute: Play.onRoute, onCity: Play.onCity });
+        if (S.tab === 'play') { $('#sub').textContent = map.name; sizeBoards(); }
+      }
+      if (snap.pub && snap.mySeat >= 0) {
+        const v = window.TTROnlineGame.merge(snap.pub, snap.mine, snap.mySeat);
+        const prev = S.play && S.play.online ? S.play : null;
+        S.play = { me: snap.mySeat, state: Play.asState(v), view: v, online: true, race: prev ? prev.race : [], shownScores: prev ? prev.shownScores : false };
+        Play.record();
+        if (prev) for (const id in v.owner) if (prev.state.owner[id] == null && v.owner[id] !== snap.mySeat) Play.flashRoute(id);
+      } else if (S.play && S.play.online) S.play = null;
+      if (S.tab === 'play') Play.render();
+    },
+    asState(v) { return window.TTROnlineGame.asState(v); },
+    netEnd(msg) {
+      if (!Play.net) return;
+      Play.net = null; Play.netFlag(false); Play.gen++;
+      if (S.play && S.play.online) S.play = null;
+      closeSheet(true);
+      if (msg) toast(msg);
+      if (S.tab === 'play') Play.show();
+    },
+    async netLeave() {
+      const net = Play.net; if (!net) return;
+      await net.room.leave();
+      Play.netEnd();
+    },
+    confirmLeave() {
+      const sh = openSheet(`<h2>Leave the room?</h2><p class="note">${Play.net && Play.net.snap && Play.net.snap.isHost ? 'Another player takes over as host, or the room closes.' : 'A computer takes your seat.'}</p><div class="acts"><button class="btn" data-x>Stay</button><button class="btn primary" data-ok>Leave</button></div>`);
+      sh.querySelector('[data-x]').onclick = () => closeSheet();
+      sh.querySelector('[data-ok]').onclick = () => { closeSheet(true); Play.netLeave(); };
+    },
+    renderLobby(panel) {
+      const snap = Play.net.snap, map = Play.map;
+      if (!snap || !snap.code || snap.status === 'joining') {
+        panel.innerHTML = `<div class="sec">Online</div><p class="note">Connecting…</p><div class="row" style="margin-top:12px"><button class="btn" id="n-leave">Cancel</button></div>`;
+        panel.querySelector('#n-leave').onclick = () => Play.netLeave();
+        return;
+      }
+      const deck = map.ticketDecks.find(d => d.id === (snap.options || {}).deckId);
+      const seats = snap.seats.map((x, i) => `<div class="row"><i style="width:14px;height:14px;border-radius:4px;background:${B.PLAYER[i]};flex:none"></i>
+          <span class="grow">${x.kind === 'empty' ? '<span class="muted">Open seat</span>' : esc(x.name || (x.kind === 'computer' ? 'Computer' : 'Player'))}${i === snap.mySeat ? ' <span class="muted small">you</span>' : ''}</span>
+          ${snap.isHost && i !== snap.mySeat && x.kind !== 'human' ? `<span class="seg" role="group"><button type="button" data-seat-k="${i}" data-k="empty" aria-pressed="${x.kind === 'empty'}">Friend</button><button type="button" data-seat-k="${i}" data-k="computer" aria-pressed="${x.kind === 'computer'}">Computer</button></span>`
+            : `<span class="small muted">${x.kind === 'computer' ? 'computer' : x.kind === 'human' ? (x.online ? 'here' : 'away') : ''}</span>`}</div>`).join('');
+      panel.innerHTML = `
+        <div class="sec">Online room <button class="q" data-help="online" aria-label="About online play">?</button></div>
+        <div class="code-big" aria-label="Room code">${esc(snap.code)}</div>
+        <p class="note" style="text-align:center">${esc(map.name)}${deck && map.ticketDecks.length > 1 ? ' · ' + esc(deck.name) : ''} · friends tap Join and type this code</p>
+        <div class="tlist" style="margin-top:10px">${seats}</div>
+        <div class="row" style="margin-top:12px"><button class="btn" id="n-leave">Leave</button>${snap.isHost ? '<button class="btn primary grow" id="n-start">Start</button>' : '<span class="grow note">The host starts the game.</span>'}</div>
+        ${snap.isHost ? '<p class="note">Open seats play as computers.</p>' : ''}`;
+      Play.board.render({});
+      panel.querySelector('#n-leave').onclick = () => Play.netLeave();
+      const st = panel.querySelector('#n-start'); if (st) st.onclick = () => Play.net.room.start();
+      panel.querySelectorAll('[data-seat-k]').forEach(b => b.onclick = () => Play.net.room.setSeat(+b.dataset.seatK, b.dataset.k));
+    },
+    nameField(id) {
+      return `<input type="text" id="${id}" class="text" maxlength="16" autocomplete="nickname" placeholder="Your name" value="${esc(S.settings.netName || '')}">`;
+    },
+    takeName(sh, id) {
+      const name = (sh.querySelector('#' + id).value || '').trim().slice(0, 16) || 'Player';
+      S.settings.netName = name; save();
+      return name;
+    },
+    onlineSheet() {
+      const sh = openSheet(`<h2>Online</h2>
+        <p class="note">Play ${esc(Play.map.name)} with friends on their own phones. Seats can be friends or computers.</p>
+        <div class="acts"><button class="btn" data-x>Cancel</button><button class="btn" data-join>Join</button><button class="btn primary" data-host>Create room</button></div>`);
+      sh.querySelector('[data-x]').onclick = () => closeSheet();
+      sh.querySelector('[data-join]').onclick = () => Play.joinSheet();
+      sh.querySelector('[data-host]').onclick = () => Play.hostSheet();
+    },
+    hostSheet() {
+      const map = Play.map;
+      let n = Math.min(map.players[1], 2), level = 'medium';
+      const kinds = ['friend', 'friend', 'friend', 'friend'];
+      const sh = openSheet(`<h2>Online room</h2><div class="sec">Name</div>${Play.nameField('n-name')}<div id="n-body"></div>
+        <div class="acts"><button class="btn" data-x>Cancel</button><button class="btn primary" data-ok>Create</button></div>`);
+      const draw = () => {
+        sh.querySelector('#n-body').innerHTML = `
+          <div class="sec">Players</div><span class="seg" role="group">${Array.from({ length: map.players[1] - 1 }, (_, i) => i + 2).map(k => `<button type="button" data-n="${k}" aria-pressed="${k === n}">${k}</button>`).join('')}</span>
+          <div class="tlist" style="margin-top:8px">${Array.from({ length: n - 1 }, (_, i) => `<div class="row"><i style="width:14px;height:14px;border-radius:4px;background:${B.PLAYER[i + 1]};flex:none"></i><span class="grow">Seat ${i + 2}</span><span class="seg" role="group"><button type="button" data-s="${i}" data-k="friend" aria-pressed="${kinds[i] === 'friend'}">Friend</button><button type="button" data-s="${i}" data-k="computer" aria-pressed="${kinds[i] === 'computer'}">Computer</button></span></div>`).join('')}</div>
+          ${kinds.slice(0, n - 1).includes('computer') ? `<div class="sec">Computers</div><span class="seg" role="group">${LEVELS.map(l => `<button type="button" data-l="${l}" aria-pressed="${level === l}">${LEVEL_NAME[l]}</button>`).join('')}</span>` : ''}`;
+        sh.querySelectorAll('[data-n]').forEach(b => b.onclick = () => { n = +b.dataset.n; draw(); });
+        sh.querySelectorAll('[data-s]').forEach(b => b.onclick = () => { kinds[+b.dataset.s] = b.dataset.k; draw(); });
+        sh.querySelectorAll('[data-l]').forEach(b => b.onclick = () => { level = b.dataset.l; draw(); });
+      };
+      draw();
+      sh.querySelector('[data-x]').onclick = () => closeSheet();
+      sh.querySelector('[data-ok]').onclick = async () => {
+        const name = Play.takeName(sh, 'n-name');
+        closeSheet(true);
+        const room = await Play.netRoom();
+        Play.render();
+        const r = await room.createRoom({ name, seats: ['human'].concat(kinds.slice(0, n - 1).map(k => k === 'friend' ? 'empty' : 'computer')), options: { mapId: map.id, deckId: Play.setupDeck || map.ticketDecks[0].id, level, noLongest: S.settings.longest === false } });
+        if (!r.ok) Play.netEnd();
+      };
+    },
+    joinSheet() {
+      const sh = openSheet(`<h2>Join a room</h2><div class="sec">Code</div><input type="text" id="n-code" class="text code-in" maxlength="5" autocapitalize="characters" autocomplete="off" spellcheck="false" placeholder="ABCDE">
+        <div class="sec">Name</div>${Play.nameField('n-name')}
+        <div class="acts"><button class="btn" data-x>Cancel</button><button class="btn primary" data-ok>Join</button></div>`);
+      sh.querySelector('[data-x]').onclick = () => closeSheet();
+      sh.querySelector('[data-ok]').onclick = async () => {
+        const code = (sh.querySelector('#n-code').value || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+        if (code.length !== 5) return toast('The code has 5 letters');
+        const name = Play.takeName(sh, 'n-name');
+        closeSheet(true);
+        const room = await Play.netRoom();
+        Play.render();
+        const r = await room.joinRoom(code, name);
+        if (!r.ok) Play.netEnd();
+      };
     },
     scores() {
       const p = S.play, s = p.state, map = Play.map, res = s.result;
@@ -784,7 +933,7 @@
         ${rows.map(r => `<div class="small" style="margin-bottom:4px"><b style="color:${B.PLAYER[r.seat]}">${esc(r.name)}</b> ${r.tickets.map(x => `<span style="color:${x.ok ? 'var(--good)' : 'var(--bad)'}">${esc(ticketName(map, deck[x.t]))} ${x.pts >= 0 ? '+' : '−'}${Math.abs(x.pts)}</span>`).join(' · ')}</div>`).join('')}
         <div class="acts"><button class="btn" data-x>Close</button><button class="btn primary" data-again>Play again</button></div>`);
       sh.querySelector('[data-x]').onclick = () => closeSheet();
-      sh.querySelector('[data-again]').onclick = () => { closeSheet(true); Play.gen++; Play.setupMap = map.id; Play.setupDeck = s.deckId; Play.setupOpp = s.players.length - 1; Play.setupLevels = s.players.slice(1).map(q => q.level); S.play = null; save(); Play.render(); };
+      sh.querySelector('[data-again]').onclick = () => { closeSheet(true); if (p.online) return Play.netLeave(); Play.gen++; Play.setupMap = map.id; Play.setupDeck = s.deckId; Play.setupOpp = s.players.length - 1; Play.setupLevels = s.players.slice(1).map(q => q.level); S.play = null; save(); Play.render(); };
     },
   };
 
@@ -914,17 +1063,22 @@
       if (Strength.data !== undefined) return Promise.resolve(Strength.data);
       return fetch('data/strength.json?v=' + VERSION).then(r => r.ok ? r.json() : null).catch(() => null).then(d => (Strength.data = d));
     },
-    async note(el, mapId) {
+    // head-to-head (2-player) results; compact = one line for the Play setup
+    async note(el, mapId, compact) {
       if (!el) return;
       const d = await Strength.load();
       const m = d && d.maps && d.maps[mapId];
       if (!m) { el.innerHTML = ''; return; }
-      const rows = Object.entries(m).filter(([k]) => k.split(' v ').length === 2);
-      el.innerHTML = `<table class="scores" style="margin-top:8px"><tr><th>Match-up</th><th>Stronger wins</th><th>Games</th></tr>${rows.map(([k, r]) => {
-        const [x, y] = k.split(' v ');
-        const strong = (r.winPct[x] || 0) >= (r.winPct[y] || 0) ? x : y;
-        return `<tr><td>${LEVEL_NAME[x] || x} v ${LEVEL_NAME[y] || y}</td><td>${LEVEL_NAME[strong] || strong} ${Math.round(r.winPct[strong])}%</td><td>${r.games}</td></tr>`;
-      }).join('')}</table>`;
+      const rows = Object.entries(m).filter(([k, r]) => r.players === 2 && k.split('-').length === 2).map(([k, r]) => {
+        const [x, y] = k.split('-'), strong = (r.winPct[x] || 0) >= (r.winPct[y] || 0) ? x : y, weak = strong === x ? y : x;
+        return { strong, weak, pct: Math.round(r.winPct[strong]), games: r.games };
+      });
+      if (compact) {
+        el.innerHTML = `<p class="note">${rows.filter(r => r.strong !== 'hard' || r.weak !== 'easy').map(r => `${LEVEL_NAME[r.strong]} beats ${LEVEL_NAME[r.weak]} ${r.pct}%`).join(' · ')}</p>`;
+        return;
+      }
+      el.innerHTML = `<table class="scores" style="margin-top:8px"><tr><th>Match-up</th><th>Stronger wins</th><th>Games</th></tr>${rows.map(r =>
+        `<tr><td>${LEVEL_NAME[r.weak]} v ${LEVEL_NAME[r.strong]}</td><td>${LEVEL_NAME[r.strong]} ${r.pct}%</td><td>${r.games}</td></tr>`).join('')}</table>`;
     },
   };
 
@@ -938,19 +1092,22 @@
         <div class="sec">Play</div>
         <div class="setting"><span class="label">Computer speed</span><span class="seg" role="group">${['slow', 'normal', 'fast'].map(k => `<button type="button" data-speed="${k}" aria-pressed="${st.speed === k}">${k[0].toUpperCase() + k.slice(1)}</button>`).join('')}</span></div>
         <div class="setting"><span class="label">Study mode<div class="note">Show computers' cards and tickets</div></span><label class="switch"><input type="checkbox" id="s-study" ${st.study ? 'checked' : ''}><span></span></label></div>
+        <div class="sec">Rules</div>
+        <div class="setting"><span class="label">Longest route bonus<div class="note">Off is a common house rule. Nordic and USA 1910 never use it.</div></span><label class="switch"><input type="checkbox" id="s-longest" ${st.longest !== false ? 'checked' : ''}><span></span></label></div>
         <div class="sec">Table</div>
         <div class="setting"><span class="label">Ticket privacy <button class="q" data-help="privacy" aria-label="About ticket privacy">?</button></span><span class="seg" role="group"><button type="button" data-priv="mine" aria-pressed="${st.privacy === 'mine'}">Just mine</button><button type="button" data-priv="pass" aria-pressed="${st.privacy === 'pass'}">Pass the phone</button></span></div>
         <div class="sec">How strong are the computers? <button class="q" data-help="strength" aria-label="How strong">?</button></div>
         <div class="row"><span class="seg" role="group">${MAP_IDS.map(id => `<button type="button" data-sm="${id}" aria-pressed="${(Settings.sm || 'usa') === id}">${MAP_NAMES[id].split(' ')[0]}</button>`).join('')}</span></div>
         <div id="s-strength"></div>
         <div class="sec">About</div>
-        <p class="note">Maps: USA (Classic, 1910, Big Cities, Mega Game tickets), Europe, Nordic Countries, India. Board drawings are our own. Every route, ticket and rule is checked in <a href="https://github.com/TimothyHadfield/ticket-to-ride/blob/main/docs/rules-check.md" target="_blank" rel="noopener">rules-check</a>. Ticket to Ride is a Days of Wonder game; this is an unofficial fan tool.</p>
+        <p class="note">Maps: USA (Classic, 1910, Big Cities, Mega Game tickets), Europe, Nordic Countries, India, Switzerland. Board drawings are our own. Every route, ticket and rule is checked in <a href="https://github.com/TimothyHadfield/ticket-to-ride/blob/main/docs/rules-check.md" target="_blank" rel="noopener">rules-check</a>. Ticket to Ride is a Days of Wonder game; this is an unofficial fan tool.</p>
         <div class="row" style="margin-top:10px"><button class="btn small" id="s-reset">Clear saved games</button><span class="grow"></span><span class="small muted">v${VERSION}</span></div>`;
       Strength.note($('#s-strength'), Settings.sm || 'usa');
       panel.querySelectorAll('[data-speed]').forEach(b => b.onclick = () => { st.speed = b.dataset.speed; save(); Settings.show(); });
       panel.querySelectorAll('[data-priv]').forEach(b => b.onclick = () => { st.privacy = b.dataset.priv; save(); Settings.show(); });
       panel.querySelectorAll('[data-sm]').forEach(b => b.onclick = () => { Settings.sm = b.dataset.sm; Settings.show(); });
       $('#s-study').onchange = e => { st.study = e.target.checked; save(); };
+      $('#s-longest').onchange = e => { st.longest = e.target.checked; save(); };
       $('#s-reset').onclick = () => {
         const sh = openSheet(`<h2>Clear saved games?</h2><p class="note">The table game and the game against the computers are deleted.</p><div class="acts"><button class="btn" data-x>Cancel</button><button class="btn primary" data-ok>Clear</button></div>`);
         sh.querySelector('[data-x]').onclick = () => closeSheet();

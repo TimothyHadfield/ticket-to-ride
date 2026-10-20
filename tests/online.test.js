@@ -74,6 +74,33 @@ test('merge(public, mine) gives the same view the engine gives that seat', () =>
   assert.equal(map.id, 'europe');
 });
 
+test('a phone checks its own move on asState(its view) before sending it: no legal move is refused', () => {
+  const { asState } = require('../js/online-game.js');
+  const refused = {};
+  for (const mapId of ['usa', 'europe', 'nordic', 'india', 'switzerland']) {
+    let s = game.setup(2, { mapId }, rngFrom(21), [{ kind: 'human' }, { kind: 'human' }]);
+    let steps = 0;
+    while (!game.isOver(s) && steps++ < 3000) {
+      const seat = game.toAct(s)[0];
+      const v = merge(game.publicView(s), game.privateView(s, seat), seat);
+      const a = Object.assign(require('../js/ai.js').choose(v, seat, 'medium'), { seat });
+      try { T.apply(T.clone(asState(v)), Object.assign({}, a)); }
+      catch (e) { if (e.rule) { const k = mapId + ' ' + a.type + ': ' + e.message; refused[k] = (refused[k] || 0) + 1; } }
+      s = game.apply(JSON.parse(JSON.stringify(s)), seat, a);
+    }
+    assert.ok(game.isOver(s));
+  }
+  assert.deepEqual(refused, {});
+});
+
+test('the "no longest route" house rule reaches the online game', () => {
+  const seats = [{ kind: 'human' }, { kind: 'computer' }];
+  const off = game.setup(2, { mapId: 'usa', noLongest: true }, rngFrom(3), seats);
+  const on = game.setup(2, { mapId: 'usa' }, rngFrom(3), seats);
+  assert.equal(T.rules(off).longest, 0);
+  assert.equal(T.rules(on).longest, 10);
+});
+
 test('shared local room (js/online.js createLocal) plays a game to the end', async () => {
   const { createLocal } = await import('../js/online.js');
   const room = createLocal({ game, seats: ['computer', 'computer', 'computer'], options: { mapId: 'usa', deckId: 'classic', level: 'easy' }, botDelayMs: 0, rng: rngFrom(9) });

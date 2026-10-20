@@ -200,23 +200,8 @@
       return { keep: scored.slice(0, min).map(x => x.t), why: 'looked closest' };
     }
     const n = pend.length;
-    const base = plan(c, c.openT);
     let best = null;
-    if (!on(level, 'tickets')) {
-      const trains = c.me.trains;
-      for (let mask = 1; mask < (1 << n); mask++) {
-        const keep = pend.filter((_, i) => mask & (1 << i));
-        if (keep.length < min) continue;
-        const p = plan(c, c.openT.concat(keep));
-        let value = 0; for (const t of keep) value += tk[t].pts;
-        const over = Math.max(0, p.trains - trains * 0.75);
-        let score = value - p.failed.length * 30 - over * 3 - (p.trains - base.trains) * 0.5;
-        if (p.trains > trains) score -= 40;
-        if (!best || score > best.score) best = { score, keep };
-      }
-      return { keep: best.keep, why: 'good points for the trains' };
-    }
-    // hard: expected points — each ticket counts +pts if the plan finishes in time, -pts if not;
+    // medium and hard: expected points — each ticket counts +pts if the plan finishes in time, -pts if not;
     // the plan's routes score their own points; trains spent cost what they could earn elsewhere.
     const turns = c.turnsLeft;
     const P = HARD;

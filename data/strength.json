@@ -1,267 +1,323 @@
 {
   "date": "2026-10-20",
-  "gamesPerPairing": 2000,
+  "gamesPerPairing": 1000,
   "note": "winPct = share of games won by one seat of that level (ties split); fair share is 100 / players.",
   "maps": {
     "usa": {
       "easy-medium": {
         "players": 2,
-        "games": 2000,
+        "games": 1000,
         "winPct": {
-          "easy": 28.9,
-          "medium": 71.1
+          "easy": 25.1,
+          "medium": 75
         },
         "avgScore": {
-          "easy": 86.1,
-          "medium": 104.6
+          "easy": 86,
+          "medium": 108.8
         },
-        "avgTurns": 76.6
+        "avgTurns": 76.1
       },
       "medium-hard": {
         "players": 2,
-        "games": 2000,
+        "games": 1000,
         "winPct": {
-          "medium": 33.5,
-          "hard": 66.5
+          "medium": 39.4,
+          "hard": 60.6
         },
         "avgScore": {
-          "medium": 100.2,
-          "hard": 118.7
+          "medium": 106.8,
+          "hard": 116.3
         },
-        "avgTurns": 78.3
+        "avgTurns": 77.9
       },
       "easy-hard": {
         "players": 2,
-        "games": 2000,
+        "games": 1000,
         "winPct": {
-          "easy": 17.8,
-          "hard": 82.2
+          "easy": 16.3,
+          "hard": 83.7
         },
         "avgScore": {
-          "easy": 85.2,
-          "hard": 117.7
+          "easy": 84.9,
+          "hard": 118.7
         },
         "avgTurns": 75.6
       },
       "easy-medium-hard": {
         "players": 3,
-        "games": 2000,
+        "games": 1000,
         "winPct": {
           "easy": 7.3,
-          "medium": 29,
-          "hard": 63.7
+          "medium": 35.9,
+          "hard": 56.8
         },
         "avgScore": {
-          "easy": 79.3,
-          "medium": 92.7,
-          "hard": 112.3
+          "easy": 79.7,
+          "medium": 101.9,
+          "hard": 111.7
         },
-        "avgTurns": 110.2
+        "avgTurns": 109.7
       },
       "hard-medium-medium-easy": {
         "players": 4,
-        "games": 2000,
+        "games": 1000,
         "winPct": {
-          "easy": 3.6,
-          "medium": 19.7,
-          "hard": 56.9
+          "easy": 2.5,
+          "medium": 24.4,
+          "hard": 48.7
         },
         "avgScore": {
           "easy": 78.8,
-          "medium": 90.8,
-          "hard": 111.5
+          "medium": 99.9,
+          "hard": 110.8
         },
-        "avgTurns": 145.3
+        "avgTurns": 144.5
       }
     },
     "europe": {
       "easy-medium": {
         "players": 2,
-        "games": 2000,
+        "games": 1000,
         "winPct": {
-          "easy": 28.2,
-          "medium": 71.8
+          "easy": 16.1,
+          "medium": 83.9
         },
         "avgScore": {
-          "easy": 93.8,
-          "medium": 103.7
+          "easy": 92.7,
+          "medium": 114.7
         },
-        "avgTurns": 81.4
+        "avgTurns": 81.2
       },
       "medium-hard": {
         "players": 2,
-        "games": 2000,
+        "games": 1000,
         "winPct": {
-          "medium": 22.1,
-          "hard": 77.9
+          "medium": 28.5,
+          "hard": 71.5
         },
         "avgScore": {
-          "medium": 97,
-          "hard": 125.2
+          "medium": 108.8,
+          "hard": 124
         },
-        "avgTurns": 81.9
+        "avgTurns": 81.4
       },
       "easy-hard": {
         "players": 2,
-        "games": 2000,
+        "games": 1000,
         "winPct": {
-          "easy": 5,
-          "hard": 95
+          "easy": 4.2,
+          "hard": 95.8
         },
         "avgScore": {
-          "easy": 89.8,
-          "hard": 125.8
+          "easy": 90,
+          "hard": 125.9
         },
-        "avgTurns": 79.9
+        "avgTurns": 80.1
       },
       "easy-medium-hard": {
         "players": 3,
-        "games": 2000,
+        "games": 1000,
         "winPct": {
-          "easy": 4.8,
-          "medium": 18.8,
-          "hard": 76.4
+          "easy": 2.3,
+          "medium": 30,
+          "hard": 67.7
         },
         "avgScore": {
-          "easy": 88.2,
-          "medium": 83.1,
-          "hard": 119.1
+          "easy": 87.7,
+          "medium": 102,
+          "hard": 116.6
         },
-        "avgTurns": 118.6
+        "avgTurns": 118.1
       },
       "hard-medium-medium-easy": {
         "players": 4,
-        "games": 2000,
+        "games": 1000,
         "winPct": {
-          "easy": 3.7,
-          "medium": 16.4,
-          "hard": 63.4
+          "easy": 1.7,
+          "medium": 20.1,
+          "hard": 58
         },
         "avgScore": {
-          "easy": 88.1,
-          "medium": 81.3,
-          "hard": 115.9
+          "easy": 86.3,
+          "medium": 98.9,
+          "hard": 114.8
         },
-        "avgTurns": 155.9
+        "avgTurns": 155.1
       }
     },
     "nordic": {
       "easy-medium": {
         "players": 2,
-        "games": 2000,
+        "games": 1000,
         "winPct": {
-          "easy": 33.6,
-          "medium": 66.3
+          "easy": 19.2,
+          "medium": 80.8
         },
         "avgScore": {
-          "easy": 67.6,
-          "medium": 71.2
+          "easy": 75.9,
+          "medium": 97.8
         },
-        "avgTurns": 74
+        "avgTurns": 77.9
       },
       "medium-hard": {
         "players": 2,
-        "games": 2000,
+        "games": 1000,
         "winPct": {
-          "medium": 25,
-          "hard": 75
+          "medium": 40,
+          "hard": 60
         },
         "avgScore": {
-          "medium": 64.1,
-          "hard": 102.8
+          "medium": 91.8,
+          "hard": 100.7
         },
-        "avgTurns": 75.1
+        "avgTurns": 80.8
       },
       "easy-hard": {
         "players": 2,
-        "games": 2000,
+        "games": 1000,
         "winPct": {
-          "easy": 7.7,
-          "hard": 92.3
+          "easy": 14.3,
+          "hard": 85.7
         },
         "avgScore": {
-          "easy": 64.4,
-          "hard": 102.4
+          "easy": 75.5,
+          "hard": 103.3
         },
-        "avgTurns": 72.6
+        "avgTurns": 77.8
       },
       "easy-medium-hard": {
         "players": 3,
-        "games": 2000,
+        "games": 1000,
         "winPct": {
-          "easy": 3.2,
-          "medium": 29.4,
-          "hard": 67.4
+          "easy": 3.8,
+          "medium": 37.6,
+          "hard": 58.5
         },
         "avgScore": {
-          "easy": 62.6,
-          "medium": 62.4,
-          "hard": 95.6
+          "easy": 71.4,
+          "medium": 89.9,
+          "hard": 96
         },
-        "avgTurns": 106.3
+        "avgTurns": 113
       }
     },
     "india": {
       "easy-medium": {
         "players": 2,
-        "games": 2000,
+        "games": 1000,
         "winPct": {
-          "easy": 28.9,
-          "medium": 71.1
+          "easy": 10.7,
+          "medium": 89.3
         },
         "avgScore": {
-          "easy": 74.7,
-          "medium": 83.7
+          "easy": 77,
+          "medium": 101.9
         },
-        "avgTurns": 83.4
+        "avgTurns": 83.5
       },
       "medium-hard": {
         "players": 2,
-        "games": 2000,
+        "games": 1000,
         "winPct": {
-          "medium": 18.6,
-          "hard": 81.4
+          "medium": 31.5,
+          "hard": 68.5
         },
         "avgScore": {
-          "medium": 89.2,
-          "hard": 112.7
+          "medium": 101.3,
+          "hard": 114.7
         },
-        "avgTurns": 86.6
+        "avgTurns": 86.2
       },
       "easy-hard": {
         "players": 2,
-        "games": 2000,
+        "games": 1000,
         "winPct": {
-          "easy": 4.9,
-          "hard": 95.1
+          "easy": 4.1,
+          "hard": 95.9
         },
         "avgScore": {
-          "easy": 73.3,
-          "hard": 104.8
+          "easy": 75.2,
+          "hard": 111.4
         },
-        "avgTurns": 82
+        "avgTurns": 81.9
       },
       "easy-medium-hard": {
         "players": 3,
-        "games": 2000,
+        "games": 1000,
         "winPct": {
-          "easy": 4.6,
-          "medium": 13.1,
-          "hard": 82.3
+          "easy": 2.4,
+          "medium": 24.6,
+          "hard": 73
         },
         "avgScore": {
-          "easy": 72,
-          "medium": 74.2,
-          "hard": 102.4
+          "easy": 72.5,
+          "medium": 90.3,
+          "hard": 106.5
         },
-        "avgTurns": 122.8
+        "avgTurns": 122.6
+      }
+    },
+    "switzerland": {
+      "easy-medium": {
+        "players": 2,
+        "games": 1000,
+        "winPct": {
+          "easy": 31.3,
+          "medium": 68.7
+        },
+        "avgScore": {
+          "easy": 74.6,
+          "medium": 88.4
+        },
+        "avgTurns": 81.5
+      },
+      "medium-hard": {
+        "players": 2,
+        "games": 1000,
+        "winPct": {
+          "medium": 35,
+          "hard": 65
+        },
+        "avgScore": {
+          "medium": 88.7,
+          "hard": 101.7
+        },
+        "avgTurns": 86.8
+      },
+      "easy-hard": {
+        "players": 2,
+        "games": 1000,
+        "winPct": {
+          "easy": 22.1,
+          "hard": 77.8
+        },
+        "avgScore": {
+          "easy": 72.9,
+          "hard": 96.5
+        },
+        "avgTurns": 80.8
+      },
+      "easy-medium-hard": {
+        "players": 3,
+        "games": 1000,
+        "winPct": {
+          "easy": 15.6,
+          "medium": 31.4,
+          "hard": 53
+        },
+        "avgScore": {
+          "easy": 69.9,
+          "medium": 79.1,
+          "hard": 88.5
+        },
+        "avgTurns": 118.9
       }
     }
   },
   "speed": {
-    "games": 36000,
-    "seconds": 637.3,
-    "gamesPerSecond": 56.5,
+    "games": 22000,
+    "seconds": 732.5,
+    "gamesPerSecond": 30,
     "threads": 11
   }
 }

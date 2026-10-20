@@ -16,7 +16,7 @@
       if (!map) throw new Error('map not loaded: ' + options.mapId);
       if (n < map.players[0] || n > map.players[1]) throw new Error(map.name + ' takes ' + map.players.join('–') + ' players');
       return T.newGame(map, {
-        seed: Math.floor(rng() * 2147483647) + 1, deckId: options.deckId,
+        seed: Math.floor(rng() * 2147483647) + 1, deckId: options.deckId, options: { noLongest: !!options.noLongest },
         seats: seats.map((x, i) => ({ name: x.name || (x.kind === 'computer' ? 'Computer ' + (i + 1) : 'Player ' + (i + 1)), kind: x.kind === 'computer' ? 'cpu' : 'human', level: x.kind === 'computer' ? (options.level || 'medium') : null })),
       });
     },
@@ -53,6 +53,16 @@
     return v;
   }
 
-  const api = { game, merge };
+  // a seat's view as a full state for the screen and for checking a move before it is sent:
+  // hidden decks become stand-in cards of the right size (only their lengths are shown)
+  function asState(v) {
+    const s = JSON.parse(JSON.stringify(v));
+    const fill = (n, x) => typeof n === 'number' ? Array(n).fill(x) : n;
+    s.trainDeck = fill(s.trainDeck, T.COLORS[0]); s.ticketDeck = fill(s.ticketDeck, 0); s.longDeck = fill(s.longDeck, 0);
+    s.players.forEach(q => { if (q.hand == null) q.hand = T.emptyHand(); if (q.tickets == null) q.tickets = Array(q.ticketCount || 0).fill(null); });
+    return s;
+  }
+
+  const api = { game, merge, asState };
   if (isNode) module.exports = api; else root.TTROnlineGame = api;
 })(typeof window !== 'undefined' ? window : globalThis);
