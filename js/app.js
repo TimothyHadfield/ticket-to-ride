@@ -3,7 +3,7 @@
 (function () {
   'use strict';
   const T = window.TTR, G = window.TTRGraph, AI = window.TTRAI, O = window.TTROdds, B = window.Board;
-  const VERSION = '1.3';
+  const VERSION = '1.4';
   const MAP_IDS = ['usa', 'europe', 'nordic', 'india', 'switzerland'];
   const MAP_NAMES = { usa: 'USA', europe: 'Europe', nordic: 'Nordic Countries', india: 'India', switzerland: 'Switzerland' };
   const LEVELS = ['easy', 'medium', 'hard'];
@@ -23,7 +23,7 @@
     try { d = JSON.parse(localStorage.getItem(KEY)); } catch (e) { d = null; }
     d = d && typeof d === 'object' ? d : {};
     d.tab = d.tab || 'table';
-    d.settings = Object.assign({ speed: 'normal', study: false, longest: true, privacy: 'mine', labMap: 'usa', labDeck: null }, d.settings || {});
+    d.settings = Object.assign({ speed: 'normal', study: false, longest: true, privacy: 'mine', labMap: 'usa', labDeck: null, cb: false }, d.settings || {});
     d.table = d.table || null;
     d.play = d.play || null;
     d.lab = Object.assign({ mode: 'path', a: null, b: null, blocked: [], sort: 'ppt' }, d.lab || {});
@@ -53,8 +53,8 @@
     P.forEach((t, i) => { if (t !== d[i]) t.orig = d[i]; });
     return P;
   }
-  // the cards a payment uses, as coloured pips
-  const payLabel = o => Object.entries(T.cardsOf(o)).map(([c, k]) => `<span class="pip" style="background:${B.COLOR[c]}"></span>${k} ${c === 'loco' ? 'locomotive' + (k > 1 ? 's' : '') : c}`).join(' + ');
+  // the cards a payment uses, drawn as small cards (a little pile when there are two or more)
+  const payLabel = o => Object.entries(T.cardsOf(o)).map(([c, k]) => `<span class="mini${k > 1 ? ' pile' : ''}">${window.Cards.svg(c)}</span>${k} ${c === 'loco' ? 'locomotive' + (k > 1 ? 's' : '') : c}`).join(' + ') + '<span class="go" aria-hidden="true">›</span>';
 
   // ---------------------------------------------------------------- shell: tabs, sheets, toasts
   const TABS = [['table', 'Table', 'i-table'], ['play', 'Play', 'i-play'], ['lab', 'Lab', 'i-lab'], ['settings', 'Settings', 'i-gear']];
@@ -168,7 +168,7 @@
     return `<select name="${name}">${map.ticketDecks.map(d => `<option value="${d.id}"${d.id === value ? ' selected' : ''}>${esc(d.name)}</option>`).join('')}</select>`;
   }
   function cardHTML(color, n, cls) {
-    return `<div class="tcard ${cls || ''}${n === 0 ? ' zero' : ''}" data-color="${color}" title="${color === 'loco' ? 'Locomotive' : color}">${window.Cards.svg(color)}${n != null ? `<span class="n">${n}</span>` : ''}</div>`;
+    return `<div class="tcard ${cls || ''}${n === 0 ? ' zero' : ''}${n > 1 ? ' pile' : ''}" data-color="${color}" title="${color === 'loco' ? 'Locomotive' : color}">${window.Cards.svg(color)}${n != null ? `<span class="n">${n}</span>` : ''}</div>`;
   }
   function chip(seat, name, score, meta, on, turn) {
     return `<button type="button" class="pchip${on ? ' on' : ''}${turn ? ' turn' : ''}" data-seat="${seat}"><span class="nm"><i style="background:${B.PLAYER[seat]}"></i>${esc(name)}</span><span class="sc">${score}</span><span class="mt">${meta}</span></button>`;
@@ -503,7 +503,7 @@
         <div class="sec" style="margin-top:10px">Cards</div>
         <div class="market">${market}
           <button type="button" class="tdeck" id="p-deck" ${legal.includes('draw') ? '' : 'disabled'}><b>${s.trainDeck.length}</b>deck</button>
-          <button type="button" class="tdeck" id="p-tix" ${legal.includes('drawTickets') ? '' : 'disabled'}><b>${s.ticketDeck.length}</b>tickets</button></div>
+          <button type="button" class="tdeck tix" id="p-tix" ${legal.includes('drawTickets') ? '' : 'disabled'}><b>${s.ticketDeck.length}</b>tickets</button></div>
         <div class="sec">My hand · ${pl.trains} trains${map.stations ? ' · ' + pl.stations + ' stations' : ''}</div>
         <div class="hand">${hand}</div>
         ${map.stations && myTurn && !s.drew && pl.stations > 0 ? `<div class="row" style="margin-top:8px"><button class="btn small${Play.stationMode ? ' warm' : ''}" id="p-station">${Play.stationMode ? 'Cancel station' : 'Build a station (' + T.stationCost(s, me) + ' cards)'}</button><button class="q" data-help="stations" aria-label="About stations">?</button></div>` : ''}
@@ -1107,6 +1107,7 @@
         <div class="sec">Play</div>
         <div class="setting"><span class="label">Computer speed</span><span class="seg" role="group">${['slow', 'normal', 'fast'].map(k => `<button type="button" data-speed="${k}" aria-pressed="${st.speed === k}">${k[0].toUpperCase() + k.slice(1)}</button>`).join('')}</span></div>
         <div class="setting"><span class="label">Study mode<div class="note">Show computers' cards and tickets</div></span><label class="switch"><input type="checkbox" id="s-study" ${st.study ? 'checked' : ''}><span></span></label></div>
+        <div class="setting"><span class="label">Colour-blind marks<div class="note">A shape for each colour on cards and map spaces</div></span><label class="switch"><input type="checkbox" id="s-cb" ${st.cb ? 'checked' : ''}><span></span></label></div>
         <div class="sec">Rules</div>
         <div class="setting"><span class="label">Longest route bonus<div class="note">Off is a common house rule. Nordic and USA 1910 never use it.</div></span><label class="switch"><input type="checkbox" id="s-longest" ${st.longest !== false ? 'checked' : ''}><span></span></label></div>
         <div class="sec">Table</div>
@@ -1122,6 +1123,7 @@
       panel.querySelectorAll('[data-priv]').forEach(b => b.onclick = () => { st.privacy = b.dataset.priv; save(); Settings.show(); });
       panel.querySelectorAll('[data-sm]').forEach(b => b.onclick = () => { Settings.sm = b.dataset.sm; Settings.show(); });
       $('#s-study').onchange = e => { st.study = e.target.checked; save(); };
+      $('#s-cb').onchange = e => { st.cb = e.target.checked; save(); applyCb(); };
       $('#s-longest').onchange = e => { st.longest = e.target.checked; save(); };
       $('#s-reset').onclick = () => {
         const sh = openSheet(`<h2>Clear saved games?</h2><p class="note">The table game and the game against the computers are deleted.</p><div class="acts"><button class="btn" data-x>Cancel</button><button class="btn primary" data-ok>Clear</button></div>`);
@@ -1134,6 +1136,8 @@
   const VIEWS = { table: Table, play: Play, lab: Lab, settings: Settings };
 
   // ---------------------------------------------------------------- boot
+  function applyCb() { B.cbMarks = !!S.settings.cb; document.body.classList.toggle('cb', B.cbMarks); }
+  applyCb();
   buildTabs();
   const start = (location.hash || '').slice(1);
   history.replaceState({ tab: TABS.some(t => t[0] === start) ? start : S.tab }, '', location.hash || '#' + S.tab);

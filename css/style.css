@@ -11,9 +11,9 @@
   --accent-warm: #f0b354;
   --good: #6ee7a8;
   --bad: #f08c8c;
-  --land: #1b2130;
-  --land-edge: #252d40;
-  --sea: #0f1117;
+  --land: #252d3f;
+  --land-edge: #3a4660;
+  --sea: #0b1019;
   --radius: 12px;
   --tab-h: 58px;
   --head-h: 48px;
@@ -67,17 +67,21 @@ main { min-height: 0; position: relative; }
 .view.active { display: flex; }
 
 /* board on top, panel in the leftover space */
-.board-wrap { position: relative; flex: none; background: var(--sea); overflow: hidden; touch-action: none; }
+.board-wrap { position: relative; flex: none; background: radial-gradient(120% 90% at 50% 45%, #111a29, var(--sea) 70%); overflow: hidden; touch-action: none; }
 .board-wrap svg.board { width: 100%; height: 100%; display: block; user-select: none; -webkit-user-select: none; }
 .panel { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 10px 12px 14px; border-top: 1px solid var(--line); }
-.zoom { position: absolute; right: 6px; bottom: 6px; display: flex; flex-direction: column; gap: 4px; }
-.zoom button {
-  width: 30px; height: 30px; border-radius: 9px; border: 1px solid rgba(42,48,66,.8);
-  background: rgba(15,17,23,.62); color: var(--muted); font-size: 17px; line-height: 1;
-  display: grid; place-items: center; -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px);
-  transition: transform .08s, color .12s;
+.zoom {
+  position: absolute; right: 6px; bottom: 6px; display: flex; flex-direction: column;
+  border-radius: 11px; border: 1px solid var(--line); background: rgba(22,25,35,.92); overflow: hidden;
+  box-shadow: 0 4px 14px rgba(0,0,0,.4);
 }
-.zoom button:active { transform: scale(.9); color: var(--text); }
+.zoom button {
+  width: 40px; height: 38px; border: 0; background: none; color: var(--text); font-size: 19px; line-height: 1;
+  display: grid; place-items: center; transition: transform .08s, background .12s;
+}
+.zoom button + button { border-top: 1px solid var(--line); }
+.zoom button:hover { background: var(--card-hover); }
+.zoom button:active { transform: scale(.9); background: var(--card-hover); }
 .board-tip {
   position: absolute; left: 8px; top: 8px; right: 52px; pointer-events: none;
   font-size: 12.5px; color: var(--text); text-shadow: 0 1px 2px #000;
@@ -98,34 +102,51 @@ main { min-height: 0; position: relative; }
 
 /* ------------------------------------------------------------------ board svg */
 .land { fill: var(--land); }
-.city circle.dot { fill: #f4efe4; stroke: #0f1117; stroke-width: 2.5; }
+.city circle.dot { fill: #f4efe4; stroke: #0b0d12; stroke-width: 2.5; }
 .city circle.ring { fill: none; stroke: #f4efe4; stroke-width: 1.5; opacity: .55; }
 .city text {
-  font: 650 var(--lf, 15px) system-ui, -apple-system, sans-serif; fill: #f4efe4; paint-order: stroke; stroke: #0f1117;
-  stroke-width: 4.5px; stroke-linejoin: round; pointer-events: none; letter-spacing: .01em;
+  font: 650 var(--lf, 15px) system-ui, -apple-system, sans-serif; fill: #f4efe4; paint-order: stroke; stroke: #0b0d12;
+  stroke-width: calc(var(--lf, 15px) * .36); stroke-linejoin: round; pointer-events: none; letter-spacing: .01em;
 }
-.city rect.dot { fill: #f4efe4; stroke: #0f1117; stroke-width: 2.5; }
+.city rect.dot { fill: #f4efe4; stroke: #0b0d12; stroke-width: 2.5; }
 .city[data-border] rect.dot { fill: #c1563f; stroke: #f4efe4; stroke-width: 1.6; }
 .city.sel .dot { fill: var(--accent-warm); }
 .city.end .dot { fill: var(--accent); }
-.car { stroke: rgba(10,12,18,.85); stroke-width: 1.4; }
-.car.blk { stroke: #7d8499; stroke-width: 1.3; } /* black spaces would vanish on the dark land */
-.car.tunnel { stroke: #0f1117; stroke-dasharray: 3 2; stroke-width: 2.2; }
-.car.blk.tunnel { stroke: #7d8499; }
-.heat .car.blk { stroke: rgba(10,12,18,.85); } /* Busy routes colours every space, so no outline */
-.loco-mark { fill: none; stroke: #0f1117; stroke-width: 1.6; }
-.route.claimed .car { stroke: #0b0d12; stroke-width: 1.8; stroke-dasharray: none; }
-.route.claimed[data-own="4"] .car { stroke: #c9ced8; }
+/* track bed under each city pair (both tracks of a double route share one); ferries cross on a sea-blue band */
+.bed { stroke: rgba(6,8,13,.5); stroke-linecap: round; fill: none; }
+.bed.ferry { stroke: rgba(80,150,240,.34); stroke-dasharray: 1.5 3.5; }
+/* open spaces: flat coloured tiles */
+.car { stroke: rgba(8,10,15,.9); stroke-width: 1.3; }
+.car.blk { stroke: #a3abbe; stroke-width: 1.4; } /* black spaces would vanish on the dark land */
+.car.tunnel { stroke: #0b0d12; stroke-width: 1.8; }
+.car.blk.tunnel { stroke: #a3abbe; }
+/* tunnels: rail ties sticking out on both sides */
+.ties { stroke: #e9e4d6; stroke-dasharray: 1.7 2.5; opacity: .85; fill: none; }
+.heat .car.blk { stroke: rgba(8,10,15,.9); } /* Busy routes colours every space, so no outline */
+.loco-mark { fill: #f4efe4; stroke: #0b0d12; stroke-width: 1.3; }
+.cbm { fill: rgba(8,10,15,.78); display: none; pointer-events: none; }
+svg.cb .cbm { display: inline; }
+svg.cb.heat .route:not(.claimed) .cbm { display: none; }
+.route.claimed[data-own="4"] .cbm, .route:not(.claimed) .car.blk + .cbm { fill: rgba(244,239,228,.85); }
+/* claimed: a train sitting on the board (fat cars on a dark casing, shine on top) */
+.casing { stroke: #06080c; stroke-linecap: round; display: none; }
+.route.claimed .casing { display: inline; }
+.route.claimed .ties { display: none; }
+.route.claimed .car { stroke: rgba(0,0,0,.55); stroke-width: 1; stroke-dasharray: none; }
+.route.claimed[data-own="4"] .car { stroke: #b9c0ce; stroke-width: 1.2; }
 .route.claimed .loco-mark { display: none; }
-.route:not(.claimed) .train-mark { display: none; }
+.shine { fill: #fff; opacity: .34; pointer-events: none; display: none; }
+.route.claimed .shine { display: inline; }
+.route.claimed[data-own="4"] .shine { opacity: .2; }
 .route.dim { opacity: .4; }
 .route.hl .car { stroke: var(--accent-warm); stroke-width: 2.6; animation: ttr-pop .55s cubic-bezier(.3,.7,.2,1); transform-box: fill-box; transform-origin: center; }
 @keyframes ttr-pop { from { transform: scale(1.6); opacity: .3; } to { transform: none; opacity: 1; } }
 .route.path .car { stroke: #fff; stroke-width: 2.4; filter: drop-shadow(0 0 4px rgba(240,179,84,.9)); }
 .route.blocked .car { opacity: .35; }
-.route.sel .car { stroke: var(--accent); stroke-width: 3.2; filter: drop-shadow(0 0 5px rgba(110,168,254,.95)); }
-.train-mark { fill: rgba(255,255,255,.4); pointer-events: none; }
-.station { stroke: #0f1117; stroke-width: 1.5; }
+.route.sel .car { stroke: #fff; stroke-width: 3.2; filter: drop-shadow(0 0 2px #fff) drop-shadow(0 0 7px rgba(110,168,254,1)); animation: ttr-sel .8s ease-in-out infinite alternate; }
+@keyframes ttr-sel { from { stroke: #fff; } to { stroke: var(--accent); } }
+.route.sel .ties { opacity: 1; }
+.station { stroke: #0b0d12; stroke-width: 1.5; }
 
 /* ------------------------------------------------------------------ widgets */
 .btn {
@@ -222,16 +243,27 @@ select option { background: var(--card); color: var(--text); }
 .chance { font-weight: 700; }
 
 /* cards */
-.hand { display: grid; grid-template-columns: repeat(9, 1fr); gap: 4px; }
+.hand { display: grid; grid-template-columns: repeat(9, 1fr); gap: 5px; padding-top: 3px; }
+/* a train card: a printed face inside a cream card edge, with a soft shadow */
 .tcard {
-  position: relative; aspect-ratio: 5 / 7.4; border-radius: 7px; border: 1.5px solid rgba(255,255,255,.18);
-  display: flex; align-items: flex-end; justify-content: center; padding-bottom: 3px; overflow: hidden;
-  font-weight: 800; font-size: 14px; color: #0f1117; box-shadow: 0 2px 6px rgba(0,0,0,.35);
+  position: relative; aspect-ratio: 5 / 7.4; border-radius: 7px; border: 2px solid #ece6d8;
+  display: block; overflow: hidden; padding: 0;
+  font-weight: 800; font-size: 14px; color: #0f1117;
+  box-shadow: inset 0 0 0 1px rgba(0,0,0,.28), 0 2px 5px rgba(0,0,0,.5);
   transition: transform .18s ease, opacity .18s;
 }
 .tcard svg { position: absolute; inset: 0; width: 100%; height: 100%; }
-.tcard .n { position: relative; background: rgba(255,255,255,.88); border-radius: 6px; padding: 0 5px; min-width: 20px; text-align: center; line-height: 18px; font-size: 13px; }
-.tcard.zero { opacity: .25; }
+/* how many: a corner badge, so the drawing stays visible */
+.tcard .n {
+  position: absolute; left: 2px; top: 2px; background: rgba(12,14,20,.86); color: #fff; border-radius: 5px;
+  min-width: 17px; padding: 0 4px; text-align: center; line-height: 17px; font-size: 12.5px; font-variant-numeric: tabular-nums;
+}
+/* two or more: the card edge of a second card peeks out behind, like a little pile */
+.tcard.pile { box-shadow: inset 0 0 0 1px rgba(0,0,0,.28), 2.5px -2.5px 0 -.5px #bfb8a8, 0 2px 5px rgba(0,0,0,.5); overflow: visible; }
+.tcard.pile svg { border-radius: 5px; }
+.tcard.zero { opacity: .22; border-color: #6b6f7c; box-shadow: none; }
+.tcard .cbm { display: none; }
+body.cb .tcard .cbm { display: inline; }
 .tcard.face { cursor: pointer; }
 .tcard.face:active { transform: scale(.94); }
 .tcard.deck { background: linear-gradient(160deg, #2c3550, #1a1e2b); color: var(--text); }
@@ -239,16 +271,23 @@ select option { background: var(--card); color: var(--text); }
 .market { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; align-items: end; }
 .market .tcard { font-size: 11px; }
 .tdeck {
-  aspect-ratio: 5 / 7.4; border-radius: 7px; border: 1.5px solid #34405e; color: var(--muted);
-  background: repeating-linear-gradient(135deg, rgba(110,168,254,.07) 0 6px, transparent 6px 12px), linear-gradient(160deg, #26304a, #181c28);
+  aspect-ratio: 5 / 7.4; border-radius: 7px; border: 2px solid #ece6d8; color: #c9cfdd;
+  background: radial-gradient(circle at 50% 42%, rgba(110,168,254,.28) 0 22%, transparent 23%),
+    repeating-linear-gradient(135deg, rgba(110,168,254,.12) 0 4px, transparent 4px 8px), linear-gradient(160deg, #2b3a62, #1a2138);
   display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; gap: 0; padding: 2px;
-  box-shadow: 0 2px 6px rgba(0,0,0,.35); transition: transform .08s, border-color .12s;
+  /* a face-down pile: two more card edges behind */
+  box-shadow: inset 0 0 0 1px rgba(0,0,0,.3), 2px -2px 0 -.5px #bfb8a8, 4px -4px 0 -1px #8f8a7f, 0 3px 6px rgba(0,0,0,.5);
+  transition: transform .08s, border-color .12s;
 }
-button.tdeck:not(:disabled):hover { border-color: var(--accent); }
+.tdeck.tix {
+  background: radial-gradient(circle at 50% 42%, rgba(240,179,84,.3) 0 22%, transparent 23%),
+    repeating-linear-gradient(135deg, rgba(240,179,84,.13) 0 4px, transparent 4px 8px), linear-gradient(160deg, #4a3a22, #2a2114);
+}
+button.tdeck:not(:disabled):hover { border-color: #fff; }
 button.tdeck:not(:disabled):active { transform: scale(.94); }
 button.tdeck:disabled { opacity: .45; cursor: not-allowed; }
 div.tdeck { background: var(--bg-soft); border-style: dashed; border-color: var(--line); box-shadow: none; }
-.tdeck b { font-size: 16px; color: var(--text); line-height: 1.15; font-variant-numeric: tabular-nums; }
+.tdeck b { font-size: 16px; color: #fff; line-height: 1.15; font-variant-numeric: tabular-nums; text-shadow: 0 1px 2px rgba(0,0,0,.6); }
 /* phone: shorter cards (the drawing is cropped, not squashed) so the hand and tickets fit under the map */
 @media (max-width: 899px) {
   .tcard, .tdeck { aspect-ratio: 5 / 5.6; }
@@ -279,15 +318,25 @@ div.tdeck { background: var(--bg-soft); border-style: dashed; border-color: var(
 .sheet .acts .btn { flex: 1; }
 @media (min-width: 900px) {
   /* laptop: the sheet sits over the side panel, so the map (and the route being claimed) stays in view */
-  .sheet { left: auto; right: 10px; bottom: auto; top: 50%; width: 400px; border-radius: 16px; border: 1px solid var(--line);
-    transform: translate(0, -46%); opacity: 0; transition: transform .2s, opacity .2s; box-shadow: 0 18px 50px rgba(0,0,0,.5); }
-  .sheet.show { transform: translate(0, -50%); opacity: 1; }
-  body[data-view="settings"] .sheet { right: calc(50% - 200px); } /* no map there: centre it */
+  /* ...low in the panel, so the cards you pay with stay in view above it */
+  .sheet { left: auto; right: 10px; bottom: 12px; top: auto; width: 400px; border-radius: 16px; border: 1px solid var(--line);
+    transform: translate(0, 14px); opacity: 0; transition: transform .2s, opacity .2s; box-shadow: 0 18px 50px rgba(0,0,0,.5); }
+  .sheet.show { transform: none; opacity: 1; }
+  body[data-view="settings"] .sheet { right: calc(50% - 200px); bottom: auto; top: 50%; transform: translate(0, -46%); } /* no map there: centre it */
+  body[data-view="settings"] .sheet.show { transform: translate(0, -50%); }
 }
 .paylist { display: flex; flex-direction: column; gap: 6px; margin-top: 10px; }
 .payopt { display: flex; align-items: center; gap: 8px; padding: 8px 10px; background: var(--bg-soft); border: 1px solid var(--line); border-radius: 10px; text-align: left; }
 .payopt:hover { border-color: var(--accent); }
+.payopt:active { transform: scale(.98); }
 .pip { width: 16px; height: 22px; border-radius: 4px; border: 1px solid rgba(255,255,255,.25); display: inline-block; flex: none; }
+/* claim sheet: each way to pay shows the actual cards */
+.payopt { min-height: 48px; font-size: 15px; font-weight: 600; }
+.payopt .mini { position: relative; width: 24px; height: 34px; border-radius: 4px; border: 1.5px solid #ece6d8; overflow: hidden; flex: none; box-shadow: 0 1px 3px rgba(0,0,0,.5); }
+.payopt .mini svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.payopt .mini.pile { box-shadow: 2px -2px 0 -.5px #bfb8a8, 0 1px 3px rgba(0,0,0,.5); overflow: visible; }
+.payopt .mini.pile svg { border-radius: 3px; }
+.payopt .go { margin-left: auto; color: var(--accent); font-size: 20px; line-height: 1; }
 
 /* scores table */
 table.scores { width: 100%; border-collapse: collapse; font-size: 13.5px; font-variant-numeric: tabular-nums; }

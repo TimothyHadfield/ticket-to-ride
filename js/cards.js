@@ -24,6 +24,8 @@
     const [a, b] = FILL[color] || FILL.loco;
     const ink = INK[color] || '#ffffff';
     const id = 'g' + color;
+    // Settings: colour-blind marks, the same small shape as on the map's spaces of this colour
+    const cb = root.Board && root.Board.CB ? root.Board.CB[color] : null;
     const stripe = color === 'loco'
       ? '<g opacity=".55"><rect x="0" y="0" width="50" height="4" fill="#e2504c"/><rect x="0" y="4" width="50" height="4" fill="#f2cf45"/><rect x="0" y="8" width="50" height="4" fill="#4fbf6a"/><rect x="0" y="12" width="50" height="4" fill="#4f8ff0"/></g>'
       : '';
@@ -36,6 +38,7 @@ ${BODY[color] || BODY.loco}
 <circle cx="13" cy="24" r="3.2"/><circle cx="37" cy="24" r="3.2"/>
 </g>
 <path d="M4 50h42" stroke="${ink}" stroke-opacity=".35" stroke-width="1.2"/>
+${cb ? `<g class="cbm" transform="translate(42,17)"><circle r="4.6" fill="#f4efe4" fill-opacity=".92"/><path d="${cb}" fill="#0b0d12" transform="scale(1.15)"/></g>` : ''}
 </svg>`;
   }
 
