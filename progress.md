@@ -1,7 +1,7 @@
 # Ticket to Ride — progress
 
 ## START HERE
-Read order: this file → `CLAUDE.md` → `docs/rules-check.md` → `docs/ideas.md`. Last updated: 2026-10-20 (auto zoom).
+Read order: this file → `CLAUDE.md` → `docs/rules-check.md` → `docs/ideas.md`. Last updated: 2026-10-20 (sounds & effects).
 
 ## Goal right now
 Tim: "Ticket to Ride and all the variants is something that I think is great". Phase 2 (his words): "build regular play online with a computer or other online players for all the games and their common varients that match exactly the play of the in-person game ... Make sure to get everything right like rules and artwork and specific numbers of cards, routes, details, etc."
@@ -32,10 +32,13 @@ Measured computer strength (data/strength.json, 1000 games per pairing, 2 player
 - "Phone layout: the map fills the screen, controls in the leftover space."
 - $0, no copyrighted art or rules text, choices live in Settings, short labels, "?" explains why.
 - "some games have maps and whatnot you can zoom in and out of often. Make it so that there is only an auto zoom that automatically fits the whole board in sight and then you can zoom if you want with easily reseting back to auto mode." (2026-10-20, same in Risk/Pandemic/Carcassonne): auto is the default on load, new game, map change, tab return and rotation; no other zoom modes or saved zoom.
+- "add opptional sounds you can add to the games that reflect what's happening in the game accurately as well as win celebrations, and other fun annimations to go along with everything. Just make sure everything is customizable in the settings so the user can play as preffered." (2026-10-20, all games)
 - "the map of the US in TTR looks nothing like the US. Fix this and any other similar problems accross the games" (2026-10-20): every board must read as the real place at a glance; land clearly stands out from sea and lakes.
 
 ## Traps
-- `js/online.js` is a verbatim copy of `../_online/online.js`. Don't edit it here.
+- `js/online.js` is a verbatim copy of `../_online/online.js`. Don't edit it here. Same for `js/fx.js` (copy of `../_fx/fx.js`); game-specific sound logic lives in `js/sfx.js`.
+- fx.js's switch colour beats the game's (same specificity, injected later): style.css re-sets `.fx-set .switch` to the app's blue. FX.celebrate plays its fanfare internally, so a spy on FX.play doesn't see it (tests count `FX.stats.plays`).
+- Settings: fx's Normal/Fast buttons also use `data-speed`; `FX.renderSettings` must run after the computer-speed buttons are wired.
 - Views hold deck **sizes** (numbers); `T.legal()` wants arrays. ai.js wraps this (`legalIn`). The online screen uses `TTROnlineGame.asState(view)`, which fills hidden decks with stand-in cards. Null fillers made the pre-send check refuse every deck draw, which stalled online games (fixed, with a test).
 - Medium used to pick tickets by raw points, which made it no better than Easy on Switzerland. It now uses the same expected-points ticket choice as Hard.
 - phone-view takes its screenshot before `--eval`. For after-eval screenshots use a Playwright script.
@@ -74,7 +77,14 @@ Measured computer strength (data/strength.json, 1000 games per pairing, 2 player
 - board.js: one mode. **Auto** = whole board (routes + names at the size they're drawn + 6 px margin) centred and as big as fits, 48 px kept clear on the right for the buttons; re-fits with a glide when the board area resizes; one-finger drag does nothing in auto. Pinch / wheel / + zoom by hand (max 6× the fit); drag pans clamped to the board; zooming out to the fit, the ⤢ button (dimmed in auto, lit warm when zoomed) or a double tap on empty board = back to auto. Rotation, tab show, map change and Start reset to auto (app.js `makeBoard` / start handlers call `toAuto`). Unused `focus()` removed.
 - Check: `node tools/zoom-check.mjs [url]` (Playwright WebKit from ~/.claude/tools; serve the folder first) — 201 checks over 5 maps × 393×659 / 659×393 / 1280×800; old build failed 51. Screenshots scratchpad `design/ticket-to-ride-zoom/before|after` (session acb6c2a0).
 
+## Sounds & effects (2026-10-20)
+- `js/fx.js` (shared, unchanged copy) + `js/sfx.js`: `diff(prev, next, me, map)` turns any two states into events (local move, computer move, online snapshot alike), `fire()` plays them paced with animations. Settings → "Sound & effects" (FX.renderSettings). v1.7, cache ?v=8.
+- Event → sound map: train card drawn (deck or face-up, anyone) = `cardDeal` + card flies to your hand slot / rival's chip · route claimed = one wood `place` clack per car (75 ms apart, cars drop in one by one) + `train` whistle for 5+ · tunnel = 3 `cardFlip` · tickets drawn = `cardSlide` (rival: ticket pile flies to chip) · tickets kept = `cardFlip` · station = `place` (low) · three locos flushed = `shuffle` · new game = `shuffle` · your ticket finished = `ding` + "+N" float · last round = `alarm` + warm flash · becomes your turn = `turn` chime + flash · refused move = `error` · Table: claim as above, remove/undo = `slide`, tickets added = `cardSlide`. Rivals/computers same sounds at 0.75 volume.
+- Game over: `drumroll` while Totals count up, longest-route bonus = 'big' sparkle at your Longest cell, then win (confetti in winner's colour) / lose. Table final: count-up; confetti for the winner only with "Pass the phone".
+- Verified: `tests/fx.test.js` (5 tests, failed first on the old build) + 85/85 suite; Playwright WebKit run (scratchpad `fx-check.mjs`, session acb6c2a0): no console errors, no overflow, no page scroll, Animations off = 0 overlays and no canvas. Screenshots scratchpad `design/ticket-to-ride-fx/`.
+
 ## NOT verified
+- Sounds by ear (Playwright WebKit on Windows has no Web Audio; sound gating measured in node with a fake AudioContext). Car-by-car clack seen only as running animations, not caught mid-drop in a screenshot. Online sounds from snapshots tested in node only (view diffs = local diffs), not with two phones.
 - Auto zoom with real fingers on an iPhone (synthetic pointer events only); route-tap sweep (477/478) not re-run after the auto fit got slightly bigger.
 - Real maps on a real iPhone screen (land/sea contrast judged in headless WebKit screenshots only); Tim's eye on the new land/sea colours.
 - Design pass 2 on a real iPhone: the flick/pinch feel was measured with synthetic pointer events in WebKit, not real fingers.

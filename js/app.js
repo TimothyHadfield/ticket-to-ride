@@ -3,7 +3,8 @@
 (function () {
   'use strict';
   const T = window.TTR, G = window.TTRGraph, AI = window.TTRAI, O = window.TTROdds, B = window.Board;
-  const VERSION = '1.6';
+  const FX = window.FX, SFX = window.TTRSfx; // sounds + animations (js/fx.js is the shared library, js/sfx.js maps game events to it)
+  const VERSION = '1.7';
   const MAP_IDS = ['usa', 'europe', 'nordic', 'india', 'switzerland'];
   const MAP_NAMES = { usa: 'USA', europe: 'Europe', nordic: 'Nordic Countries', india: 'India', switzerland: 'Switzerland' };
   const LEVELS = ['easy', 'medium', 'hard'];
@@ -108,6 +109,26 @@
     if (undo) t.querySelector('button').onclick = () => { undo(); t.classList.remove('show'); };
     requestAnimationFrame(() => t.classList.add('show'));
     clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('show'), undo ? 4500 : 2600);
+  }
+  // a move the rules refuse: the message plus a soft error sound
+  function refuse(text) { toast(text); FX.play('error'); }
+  // sounds and animations for one board: where the chips, cards and route cars are on screen
+  const fxColors = B.PLAYER.map(c => c === '#2b2f3a' ? '#e8eaf0' : c); // the black player's colour can't be read on the dark page
+  function fxCtx(view, me) {
+    const panel = $('#v-' + view + ' .panel'), wrap = $('#v-' + view + ' .board-wrap');
+    return {
+      me, colors: fxColors,
+      chip: i => panel.querySelector(`.players [data-seat="${i}"]`),
+      score: i => panel.querySelector(`.players [data-seat="${i}"] .sc`),
+      deck: () => panel.querySelector('#p-deck'), tix: () => panel.querySelector('#p-tix'),
+      face: i => panel.querySelector(`[data-face="${i}"]`),
+      hand: c => (c && panel.querySelector(`.hand [data-color="${c}"]`)) || panel.querySelector('.hand'),
+      ticketRow: i => panel.querySelector(`.tlist [data-tix="${i}"]`),
+      status: () => panel.querySelector('.status'),
+      cars: id => Array.from(wrap.querySelectorAll(`[data-route="${id}"] rect.car`)),
+      sheet: () => document.querySelector('.sheet'),
+      longestCell: () => document.querySelector(`.sheet tr[data-seat="${me}"] td[data-k="longestPts"]`),
+    };
   }
   // "?" explanations say WHY
   function help(title, body) {
@@ -287,7 +308,7 @@
           players: Array.from({ length: k }, (_, s) => ({ name: (Table.setupNames[s] || '').trim() || PNAME[s] })),
           me: 0, active: 0, claims: {}, stations: {}, tickets: {}, history: [], mode: 'claim',
         };
-        save(); Table.board.toAuto(); Table.render();
+        save(); Table.board.toAuto(); Table.render(); FX.play('shuffle');
       };
     },
     saveNames(panel) { Table.setupNames = Table.setupNames || []; panel.querySelectorAll('[data-name]').forEach(i => { Table.setupNames[+i.dataset.name] = i.value; }); },
@@ -299,30 +320,34 @@
         const who = tb.claims[id];
         delete tb.claims[id];
         tb.history.push({ type: 'unclaim', id, seat: who });
-        save(); Table.render();
+        save(); Table.render(); FX.play('slide');
         toast('Removed ' + cityName(map, r.a) + '–' + cityName(map, r.b), Table.undo);
         return;
       }
       const why = T.routeOpen({ owner: tb.claims, players: tb.players, mapId: map.id, deckId: tb.deckId }, r, seat);
-      if (why === 'own twin') return toast(tb.players[seat].name + ' already has the other track');
-      if (why === 'double closed') return toast('With ' + tb.players.length + ' players only one of the two tracks is used');
+      if (why === 'own twin') return refuse(tb.players[seat].name + ' already has the other track');
+      if (why === 'double closed') return refuse('With ' + tb.players.length + ' players only one of the two tracks is used');
       const trains = map.trains - Object.entries(tb.claims).filter(([, o]) => o === seat).reduce((a, [rid]) => a + G.index(map).routeById[rid].len, 0);
-      if (trains < r.len) return toast(tb.players[seat].name + ' has only ' + trains + ' trains');
+      if (trains < r.len) return refuse(tb.players[seat].name + ' has only ' + trains + ' trains');
+      const ptsBefore = Object.entries(tb.claims).filter(([, o]) => o === seat).reduce((a, [rid]) => a + T.routePoints(map, G.index(map).routeById[rid].len), 0);
       tb.claims[id] = seat;
       tb.history.push({ type: 'claim', id, seat });
       save(); Table.render();
+      const pts = T.routePoints(map, r.len);
+      SFX.fire([{ type: 'claim', seat, route: id, len: r.len, pts, before: ptsBefore, after: ptsBefore + pts }], fxCtx('table', tb.me));
       toast(tb.players[seat].name + ' +' + T.routePoints(map, r.len) + ' · ' + cityName(map, r.a) + '–' + cityName(map, r.b), Table.undo);
     },
     onCity(id) {
       const tb = S.table, map = Table.map;
       if (!tb || tb.mapId !== map.id || tb.mode !== 'station') return;
       tb.stations = tb.stations || {};
-      if (tb.stations[id] != null) { tb.history.push({ type: 'unstation', id, seat: tb.stations[id] }); delete tb.stations[id]; save(); Table.render(); return; }
+      if (tb.stations[id] != null) { tb.history.push({ type: 'unstation', id, seat: tb.stations[id] }); delete tb.stations[id]; save(); Table.render(); FX.play('slide'); return; }
       const used = Object.values(tb.stations).filter(o => o === tb.active).length;
-      if (used >= map.stations) return toast('No stations left');
+      if (used >= map.stations) return refuse('No stations left');
       tb.stations[id] = tb.active;
       tb.history.push({ type: 'station', id, seat: tb.active });
       save(); Table.render();
+      SFX.fire([{ type: 'station', seat: tb.active, city: id }], fxCtx('table', tb.me));
       toast('Station in ' + cityName(map, id), Table.undo);
     },
     undo() {
@@ -333,7 +358,7 @@
       if (h.type === 'station') delete tb.stations[h.id];
       if (h.type === 'unstation') tb.stations[h.id] = h.seat;
       if (h.type === 'tickets') tb.tickets[h.seat] = tb.tickets[h.seat].filter(t => !h.ids.includes(t));
-      save(); Table.render();
+      save(); Table.render(); FX.play('slide');
     },
     cover(seat) {
       const tb = S.table;
@@ -383,7 +408,7 @@
       const tb = S.table;
       tb.tickets[seat] = (tb.tickets[seat] || []).concat(ids);
       tb.history.push({ type: 'tickets', seat, ids });
-      save(); Table.render();
+      save(); Table.render(); FX.play('cardSlide');
     },
     advise(seat, drawnIdx) {
       const tb = S.table, map = Table.map, deck = T.deckFor(map, { deckId: tb.deckId }).tickets;
@@ -446,6 +471,9 @@
         <p class="note">${map.id === 'europe' ? 'European Express' : 'Longest route'}: ${rows.map(r => esc(r.name) + ' ' + r.longest).join(' · ')}</p>${missing}
         <div class="acts"><button class="btn" data-x>Close</button></div>`);
       sh.querySelector('[data-x]').onclick = () => closeSheet();
+      // totals count up; with every ticket known ("Pass the phone") the winner gets the confetti in their colour
+      FX.play('drumroll', { vol: 0.7 });
+      SFX.countTotals(sh).then(() => { if (!partial) { const w = fxColors[rows[0].seat]; FX.celebrate({ kind: 'win', colors: [w, '#f0b354', '#f4efe4', w, '#6ee7a8'] }); } });
     },
   };
 
@@ -642,19 +670,24 @@
         const state = T.newGame(map, { seed: (Math.random() * 2 ** 31) >>> 0, deckId: Play.setupDeck || map.ticketDecks[0].id, seats, options: { noLongest: S.settings.longest === false } });
         S.play = { me: 0, state };
         Play.gen++; Play.hint = null; Play.sel = null; Play.stationMode = false;
-        save(); Play.board.toAuto(); Play.render(); Play.pump();
+        save(); Play.board.toAuto(); Play.render(); FX.play('shuffle'); Play.pump();
       };
+    },
+    // sounds and animations for everything that changed between two states (my move, a computer's, an online snapshot)
+    fx(prev, next) {
+      if (!prev || !next || S.tab !== 'play' || !Play.map || next.mapId !== Play.map.id) return;
+      const ev = SFX.diff(prev, next, S.play.me, Play.map);
+      if (ev.length) SFX.fire(ev, fxCtx('play', S.play.me));
     },
     act(a) {
       const p = S.play; if (!p) return;
       const s = p.state, me = p.me;
       a.seat = me;
       if (p.online) {
-        try { T.apply(T.clone(s), Object.assign({}, a)); } catch (e) { if (e.rule) return toast(e.message.charAt(0).toUpperCase() + e.message.slice(1)); }
+        try { T.apply(T.clone(s), Object.assign({}, a)); } catch (e) { if (e.rule) return refuse(e.message.charAt(0).toUpperCase() + e.message.slice(1)); }
         Play.hint = null; Play.hintRoute = null;
         if (a.type === 'claim' || a.type === 'station') Play.stationMode = false;
-        if (a.type === 'draw' && typeof a.from === 'number') Play.flyCard(s.faceUp[a.from], a.from);
-        Play.net.room.act(a); // a refusal arrives as an 'error' event (toast)
+        Play.net.room.act(a); // a refusal arrives as an 'error' event (toast); sounds come with the snapshot
         return;
       }
       try {
@@ -663,24 +696,12 @@
         Play.hint = null; Play.hintRoute = null;
         if (a.type === 'claim' || a.type === 'station') Play.stationMode = false;
         if (a.type === 'claim' && p.state.owner[a.route] === me) Play.flashRoute(a.route);
-        if (a.type === 'draw' && typeof a.from === 'number') Play.flyCard(before.faceUp[a.from], a.from);
-        save(); Play.render(); Play.pump();
+        save(); Play.render(); Play.fx(before, p.state); Play.pump();
       } catch (e) {
-        if (e.rule) toast(e.message.charAt(0).toUpperCase() + e.message.slice(1)); else { console.error(e); toast('Something went wrong'); }
+        if (e.rule) refuse(e.message.charAt(0).toUpperCase() + e.message.slice(1)); else { console.error(e); toast('Something went wrong'); }
       }
     },
     flashRoute(id) { Play.flash = id; clearTimeout(Play.flashT); Play.flashT = setTimeout(() => { Play.flash = null; if (S.tab === 'play') Play.render(); }, 1400); },
-    flyCard(color, idx) {
-      // a face-up card glides down into the hand
-      const from = document.querySelector(`[data-face="${idx}"]`), to = document.querySelector(`.hand [data-color="${color}"]`);
-      if (!from || !to) return;
-      const a = from.getBoundingClientRect(), b = to.getBoundingClientRect();
-      const f = document.createElement('div'); f.className = 'tcard fly'; f.innerHTML = window.Cards.svg(color);
-      Object.assign(f.style, { left: a.left + 'px', top: a.top + 'px', width: a.width + 'px', height: a.height + 'px' });
-      document.body.appendChild(f);
-      requestAnimationFrame(() => { f.style.transform = `translate(${b.left - a.left}px,${b.top - a.top}px) scale(${b.width / a.width})`; f.style.opacity = '.2'; });
-      setTimeout(() => f.remove(), 480);
-    },
     // computers move one action at a time, with a pause so you can follow
     pump() {
       const p = S.play; if (!p || p.online || Play.busy) return;
@@ -701,7 +722,7 @@
         Play.record();
         if (a.type === 'claim' && S.play.state.owner[a.route] === seat) Play.flashRoute(a.route);
         save();
-        if (S.tab === 'play') Play.render();
+        if (S.tab === 'play') { Play.render(); Play.fx(st, S.play.state); }
         Play.pump();
       }, s.phase === 'setup' ? 150 : delay());
     },
@@ -712,9 +733,9 @@
       const label = cityName(map, r.a) + '–' + cityName(map, r.b);
       if (s.phase !== 'main' || s.turn !== me) return toast(label + ': ' + r.len + ' ' + (r.color === 'gray' ? 'any colour' : r.color) + (r.kind === 'tunnel' ? ', tunnel' : '') + (r.locos ? ', ' + r.locos + ' loco' : ''));
       if (s.players[me].pending || s.pendingTunnel) return;
-      if (s.drew) return toast('Take your second card first');
+      if (s.drew) return refuse('Take your second card first');
       const why = T.canClaim(s, me, id);
-      if (why) return toast(label + ': ' + why);
+      if (why) return refuse(label + ': ' + why);
       const opts = T.payOptions(s, me, id);
       if (opts.length === 1) return Play.confirmClaim(id, opts);
       Play.confirmClaim(id, opts);
@@ -735,11 +756,11 @@
       const p = S.play; if (!p || !Play.stationMode) return;
       const s = p.state, me = p.me, map = Play.map;
       const cost = T.stationCost(s, me), h = s.players[me].hand;
-      if (s.stationAt[id] != null) return toast('That city already has a station');
+      if (s.stationAt[id] != null) return refuse('That city already has a station');
       const opts = [];
       for (const c of T.COLORS) if (h[c]) { const n = Math.min(h[c], cost); if (cost - n <= h.loco) opts.push({ color: c, n, locos: cost - n }); }
       if (h.loco >= cost) opts.push({ color: null, n: 0, locos: cost });
-      if (!opts.length) return toast('A station costs ' + cost + ' cards of one colour');
+      if (!opts.length) return refuse('A station costs ' + cost + ' cards of one colour');
       const sh = openSheet(`<h2>Station in ${esc(cityName(map, id))}</h2><p class="note">Lets you use one rival route into this city for your tickets.</p>
         <div class="paylist">${opts.map((o, i) => `<button type="button" class="payopt" data-o="${i}">${payLabel(o)}</button>`).join('')}</div>
         <div class="acts"><button class="btn" data-x>Cancel</button></div>`);
@@ -805,7 +826,7 @@
       const room = mod.createOnline({ game: window.TTROnlineGame.game, gameId: 'ticket-to-ride', botDelayMs: delay() });
       Play.net = { room, snap: null };
       room.on('change', snap => Play.onSnap(snap));
-      room.on('error', msg => toast(msg));
+      room.on('error', msg => refuse(msg));
       Play.netFlag(true);
       return room;
     },
@@ -827,8 +848,15 @@
         S.play = { me: snap.mySeat, state: Play.asState(v), view: v, online: true, race: prev ? prev.race : [], shownScores: prev ? prev.shownScores : false };
         Play.record();
         if (prev) for (const id in v.owner) if (prev.state.owner[id] == null && v.owner[id] !== snap.mySeat) Play.flashRoute(id);
+        net.fxPrev = prev ? prev.state : null;
       } else if (S.play && S.play.online) S.play = null;
       if (S.tab === 'play') Play.render();
+      // every player hears every move, from the difference between snapshots
+      if (S.play && S.play.online) {
+        if (net.fxPrev) Play.fx(net.fxPrev, S.play.state);
+        else if (S.play.state.phase === 'setup' && S.tab === 'play' && !net.fxDealt) FX.play('shuffle');
+        net.fxDealt = true; net.fxPrev = null;
+      }
     },
     asState(v) { return window.TTROnlineGame.asState(v); },
     netEnd(msg) {
@@ -923,7 +951,7 @@
       sh.querySelector('[data-x]').onclick = () => closeSheet();
       sh.querySelector('[data-ok]').onclick = async () => {
         const code = (sh.querySelector('#n-code').value || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
-        if (code.length !== 5) return toast('The code has 5 characters');
+        if (code.length !== 5) return refuse('The code has 5 characters');
         const name = Play.takeName(sh, 'n-name');
         closeSheet(true);
         const room = await Play.netRoom();
@@ -945,7 +973,7 @@
       const won = res.winner === p.me;
       const sh = openSheet(`<h2>${won ? 'You win!' : esc(s.players[res.winner].name) + ' wins'}</h2>
         <table class="scores"><tr><th>Player</th>${cols.map(c => `<th>${c[0]}</th>`).join('')}<th>Total</th></tr>
-        ${rows.map((r, i) => `<tr class="${i === 0 ? 'win' : ''}"><td>${esc(r.name)}${s.players[r.seat].level ? ' <span class="muted small">' + LEVEL_NAME[s.players[r.seat].level] + '</span>' : ''}</td>${cols.map(c => `<td>${r[c[1]]}</td>`).join('')}<td><b>${r.total}</b></td></tr>`).join('')}</table>
+        ${rows.map((r, i) => `<tr class="${i === 0 ? 'win' : ''}" data-seat="${r.seat}"><td>${esc(r.name)}${s.players[r.seat].level ? ' <span class="muted small">' + LEVEL_NAME[s.players[r.seat].level] + '</span>' : ''}</td>${cols.map(c => `<td data-k="${c[1]}">${r[c[1]]}</td>`).join('')}<td><b>${r.total}</b></td></tr>`).join('')}</table>
         <div class="sec">Score race</div>${Play.raceSVG(s, res)}
         <div class="sec">Tickets</div>
         ${rows.map(r => `<div class="small" style="margin-bottom:4px"><b style="color:${B.PLAYER[r.seat]}">${esc(r.name)}</b> ${r.tickets.map(x => `<span style="color:${x.ok ? 'var(--good)' : 'var(--bad)'}">${esc(ticketName(map, deck[x.t]))} ${x.pts >= 0 ? '+' : '−'}${Math.abs(x.pts)}</span>`).join(' · ')}</div>`).join('')}
@@ -1115,6 +1143,8 @@
         <div class="setting"><span class="label">Longest route bonus<div class="note">Off is a common house rule. Nordic and USA 1910 never use it.</div></span><label class="switch"><input type="checkbox" id="s-longest" ${st.longest !== false ? 'checked' : ''}><span></span></label></div>
         <div class="sec">Table</div>
         <div class="setting"><span class="label">Ticket privacy <button class="q" data-help="privacy" aria-label="About ticket privacy">?</button></span><span class="seg" role="group"><button type="button" data-priv="mine" aria-pressed="${st.privacy === 'mine'}">Just mine</button><button type="button" data-priv="pass" aria-pressed="${st.privacy === 'pass'}">Pass the phone</button></span></div>
+        <div class="sec">Sound &amp; effects</div>
+        <div id="s-fx"></div>
         <div class="sec">How strong are the computers? <button class="q" data-help="strength" aria-label="How strong">?</button></div>
         <div class="row"><span class="seg" role="group">${MAP_IDS.map(id => `<button type="button" data-sm="${id}" aria-pressed="${(Settings.sm || 'usa') === id}">${MAP_NAMES[id].split(' ')[0]}</button>`).join('')}</span></div>
         <div id="s-strength"></div>
@@ -1128,6 +1158,7 @@
       $('#s-study').onchange = e => { st.study = e.target.checked; save(); };
       $('#s-cb').onchange = e => { st.cb = e.target.checked; save(); applyCb(); };
       $('#s-longest').onchange = e => { st.longest = e.target.checked; save(); };
+      FX.renderSettings($('#s-fx')); // after the [data-speed] buttons above are wired: its own Normal/Fast use the same attribute
       $('#s-reset').onclick = () => {
         const sh = openSheet(`<h2>Clear saved games?</h2><p class="note">The table game and the game against the computers are deleted.</p><div class="acts"><button class="btn" data-x>Cancel</button><button class="btn primary" data-ok>Clear</button></div>`);
         sh.querySelector('[data-x]').onclick = () => closeSheet();
@@ -1141,6 +1172,10 @@
   // ---------------------------------------------------------------- boot
   function applyCb() { B.cbMarks = !!S.settings.cb; document.body.classList.toggle('cb', B.cbMarks); }
   applyCb();
+  // Animations off also stops the board's own claim pop
+  const applyStill = () => document.body.classList.toggle('fx-still', !FX.settings.animations);
+  FX.init({ game: 'ticket-to-ride', accent: '#6ea8fe', onChange: applyStill });
+  applyStill();
   buildTabs();
   const start = (location.hash || '').slice(1);
   history.replaceState({ tab: TABS.some(t => t[0] === start) ? start : S.tab }, '', location.hash || '#' + S.tab);

@@ -210,6 +210,12 @@ select option { background: var(--card); color: var(--text); }
 .switch input:checked + span::after { transform: translateX(18px); }
 .setting { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--line); }
 .setting .label { flex: 1; min-width: 0; }
+/* Sound & effects rows (js/fx.js) look like the other settings rows */
+.fx-set .fx-row { padding: 10px 0; min-height: 0; border-top: 0; border-bottom: 1px solid var(--line); }
+.fx-set .fx-row.dim { opacity: .4; }
+.fx-set .switch input:checked + span { background: var(--accent); }
+.fx-set .fx-why { padding: 8px 0 0; }
+.fx-still .route.hl .car { animation: none; }
 
 /* players strip */
 .players { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 2px; scrollbar-width: none; }

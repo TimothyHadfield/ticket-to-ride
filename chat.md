@@ -41,3 +41,9 @@
 - **Built:** board.js auto mode (fit whole board incl. names, re-fit on resize with a glide, no drag in auto), hand zoom by pinch/wheel/+/−, clamped pan, fit button dimmed/lit, double tap on empty board resets; auto on tab show, map change, Start and rotation. v1.6.
 - **Verified:** `tools/zoom-check.mjs` 201/201 (old build 150/201); 80/80 unit tests; 393 px + 1280 px screenshots, no overflow, no console errors.
 - **Open:** real fingers on iPhone; route-tap sweep not re-run.
+
+## 2026-10-20 — sounds & effects (builder under the manager)
+- **Asked:** Tim: optional sounds that match what happens, win celebrations, fun animations, all switchable in Settings.
+- **Built:** shared `js/fx.js` + `js/sfx.js` (state diff → events → sounds/animations) for vs computer, online and Table; Settings "Sound & effects"; score count-up, longest-route sparkle, win/lose. v1.7.
+- **Verified:** tests/fx.test.js (fail-first) + 85/85; WebKit 393 px + 1280 px screenshots of settings, mid-game, win (confetti), no console errors/overflow.
+- **Open:** Tim's ear on the sounds; real iPhone.
