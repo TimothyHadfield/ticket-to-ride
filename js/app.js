@@ -3,7 +3,7 @@
 (function () {
   'use strict';
   const T = window.TTR, G = window.TTRGraph, AI = window.TTRAI, O = window.TTROdds, B = window.Board;
-  const VERSION = '1.5';
+  const VERSION = '1.6';
   const MAP_IDS = ['usa', 'europe', 'nordic', 'india', 'switzerland'];
   const MAP_NAMES = { usa: 'USA', europe: 'Europe', nordic: 'Nordic Countries', india: 'India', switzerland: 'Switzerland' };
   const LEVELS = ['easy', 'medium', 'hard'];
@@ -152,7 +152,8 @@
   }
   window.addEventListener('resize', sizeBoards);
   function makeBoard(id, map, handlers) {
-    if (boards[id]) { boards[id].setMap(map); Object.assign(boards[id].handlers, handlers); return boards[id]; }
+    // tab shown, map changed or game started: the board goes back to auto (the whole board in view)
+    if (boards[id]) { boards[id].setMap(map); boards[id].toAuto(); Object.assign(boards[id].handlers, handlers); return boards[id]; }
     const wrap = $('#v-' + id + ' .board-wrap');
     const h = Object.assign({}, handlers);
     const b = B.create(wrap, map, { onRoute: r => h.onRoute && h.onRoute(r), onCity: c => h.onCity && h.onCity(c), onEmpty: () => h.onEmpty && h.onEmpty() });
@@ -286,7 +287,7 @@
           players: Array.from({ length: k }, (_, s) => ({ name: (Table.setupNames[s] || '').trim() || PNAME[s] })),
           me: 0, active: 0, claims: {}, stations: {}, tickets: {}, history: [], mode: 'claim',
         };
-        save(); Table.render();
+        save(); Table.board.toAuto(); Table.render();
       };
     },
     saveNames(panel) { Table.setupNames = Table.setupNames || []; panel.querySelectorAll('[data-name]').forEach(i => { Table.setupNames[+i.dataset.name] = i.value; }); },
@@ -641,7 +642,7 @@
         const state = T.newGame(map, { seed: (Math.random() * 2 ** 31) >>> 0, deckId: Play.setupDeck || map.ticketDecks[0].id, seats, options: { noLongest: S.settings.longest === false } });
         S.play = { me: 0, state };
         Play.gen++; Play.hint = null; Play.sel = null; Play.stationMode = false;
-        save(); Play.render(); Play.pump();
+        save(); Play.board.toAuto(); Play.render(); Play.pump();
       };
     },
     act(a) {

@@ -97,7 +97,7 @@
     handlers = handlers || {};
     const svg = el('svg', { class: 'board', role: 'img' });
     wrap.appendChild(svg);
-    let geo = [], routeEls = {}, cityEls = {}, vb = null, full = null, labelBox = null;
+    let geo = [], routeEls = {}, cityEls = {}, vb = null, labs = [], routesBox = null;
     const gLand = el('g', {}, svg), gBeds = el('g', { class: 'beds' }, svg), gRoutes = el('g', {}, svg), gMarks = el('g', {}, svg), gCities = el('g', {}, svg);
 
     function build(m) {
@@ -151,7 +151,7 @@
         });
         routeEls[r.id] = grp;
       }
-      const placed = [], labelled = new Set();
+      const placed = [], labelled = new Set(); labs = []; routesBox = null;
       for (const c of map.cities) {
         const grp = el('g', Object.assign({ class: 'city', 'data-city': c.id }, c.country ? { 'data-border': c.country } : {}), gCities);
         if (c.country) {
@@ -165,14 +165,12 @@
           el('circle', { class: 'dot', cx: c.x, cy: c.y, r: 6.5 }, grp);
         }
         const ls = labelSpot(map, c, placed);
+        labs.push({ x: ls.x, y: ls.y, anchor: ls.anchor, base: ls.base, n: c.name.length });
         const t = el('text', { x: ls.x.toFixed(1), y: ls.y.toFixed(1), 'text-anchor': ls.anchor, 'dominant-baseline': ls.base }, grp);
         t.textContent = c.name;
         cityEls[c.id] = grp;
       }
-      const bx = placed.concat(map.cities.map(c => [c.x - 12, c.y - 12, c.x + 12, c.y + 12]));
-      const lx0 = Math.min(...bx.map(q => q[0])), ly0 = Math.min(...bx.map(q => q[1]));
-      labelBox = { x: lx0, y: ly0, width: Math.max(...bx.map(q => q[2])) - lx0, height: Math.max(...bx.map(q => q[3])) - ly0 };
-      full = { x: -10, y: -10, w: map.size[0] + 20, h: map.size[1] + 20 }; measured = false;
+      measured = false;
       fit();
     }
 
@@ -265,36 +263,52 @@
       } catch (e) { return false; }
     }
 
-    // The whole-map view hugs the drawn routes and labels (names at the edge stay inside).
-    // getBBox needs the board on screen, so it is measured the first time it is visible.
+    // The board's box hugs the drawn routes and the city names (names at the edge stay inside). Names are drawn at
+    // a size that depends on the zoom, so the box does too: content(s) is the box at screen scale s (px per map unit).
+    // getBBox needs the board on screen, so the routes are measured the first time it is visible.
     let measured = false, lastLf = '';
     function measure() {
       if (measured) return;
       try {
         const a = gRoutes.getBBox();
         if (!a.width) return;
-        // labels: use their placement boxes at the biggest font, so a name at the edge is never cut off on a phone
-        const b = labelBox || { x: a.x, y: a.y, width: a.width, height: a.height };
-        const x0 = Math.min(a.x, b.x) - 6, y0 = Math.min(a.y, b.y) - 6;
-        let x1 = Math.max(a.x + a.width, b.x + b.width) + 6;
-        // keep the right edge clear of the zoom buttons (~40 screen px) so no route sits under them
-        const W = svg.clientWidth || 390;
-        x1 += 48 * (x1 - x0) / Math.max(200, W - 48);
-        const y1 = Math.max(a.y + a.height, b.y + b.height) + 6;
-        full = { x: x0, y: y0, w: x1 - x0, h: y1 - y0 }; measured = true;
+        routesBox = [a.x, a.y, a.x + a.width, a.y + a.height]; measured = true;
       } catch (e) { /* not rendered yet */ }
+    }
+    // city-name font in map units at screen scale s: ~LABEL_BASE units, kept between LABEL_PX and LABEL_PX_MAX on screen
+    function fontAt(s) {
+      const px = Math.max(LABEL_PX, Math.min(LABEL_PX_MAX, LABEL_BASE * s));
+      return Math.max(LABEL_MIN, Math.min(LABEL_MAX, px / s));
+    }
+    // routes, city dots and names (at font f, with the same boxes labelSpot places them by)
+    function boxAt(f) {
+      if (!routesBox) return { x: -10, y: -10, w: map.size[0] + 20, h: map.size[1] + 20 };
+      let [x0, y0, x1, y1] = routesBox;
+      for (const c of map.cities) { x0 = Math.min(x0, c.x - 12); y0 = Math.min(y0, c.y - 12); x1 = Math.max(x1, c.x + 12); y1 = Math.max(y1, c.y + 12); }
+      for (const l of labs) {
+        const W = l.n * 0.56 * f, H = f;
+        const lx = l.anchor === 'start' ? l.x : l.anchor === 'end' ? l.x - W : l.x - W / 2;
+        const ly = l.base === 'hanging' ? l.y : l.base === 'alphabetic' ? l.y - H : l.y - H / 2;
+        x0 = Math.min(x0, lx); y0 = Math.min(y0, ly); x1 = Math.max(x1, lx + W); y1 = Math.max(y1, ly + H);
+      }
+      return { x: x0, y: y0, w: x1 - x0, h: y1 - y0 };
+    }
+    let boxCache = { f: null, b: null };
+    function content(s) {
+      const f = +fontAt(s).toFixed(1);
+      if (boxCache.f !== f || boxCache.r !== routesBox || boxCache.m !== map) boxCache = { f, r: routesBox, m: map, b: boxAt(f) };
+      // plus a small margin, the same 6 screen px at every zoom
+      const b = boxCache.b, m = 6 / s;
+      return { x: b.x - m, y: b.y - m, w: b.w + 2 * m, h: b.h + 2 * m };
     }
     function setVB(v) {
       vb = v; svg.setAttribute('viewBox', `${v.x.toFixed(1)} ${v.y.toFixed(1)} ${v.w.toFixed(1)} ${v.h.toFixed(1)}`);
       const cw = svg.clientWidth, ch = svg.clientHeight;
       if (cw && ch) {
-        const s = Math.min(cw / v.w, ch / v.h);
-        const px = Math.max(LABEL_PX, Math.min(LABEL_PX_MAX, LABEL_BASE * s));
-        const f = Math.max(LABEL_MIN, Math.min(LABEL_MAX, px / s));
+        const f = fontAt(Math.min(cw / v.w, ch / v.h));
         if (f.toFixed(1) !== lastLf) { lastLf = f.toFixed(1); svg.style.setProperty('--lf', lastLf + 'px'); }
       }
     }
-    function fit() { measure(); stopAnim(); setVB(Object.assign({}, full)); }
 
     // ------------------------------------------------------------ render state
     function render(o) {
@@ -355,11 +369,16 @@
     }
 
     // ------------------------------------------------------------ pan / zoom / tap
-    // Physical feel: the map sticks to the fingers (pinch zooms and pans together), a flick keeps gliding and slows down,
-    // and the buttons glide to the new view instead of jumping.
+    // One zoom mode: AUTO shows the whole board, centred and as big as it fits, and re-fits by itself when the board
+    // area changes size. Pinch, wheel or + zooms in by hand (physical feel: the map sticks to the fingers, a flick
+    // keeps gliding); zooming back out to the fit, the fit button or a double tap on empty board returns to auto.
+    // The view box always has the board area's own shape, so the view box is exactly what is on screen.
+    const RESERVE = 48; // screen px kept clear on the right for the zoom buttons
+    const MAX_ZOOM = 6; // times the auto fit
     const pts = new Map();
-    let drag = null, anim = 0, track = [];
+    let drag = null, anim = 0, track = [], auto = true, lastSize = null, lastTap = null;
     function stopAnim() { if (anim) cancelAnimationFrame(anim); anim = 0; }
+    function area() { return { w: svg.clientWidth || 390, h: svg.clientHeight || 260 }; }
     function toSvg(cx, cy, v) {
       v = v || vb;
       const r = svg.getBoundingClientRect();
@@ -367,23 +386,51 @@
       const ox = (r.width - v.w * s) / 2, oy = (r.height - v.h * s) / 2;
       return { x: v.x + (cx - r.left - ox) / s, y: v.y + (cy - r.top - oy) / s, s };
     }
-    // the view after zooming by k around screen point (cx, cy), starting from view v
+    // screen px per map unit when the whole board fits. Names shrink in map units as the board grows, so start from
+    // the box at the biggest names and grow a few times; each step still holds the names at the size they'll be drawn.
+    function fitScale(w, h) {
+      const sc = b => Math.min(Math.max(40, w - RESERVE) / b.w, h / b.h);
+      // start a little small (the names at their biggest), then grow: each step's box still fits at the new scale
+      let s = 0.9 * sc(boxAt(LABEL_MAX));
+      for (let i = 0; i < 3 && sc(content(s)) < s; i++) s = sc(content(s));
+      for (let i = 0; i < 6; i++) { const s2 = sc(content(s)); if (s2 <= s * 1.0005) break; s = s2; }
+      return s;
+    }
+    function autoScale() { const a = area(); return fitScale(a.w, a.h); }
+    // one axis: if the board (plus the button strip) is wider than the screen, keep its edges at or past the screen's
+    // edges; if it is narrower, centre it (but leave the strip clear)
+    function axis(p, start, len, post, vlen) {
+      if (len + post >= vlen) return Math.max(start, Math.min(start + len + post - vlen, p));
+      const gap = vlen - len;
+      return start - Math.min(gap / 2, gap - post);
+    }
+    // the view showing screen scale s, roughly at top-left x, y, kept on the board
+    function viewAt(x, y, s) {
+      const a = area(), w = a.w / s, h = a.h / s, b = content(s);
+      return { x: axis(x, b.x, b.w, RESERVE / s, w), y: axis(y, b.y, b.h, 0, h), w, h };
+    }
+    function autoView() { return viewAt(0, 0, autoScale()); }
+    function scaleOf(v) { return area().w / v.w; }
+    function clamp(v) { return viewAt(v.x, v.y, scaleOf(v)); }
+    // the view after zooming by k around screen point (cx, cy), starting from view v; null = back at the fit (auto)
     function zoomed(v, cx, cy, k) {
-      const p = toSvg(cx, cy, v);
-      let w = v.w / k, h = v.h / k;
-      const minW = full.w / 5;
-      if (w < minW) { h *= minW / w; w = minW; }
-      if (w > full.w) { h *= full.w / w; w = full.w; }
-      const fx = (p.x - v.x) / v.w, fy = (p.y - v.y) / v.h;
-      return clamp({ x: p.x - fx * w, y: p.y - fy * h, w, h });
+      const p = toSvg(cx, cy, v), r = svg.getBoundingClientRect(), s0 = autoScale();
+      const s = Math.min(s0 * MAX_ZOOM, scaleOf(v) * k);
+      if (s <= s0 * 1.001) return null;
+      return viewAt(p.x - (cx - r.left) / s, p.y - (cy - r.top) / s, s);
     }
-    function zoomAt(cx, cy, k) { setVB(zoomed(vb, cx, cy, k)); }
-    function clamp(v) {
-      v.x = Math.max(full.x - v.w * 0.25, Math.min(full.x + full.w - v.w * 0.75, v.x));
-      v.y = Math.max(full.y - v.h * 0.25, Math.min(full.y + full.h - v.h * 0.75, v.y));
-      if (v.w >= full.w) v.x = full.x + (full.w - v.w) / 2;
-      return v;
+    function lightFit() { fitBtn.classList.toggle('lit', !auto); fitBtn.setAttribute('aria-pressed', String(!auto)); }
+    function setAuto(on) { if (auto !== on) { auto = on; lightFit(); } }
+    function zoomAt(cx, cy, k) {
+      const v = zoomed(vb, cx, cy, k);
+      setAuto(!v); setVB(v || autoView());
     }
+    // back to the whole board: a glide, or a jump (first showing, new map, tab return)
+    function toAuto(instant) {
+      measure(); stopAnim(); setAuto(true);
+      if (instant || !vb) setVB(autoView()); else glideTo(autoView(), 320);
+    }
+    function fit() { toAuto(true); }
     // glide to a view (ease-out)
     function glideTo(target, ms) {
       stopAnim();
@@ -401,18 +448,17 @@
       let last = performance.now();
       const step = now => {
         const dt = Math.min(40, now - last); last = now;
-        const s = toSvg(0, 0).s;
-        const before = Object.assign({}, vb);
-        const next = clamp({ x: vb.x - vx * dt / s, y: vb.y - vy * dt / s, w: vb.w, h: vb.h });
-        if (Math.abs(next.x - (before.x - vx * dt / s)) > 0.01) vx = 0; // hit the edge: stop that way
-        if (Math.abs(next.y - (before.y - vy * dt / s)) > 0.01) vy = 0;
+        const s = scaleOf(vb);
+        const want = { x: vb.x - vx * dt / s, y: vb.y - vy * dt / s, w: vb.w, h: vb.h };
+        const next = clamp(Object.assign({}, want));
+        if (Math.abs(next.x - want.x) > 0.01) vx = 0; // hit the edge: stop that way
+        if (Math.abs(next.y - want.y) > 0.01) vy = 0;
         setVB(next);
         const f = Math.pow(0.94, dt / 16); vx *= f; vy *= f;
         anim = Math.hypot(vx, vy) > 0.02 ? requestAnimationFrame(step) : 0;
       };
       anim = requestAnimationFrame(step);
     }
-    const zoomedOut = v => v.w >= full.w - 1 && v.h >= full.h - 1;
     svg.addEventListener('pointerdown', e => {
       stopAnim();
       try { svg.setPointerCapture(e.pointerId); } catch (err) { /* synthetic or already-ended pointer */ }
@@ -428,15 +474,17 @@
       if (pts.size >= 2 && drag.pinch) {
         // zoom around where the fingers started, then move with the fingers' midpoint
         const k = dist() / drag.pinch, m0 = drag.mid, m = mid();
-        const v = zoomed(drag.vb, m0.x, m0.y, k), s = toSvg(0, 0, v).s;
-        setVB(clamp({ x: v.x - (m.x - m0.x) / s, y: v.y - (m.y - m0.y) / s, w: v.w, h: v.h }));
+        const v = zoomed(drag.vb, m0.x, m0.y, k);
+        if (!v) { setAuto(true); setVB(autoView()); return; }
+        const s = scaleOf(v);
+        setAuto(false); setVB(clamp({ x: v.x - (m.x - m0.x) / s, y: v.y - (m.y - m0.y) / s, w: v.w, h: v.h }));
         return;
       }
       const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
       if (!drag.moved && Math.hypot(dx, dy) < 7) return;
       drag.moved = true;
-      if (zoomedOut(drag.vb)) return; // nothing to pan when fully zoomed out
-      const s = toSvg(0, 0).s;
+      if (auto) return; // auto mode: a one-finger drag never moves the board
+      const s = scaleOf(drag.vb);
       setVB(clamp({ x: drag.vb.x - dx / s, y: drag.vb.y - dy / s, w: drag.vb.w, h: drag.vb.h }));
       track.push({ x: e.clientX, y: e.clientY, t: performance.now() });
       if (track.length > 6) track.shift();
@@ -453,7 +501,8 @@
       }
       if (pts.size === 0) {
         if (drag && !drag.moved && e.type === 'pointerup') tap(e.clientX, e.clientY);
-        else if (drag && drag.moved && !drag.pinch && e.type === 'pointerup' && track.length >= 2) {
+        else if (!auto && scaleOf(vb) <= autoScale() * 1.03) toAuto(); // let go just past the fit: settle into auto
+        else if (!auto && drag && drag.moved && !drag.pinch && e.type === 'pointerup' && track.length >= 2) {
           const a = track[0], b = track[track.length - 1], dt = b.t - a.t;
           if (dt > 0 && performance.now() - b.t < 80) {
             const vx = (b.x - a.x) / dt, vy = (b.y - a.y) / dt; // px per ms
@@ -489,38 +538,59 @@
       const routeHit = handlers.onRoute && bd < Math.max(tol, 9);
       // a city wins only when the tap is nearer to it than to any route (short routes sit close to their cities)
       if (handlers.onCity && bc < Math.max(tol, 13) && (!routeHit || bc < bd)) { handlers.onCity(bestCity); return; }
-      if (routeHit) handlers.onRoute(best);
-      else if (handlers.onCity && bc < tol * 2.2) handlers.onCity(bestCity);
-      else if (handlers.onEmpty) handlers.onEmpty();
+      if (routeHit) { handlers.onRoute(best); return; }
+      if (handlers.onCity && bc < tol * 2.2) { handlers.onCity(bestCity); return; }
+      // empty board: a double tap goes back to the whole board
+      const now = Date.now();
+      if (lastTap && now - lastTap.t < 350 && Math.hypot(cx - lastTap.x, cy - lastTap.y) < 30) { lastTap = null; if (!auto) toAuto(); }
+      else lastTap = { t: now, x: cx, y: cy };
+      if (handlers.onEmpty) handlers.onEmpty();
     }
 
-    // zoom buttons
+    // zoom buttons: + and − glide; the fit button is lit while zoomed by hand and dimmed in auto
     const z = document.createElement('div');
     z.className = 'zoom';
     z.innerHTML = '<button type="button" aria-label="Zoom in" data-z="in">+</button><button type="button" aria-label="Zoom out" data-z="out">−</button><button type="button" aria-label="Show whole map" data-z="fit">⤢</button>';
+    const fitBtn = z.querySelector('[data-z=fit]');
     z.addEventListener('click', e => {
       const b = e.target.closest('button'); if (!b) return;
+      if (b.dataset.z === 'fit') { toAuto(); return; }
       const r = svg.getBoundingClientRect();
-      if (b.dataset.z === 'fit') { measure(); glideTo(Object.assign({}, full), 320); }
-      else glideTo(zoomed(vb, r.left + r.width / 2, r.top + r.height / 2, b.dataset.z === 'in' ? 1.6 : 1 / 1.6), 240);
+      const v = zoomed(vb, r.left + (r.width - RESERVE) / 2, r.top + r.height / 2, b.dataset.z === 'in' ? 1.6 : 1 / 1.6);
+      if (!v) { if (!auto) toAuto(); return; }
+      setAuto(false); glideTo(v, 240);
     });
     wrap.appendChild(z);
-    // the label size depends on how big the board is on screen
-    if (window.ResizeObserver) new ResizeObserver(() => { if (vb) setVB(vb); }).observe(svg);
+    lightFit();
+    // the board area changed size (window, rotation, phone toolbar, panel): auto re-fits with a glide;
+    // a hand zoom keeps its scale and centre, unless the screen turned (then back to auto)
+    if (window.ResizeObserver) new ResizeObserver(() => {
+      const a = { w: svg.clientWidth, h: svg.clientHeight, land: window.innerWidth > window.innerHeight };
+      const prev = lastSize; lastSize = a;
+      if (!a.w || !a.h || !vb) return;
+      if (prev && prev.w === a.w && prev.h === a.h) return;
+      if (prev && prev.land !== a.land) setAuto(true);
+      if (auto) { if (!prev || !prev.w || !prev.h) toAuto(true); else glideTo(autoView(), 200); return; }
+      stopAnim();
+      const c = { x: vb.x + vb.w / 2, y: vb.y + vb.h / 2 }, s = scaleOf(vb) * (prev && prev.w ? prev.w / a.w : 1);
+      // keep the same map units per screen px: s stays, the box gets the new shape
+      const s1 = Math.max(s, autoScale());
+      if (s1 <= autoScale() * 1.001) { toAuto(true); return; }
+      setVB(viewAt(c.x - a.w / s1 / 2, c.y - a.h / s1 / 2, s1));
+    }).observe(svg);
 
     build(map);
     return {
       render, fit, setMap(m) { if (m !== map) build(m); }, get map() { return map; },
-      // first time on screen: measure and show the whole map; returns the whole-map box
-      ready() { if (!measured) fit(); return full; },
-      focus(cityIds) {
-        if (!cityIds || !cityIds.length) return fit();
-        const cs = map.cities.filter(c => cityIds.includes(c.id));
-        const xs = cs.map(c => c.x), ys = cs.map(c => c.y);
-        const pad = 80; let x = Math.min(...xs) - pad, y = Math.min(...ys) - pad, w = Math.max(...xs) - x + pad, h = Math.max(...ys) - y + pad;
-        const minW = full.w / 3; if (w < minW) { x -= (minW - w) / 2; w = minW; }
-        if (h < minW * full.h / full.w) { const nh = minW * full.h / full.w; y -= (nh - h) / 2; h = nh; }
-        glideTo(clamp({ x, y, w, h }), 320);
+      // back to the whole board (new game, tab return); instant = no glide
+      toAuto(instant) { toAuto(instant !== false); },
+      get auto() { return auto; },
+      // first time on screen: measure and show the whole board; returns the box the phone layout sizes the board
+      // area from (the board plus the strip kept clear for the zoom buttons)
+      ready() {
+        if (!measured) toAuto(true);
+        const W = svg.clientWidth || 390, b = content(fitScale(W, 1e6));
+        return { x: b.x, y: b.y, w: b.w + RESERVE * b.w / Math.max(200, W - RESERVE), h: b.h };
       },
     };
   }

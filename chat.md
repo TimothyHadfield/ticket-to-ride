@@ -35,3 +35,9 @@
 - **Built:** Natural Earth coastlines, lakes and borders for all 5 maps (build-time `tools/geo-art.js`, one thin-plate-spline warp so coasts bend with nudged cities, `maps/<id>.art.json`); faint US state lines; Swiss neighbours darker and lakes widened; land lighter, sea/lakes darker (manager: land must stand out); label keep-out around other cities.
 - **Verified:** 80/80 tests (new art test failed on the old build first); 393 px + 1280 px screenshots of 15 states, no overflow, no console errors; route taps 477/478 before and after; two blind reviewer passes named all 5 maps, second found no major errors.
 - **Open:** Tim's eye on the colours; real iPhone.
+
+## 2026-10-20 — auto zoom (builder under the manager)
+- **Asked:** Tim: "only an auto zoom that automatically fits the whole board in sight and then you can zoom if you want with easily reseting back to auto mode" (all zoomable boards).
+- **Built:** board.js auto mode (fit whole board incl. names, re-fit on resize with a glide, no drag in auto), hand zoom by pinch/wheel/+/−, clamped pan, fit button dimmed/lit, double tap on empty board resets; auto on tab show, map change, Start and rotation. v1.6.
+- **Verified:** `tools/zoom-check.mjs` 201/201 (old build 150/201); 80/80 unit tests; 393 px + 1280 px screenshots, no overflow, no console errors.
+- **Open:** real fingers on iPhone; route-tap sweep not re-run.

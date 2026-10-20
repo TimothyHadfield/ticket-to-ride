@@ -1,7 +1,7 @@
 # Ticket to Ride — progress
 
 ## START HERE
-Read order: this file → `CLAUDE.md` → `docs/rules-check.md` → `docs/ideas.md`. Last updated: 2026-10-20 (real maps).
+Read order: this file → `CLAUDE.md` → `docs/rules-check.md` → `docs/ideas.md`. Last updated: 2026-10-20 (auto zoom).
 
 ## Goal right now
 Tim: "Ticket to Ride and all the variants is something that I think is great". Phase 2 (his words): "build regular play online with a computer or other online players for all the games and their common varients that match exactly the play of the in-person game ... Make sure to get everything right like rules and artwork and specific numbers of cards, routes, details, etc."
@@ -31,6 +31,7 @@ Measured computer strength (data/strength.json, 1000 games per pairing, 2 player
 ## Standing instructions
 - "Phone layout: the map fills the screen, controls in the leftover space."
 - $0, no copyrighted art or rules text, choices live in Settings, short labels, "?" explains why.
+- "some games have maps and whatnot you can zoom in and out of often. Make it so that there is only an auto zoom that automatically fits the whole board in sight and then you can zoom if you want with easily reseting back to auto mode." (2026-10-20, same in Risk/Pandemic/Carcassonne): auto is the default on load, new game, map change, tab return and rotation; no other zoom modes or saved zoom.
 - "the map of the US in TTR looks nothing like the US. Fix this and any other similar problems accross the games" (2026-10-20): every board must read as the real place at a glance; land clearly stands out from sea and lakes.
 
 ## Traps
@@ -69,7 +70,12 @@ Measured computer strength (data/strength.json, 1000 games per pairing, 2 player
 - Colours: land #2f3a52, coast #5a6d94, sea #070a11, lakes #080c15, Switzerland's neighbours #1a2130. Swiss lakes widened 7 units (routes run on their shores); Neuchâtel's spot moved ~1.5 km inland for that.
 - Measured: 80/80 tests; route taps 477/478 at 393 px (same as before); screenshots scratchpad `design/ticket-to-ride-maps/before|after|review` (session acb6c2a0); blind reviewer named all 5 maps, no major errors (Kathiawar and parts of Lake Geneva sit under track beds).
 
+## Auto zoom (2026-10-20)
+- board.js: one mode. **Auto** = whole board (routes + names at the size they're drawn + 6 px margin) centred and as big as fits, 48 px kept clear on the right for the buttons; re-fits with a glide when the board area resizes; one-finger drag does nothing in auto. Pinch / wheel / + zoom by hand (max 6× the fit); drag pans clamped to the board; zooming out to the fit, the ⤢ button (dimmed in auto, lit warm when zoomed) or a double tap on empty board = back to auto. Rotation, tab show, map change and Start reset to auto (app.js `makeBoard` / start handlers call `toAuto`). Unused `focus()` removed.
+- Check: `node tools/zoom-check.mjs [url]` (Playwright WebKit from ~/.claude/tools; serve the folder first) — 201 checks over 5 maps × 393×659 / 659×393 / 1280×800; old build failed 51. Screenshots scratchpad `design/ticket-to-ride-zoom/before|after` (session acb6c2a0).
+
 ## NOT verified
+- Auto zoom with real fingers on an iPhone (synthetic pointer events only); route-tap sweep (477/478) not re-run after the auto fit got slightly bigger.
 - Real maps on a real iPhone screen (land/sea contrast judged in headless WebKit screenshots only); Tim's eye on the new land/sea colours.
 - Design pass 2 on a real iPhone: the flick/pinch feel was measured with synthetic pointer events in WebKit, not real fingers.
 - Online play with a real second iPhone (verified only with two headless WebKit iPhones against the real Firebase project).

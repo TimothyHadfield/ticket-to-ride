@@ -84,6 +84,9 @@ main { min-height: 0; position: relative; }
 .zoom button + button { border-top: 1px solid var(--line); }
 .zoom button:hover { background: var(--card-hover); }
 .zoom button:active { transform: scale(.9); background: var(--card-hover); }
+/* the fit button: dimmed while the whole board is in view (auto), lit once zoomed by hand */
+.zoom [data-z="fit"] { color: var(--muted); opacity: .45; transition: color .15s, opacity .15s, transform .08s, background .12s; }
+.zoom [data-z="fit"].lit { color: var(--accent-warm); opacity: 1; }
 .board-tip {
   position: absolute; left: 8px; top: 8px; right: 52px; pointer-events: none;
   font-size: 12.5px; color: var(--text); text-shadow: 0 1px 2px #000;
