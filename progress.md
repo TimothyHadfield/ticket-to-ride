@@ -1,7 +1,7 @@
 # Ticket to Ride — progress
 
 ## START HERE
-Read order: this file → `CLAUDE.md` → `docs/rules-check.md` → `docs/ideas.md`. Last updated: 2026-10-20 (visual design pass).
+Read order: this file → `CLAUDE.md` → `docs/rules-check.md` → `docs/ideas.md`. Last updated: 2026-10-20 (visual design pass 2).
 
 ## Goal right now
 Tim: "Ticket to Ride and all the variants is something that I think is great". Phase 2 (his words): "build regular play online with a computer or other online players for all the games and their common varients that match exactly the play of the in-person game ... Make sure to get everything right like rules and artwork and specific numbers of cards, routes, details, etc."
@@ -55,7 +55,14 @@ Measured computer strength (data/strength.json, 1000 games per pairing, 2 player
 - Claim sheet: route glows (`Play.claiming` → `sel`) behind a light scrim; laptop sheets sit over the side panel (Settings: centred).
 - Measured: every route's middle tapped at 393px on all 5 maps, 0 of 478 missed (before and after). Before/after screenshots: scratchpad `ttr-design/before|after` (session acb6c2a0).
 
+## Design pass 2 (2026-10-20, Tim: "I know the ticket to ride needs quite a lot to work")
+- Map (board.js): spaces 10.5 wide on a dark track bed (one bed per city pair, so double routes read as a pair); claimed = fat train on a dark casing with a shine; tunnels = rail ties; ferries = dashed sea-blue band + light loco badges; land lighter, sea blue-black; lakes enclosed by land are filled (flood fill in `smoothLand`, ferries keep theirs); labels stop growing past ~12.5 px when zoomed.
+- Pan/zoom: pinch zooms + pans with the fingers (anchor error 0.05 map units, measured), flick coasts, zoom buttons and focus glide; one 40 px zoom group (fit view reserves 48 px for it).
+- Cards: cream edges, count badge in the corner, 2+ shows a little pile, card-back deck/ticket piles (tickets warm). Claim sheet: mini cards per payment + chevron; laptop sheets sit low in the panel. Settings → "Colour-blind marks" (off by default): shapes on map spaces (zoomed) and card corners.
+- Measured: 75/75 tests; 393 px + 1280 px screenshots of 15 states incl. all 5 maps (scratchpad `design/ticket-to-ride-2/before|after`, session acb6c2a0), no page scroll, no overflow, no console errors; route taps at 393 px: 477/478 (the miss is India Bombay–Calicut tapped exactly where Guntakal–Mormugao crosses it; LANE kept at 7.5 because 8+ caused New York–Washington misses).
+
 ## NOT verified
+- Design pass 2 on a real iPhone: the flick/pinch feel was measured with synthetic pointer events in WebKit, not real fingers.
 - Online play with a real second iPhone (verified only with two headless WebKit iPhones against the real Firebase project).
 - Online rooms of 3–5 people (only 2 tested end-to-end; the game object is tested for every count in node).
 - How the hint `why` wording reads to Tim.

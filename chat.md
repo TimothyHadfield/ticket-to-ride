@@ -23,3 +23,9 @@
 - **Built:** readable phone labels, smooth land, solid claimed routes, compact phone panel (chips, cards, tickets), card-back piles, claim route glow, laptop sheets over the side panel, "Just mine" final score fix.
 - **Verified:** 75/75 tests; before/after screenshots of 13 states at 393px and 1280px (no page scroll, no overflow, no console errors); 478 route taps at 393px, 0 missed.
 - **Open:** Tim's eye on the new look; real iPhone check.
+
+## 2026-10-20 — design pass 2 (builder under the manager)
+- **Asked:** a deeper round on TtR: board-like map on a phone, readable tunnels/ferries/doubles, colour-blind help where cheap, real-looking cards, two-tap claim, physical pan/zoom, all 5 maps.
+- **Built:** track beds, claimed trains on a casing, tunnel ties, ferry bands + loco badges, lake fill, label cap; pinch-pan, flick coast, gliding zoom buttons; card faces/piles/backs, mini cards in the claim sheet; Settings "Colour-blind marks".
+- **Verified:** 75/75 tests; 30 before/after screenshots (393 px + 1280 px, all 5 maps); physics script (pinch anchor 0.05 units, flick glides on, no jump when a finger lifts); 477/478 route taps.
+- **Open:** real-finger feel on Tim's iPhone; Tim's call on the new look and the colour-blind switch wording.
