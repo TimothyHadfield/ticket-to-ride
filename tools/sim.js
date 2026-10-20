@@ -1,5 +1,5 @@
 // Self-play: measures how strong each computer level is.
-//   node tools/sim.js [games=1000] [map=usa|europe|nordic|india|all] [lineup=hard,medium]
+//   node tools/sim.js [games=1000] [map=usa|europe|nordic|india|switzerland|all] [lineup=hard,medium]
 // Seats rotate so nobody always moves first. Prints win rates and average scores.
 'use strict';
 const path = require('path');
@@ -55,7 +55,7 @@ if (require.main === module) {
   const games = +(process.argv[2] || 1000);
   const which = process.argv[3] || 'usa';
   const lineup = (process.argv[4] || 'hard,medium').split(',');
-  const maps = which === 'all' ? ['usa', 'europe', 'nordic', 'india'] : [which];
+  const maps = which === 'all' ? ['usa', 'europe', 'nordic', 'india', 'switzerland'] : [which];
   for (const m of maps) {
     const t0 = Date.now();
     const lu = lineup.slice(0, loadMap(m).players[1]);

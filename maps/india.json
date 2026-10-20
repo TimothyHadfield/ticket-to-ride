@@ -15,7 +15,7 @@
   "keep": 2
  },
  "draw": {
-  "deal": 4,
+  "deal": 3,
   "keep": 1
  },
  "deck": {
@@ -42,17 +42,17 @@
   "8": 21
  },
  "bonuses": {
+  "longest": 10,
   "mandala": [
    0,
    5,
    10,
    20,
    30,
-   40,
-   50
+   40
   ]
  },
- "longestName": "Longest Route",
+ "longestName": "Indian Express",
  "nordicLocos": false,
  "size": [
   1000,
@@ -157,7 +157,7 @@
   },
   {
    "id": "jarhat",
-   "name": "Jorhat",
+   "name": "Jarhat",
    "x": 950,
    "y": 309
   },
@@ -187,7 +187,7 @@
   },
   {
    "id": "ratiam",
-   "name": "Ratlam",
+   "name": "Ratiam",
    "x": 316,
    "y": 431
   },
@@ -229,7 +229,7 @@
   },
   {
    "id": "waltain",
-   "name": "Waltair",
+   "name": "Waltain",
    "x": 587,
    "y": 633
   },
@@ -253,7 +253,7 @@
   },
   {
    "id": "mormugau",
-   "name": "Mormugao",
+   "name": "Mormugau",
    "x": 267,
    "y": 717
   },

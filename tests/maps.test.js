@@ -6,14 +6,16 @@ const assert = require('node:assert');
 const path = require('path');
 const G = require('../js/graph.js');
 const load = id => require(path.join(__dirname, '..', 'maps', id + '.json'));
-const MAPS = ['usa', 'europe', 'nordic', 'india'];
+const MAPS = ['usa', 'europe', 'nordic', 'india', 'switzerland'];
 
 // Published facts (sources in docs/rules-check.md)
 const FACTS = {
   usa: { cities: 36, routes: 100, pairs: 78, tickets: { classic: 30, 1910: 35, bigcities: 35, mega: 69 }, trains: 45, players: [2, 5], cards: 110 },
   europe: { cities: 47, routes: 101, pairs: 90, tickets: { standard: 46 }, long: 6, trains: 45, players: [2, 5], cards: 110, stations: 3 },
-  nordic: { cities: 39, routes: 81, tickets: { standard: 46 }, trains: 40, players: [2, 3] },
-  india: { cities: 39, tickets: { standard: 58 }, trains: 45, players: [2, 4], cards: 110 },
+  nordic: { cities: 39, routes: 81, tickets: { standard: 46 }, trains: 40, players: [2, 3], cards: 110 },
+  india: { cities: 39, routes: 108, tickets: { standard: 58 }, trains: 45, players: [2, 4], cards: 110 },
+  // 34 Swiss cities + 17 border dots (5 Germany, 3 Austria, 5 Italy, 4 France)
+  switzerland: { cities: 51, routes: 88, tickets: { standard: 46 }, trains: 40, players: [2, 3], cards: 110 },
 };
 
 for (const id of MAPS) {
@@ -63,6 +65,7 @@ test('ticket values equal the shortest route (known exceptions only)', () => {
     for (const d of m.ticketDecks) {
       let odd = 0;
       for (const t of d.tickets) {
+        if (t.opts) continue; // country tickets: see the Switzerland test below
         const sp = G.shortest(m, t.a, t.b, r => r.len).dist;
         if (sp === t.pts) continue;
         const key = id + '/' + d.id + '/' + [t.a, t.b].sort().join('/');
@@ -83,6 +86,19 @@ test('USA routes: spot checks against the printed board', () => {
   assert.deepStrictEqual(find('helena', 'omaha').map(r => [r.len, r.color]), [[5, 'red']]);
   assert.deepStrictEqual(find('oklahoma-city', 'santa-fe').map(r => [r.len, r.color]), [[3, 'blue']]);
   assert.strictEqual(m.routes.reduce((a, r) => a + r.len, 0), 309);
+});
+
+test('Switzerland: country ticket values sit within 2 of the shortest route (all 34 city tickets match exactly above)', () => {
+  const T = require('../js/engine.js');
+  const m = T.register(load('switzerland'));
+  let off = 0;
+  for (const t of m.ticketDecks[0].tickets) if (t.opts) for (const o of t.opts) {
+    let sp = Infinity;
+    for (const a of T.ticketEnds(m, t.a)) for (const b of T.ticketEnds(m, o.to)) { const p = G.shortest(m, a, b, r => r.len); if (p) sp = Math.min(sp, p.dist); }
+    assert.ok(Math.abs(o.pts - sp) <= 2, t.a + '->' + o.to + ' ' + o.pts + ' vs ' + sp);
+    if (o.pts !== sp) off++;
+  }
+  assert.strictEqual(off, 9); // the printed cards (per tCHu) differ from the shortest path on 9 options; see docs/rules-check.md
 });
 
 test('Europe: tunnels and ferries', () => {

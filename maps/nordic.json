@@ -29,7 +29,7 @@
    "red": 12,
    "green": 12
   },
-  "loco": 61
+  "loco": 14
  },
  "points": {
   "1": 1,
@@ -47,6 +47,14 @@
  },
  "longestName": "Longest Route",
  "nordicLocos": true,
+ "freeLocoDraw": true,
+ "locoFlush": false,
+ "locosOn": [
+  "ferry",
+  "tunnel"
+ ],
+ "ferryAny": 3,
+ "ticketReturn": "box",
  "size": [
   1000,
   1193
@@ -336,7 +344,8 @@
    "a": "lieksa",
    "b": "murmansk",
    "len": 9,
-   "color": "gray"
+   "color": "gray",
+   "anyFor": 4
   },
   {
    "id": "r6",

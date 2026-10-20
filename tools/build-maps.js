@@ -76,15 +76,48 @@ const CITY = {
     'DELHI': ['Delhi', 28.61, 77.21], 'BAREILLY': ['Bareilly', 28.37, 79.43], 'KARACHI': ['Karachi', 24.86, 67.01],
     'JODHPUR': ['Jodhpur', 26.24, 73.02], 'JAIPUR': ['Jaipur', 26.91, 75.79], 'AGRA': ['Agra', 27.18, 78.01],
     'LUCKNOW': ['Lucknow', 26.85, 80.95], 'KATNI': ['Katni', 23.83, 80.39], 'PATNA': ['Patna', 25.59, 85.14],
-    'DHUBRI': ['Dhubri', 26.02, 89.98], 'JARHAT': ['Jorhat', 26.75, 94.2], 'CHITTAGONG': ['Chittagong', 22.36, 91.78],
+    // Names as printed on the board (Jarhat = Jorhat, Ratiam = Ratlam, Waltain = Waltair, Indur = Nizamabad,
+    // Mormugau = Mormugao); positions are the real places.
+    'DHUBRI': ['Dhubri', 26.02, 89.98], 'JARHAT': ['Jarhat', 26.75, 94.2], 'CHITTAGONG': ['Chittagong', 22.36, 91.78],
     'CALCUTTA': ['Calcutta', 22.57, 88.36], 'BILASPUR': ['Bilaspur', 22.08, 82.14], 'BHOPAL': ['Bhopal', 23.26, 77.41],
-    'RATIAM': ['Ratlam', 23.33, 75.04], 'AHMADABAD': ['Ahmadabad', 23.02, 72.57], 'KHANDWA': ['Khandwa', 21.82, 76.35],
+    'RATIAM': ['Ratiam', 23.33, 75.04], 'AHMADABAD': ['Ahmadabad', 23.02, 72.57], 'KHANDWA': ['Khandwa', 21.82, 76.35],
     'RAIPUR': ['Raipur', 21.25, 81.63], 'BOMBAY': ['Bombay', 19.08, 72.88], 'MANMAD': ['Manmad', 20.25, 74.44],
-    'INDUR': ['Indur', 18.67, 78.09], 'WALTAIN': ['Waltair', 17.69, 83.22], 'BEZWADA': ['Bezwada', 16.51, 80.65],
-    'WADI': ['Wadi', 17.06, 76.99], 'POONA': ['Poona', 18.52, 73.86], 'MORMUGAU': ['Mormugao', 15.41, 73.8],
+    'INDUR': ['Indur', 18.67, 78.09], 'WALTAIN': ['Waltain', 17.69, 83.22], 'BEZWADA': ['Bezwada', 16.51, 80.65],
+    'WADI': ['Wadi', 17.06, 76.99], 'POONA': ['Poona', 18.52, 73.86], 'MORMUGAU': ['Mormugau', 15.41, 73.8],
     'GUNTAKAL': ['Guntakal', 15.17, 77.37], 'MADRAS': ['Madras', 13.08, 80.27], 'MANGALORE': ['Mangalore', 12.91, 74.86],
     'ERODE': ['Erode', 11.34, 77.72], 'CALICUT': ['Calicut', 11.26, 75.78], 'QUILON': ['Quilon', 8.89, 76.61],
   },
+  switzerland: {
+    'BASEL': ['Basel', 47.56, 7.59], 'BADEN': ['Baden', 47.47, 8.31], 'BERN': ['Bern', 46.95, 7.45],
+    'BELLINZONA': ['Bellinzona', 46.19, 9.02], 'BRIG': ['Brig', 46.32, 7.99], 'BRUSIO': ['Brusio', 46.26, 10.12],
+    'CHUR': ['Chur', 46.85, 9.53], 'DAVOS': ['Davos', 46.8, 9.84], 'DELÉMONT': ['Delémont', 47.36, 7.35],
+    'FRIBOURG': ['Fribourg', 46.81, 7.16], 'GENÈVE': ['Genève', 46.2, 6.14], 'INTERLAKEN': ['Interlaken', 46.69, 7.86],
+    'KREUZLINGEN': ['Kreuzlingen', 47.65, 9.17], 'LA CHAUX-DE-FONDS': ['La Chaux-de-Fonds', 47.1, 6.83],
+    'LAUSANNE': ['Lausanne', 46.52, 6.63], 'LOCARNO': ['Locarno', 46.17, 8.8], 'LUGANO': ['Lugano', 46.0, 8.95],
+    'LUZERN': ['Luzern', 47.05, 8.31], 'MARTIGNY': ['Martigny', 46.1, 7.07], 'NEUCHÂTEL': ['Neuchâtel', 46.99, 6.93],
+    'OLTEN': ['Olten', 47.35, 7.9], 'PFÄFFIKON': ['Pfäffikon', 47.2, 8.78], 'SARGANS': ['Sargans', 47.05, 9.44],
+    'SCHAFFHAUSEN': ['Schaffhausen', 47.7, 8.63], 'SCHWYZ': ['Schwyz', 47.02, 8.65], 'SION': ['Sion', 46.23, 7.36],
+    'SOLOTHURN': ['Solothurn', 47.21, 7.54], 'ST.GALLEN': ['St. Gallen', 47.42, 9.38], 'VADUZ': ['Vaduz', 47.14, 9.52],
+    'WASSEN': ['Wassen', 46.71, 8.6], 'WINTERTHUR': ['Winterthur', 47.5, 8.72], 'YVERDON': ['Yverdon', 46.78, 6.64],
+    'ZUG': ['Zug', 47.17, 8.52], 'ZÜRICH': ['Zürich', 47.38, 8.54],
+  },
+};
+// Switzerland's border flags: each track to a neighbouring country ends at its own flag (5 Germany, 3 Austria,
+// 5 Italy, 4 France, as on the board). Key: COUNTRY|SWISS CITY|COLOUR -> a real spot just across the border.
+const COUNTRIES = {
+  switzerland: {
+    'DEUTSCHLAND': 'Deutschland', 'ÖSTERREICH': 'Österreich', 'ITALIA': 'Italia', 'FRANCE': 'France',
+  },
+};
+const BORDER = {
+  'DEUTSCHLAND|BASEL|blue': [47.62, 7.68], 'DEUTSCHLAND|SCHAFFHAUSEN|yellow': [47.8, 8.6],
+  'DEUTSCHLAND|KREUZLINGEN|orange': [47.78, 9.0], 'DEUTSCHLAND|KREUZLINGEN|white': [47.76, 9.35],
+  'DEUTSCHLAND|ST.GALLEN|gray': [47.55, 9.68],
+  'ÖSTERREICH|ST.GALLEN|gray': [47.4, 9.75], 'ÖSTERREICH|VADUZ|red': [47.24, 9.65], 'ÖSTERREICH|DAVOS|gray': [46.95, 10.25],
+  'ITALIA|BRIG|green': [46.11, 8.29], 'ITALIA|BRUSIO|green': [46.15, 10.2], 'ITALIA|DAVOS|gray': [46.5, 10.37],
+  'ITALIA|LUGANO|white': [45.81, 9.08], 'ITALIA|LOCARNO|orange': [45.98, 8.7],
+  'FRANCE|DELÉMONT|black': [47.5, 6.95], 'FRANCE|LA CHAUX-DE-FONDS|green': [47.06, 6.6],
+  'FRANCE|GENÈVE|yellow': [46.2, 5.95], 'FRANCE|MARTIGNY|gray': [45.92, 6.87],
 };
 const ALIAS = { 'SEVESTOPOL': 'SEVASTOPOL', 'KIRSTIANSAND': 'KRISTIANSAND', 'HONNINGVAG': 'HONNINGSVAG' };
 
@@ -116,14 +149,23 @@ const MAPS = [
     ticketDecks: [{ id: 'standard', name: 'Standard (46)', file: 'europe.tickets.txt', longFrom: 20 }],
     view: { w: 1000, lat0: 48 },
   },
+  // Loco rules per map (all optional; absent = the USA/Europe rules):
+  //   freeLocoDraw  face-up locomotives are drawn like any other card (two per turn OK)
+  //   locoFlush     false = three face-up locomotives are NOT swept (default: swept)
+  //   locosOn       route kinds where locomotives are wild ('train', 'ferry', 'tunnel'; default all)
+  //   ferryAny      any N cards may stand in for one locomotive on a ferry
+  //   anyFor        per route (special): any N cards may stand in for one card of the route
+  //   ticketReturn  'box' = unkept tickets leave the game (default: bottom of the deck)
+  // nordicLocos is kept equal to freeLocoDraw for older readers.
   {
     id: 'nordic', key: 'nordic', name: 'Nordic Countries', routes: 'nordic_countries.routes.txt',
-    players: [2, 3], trains: 40, stations: 0, deck: { colors: { pink: 12, white: 12, blue: 12, yellow: 12, orange: 12, black: 12, red: 12, green: 12 }, loco: 61 },
+    players: [2, 3], trains: 40, stations: 0, deck: STD_DECK,
     points: Object.assign({}, STD_POINTS, { 9: 27 }),
     bothDoublesFrom: 3, startHand: 4,
     setup: { deal: 5, keep: 2 }, draw: { deal: 3, keep: 1 },
     bonuses: { globetrotter: 10 },
-    nordicLocos: true,
+    freeLocoDraw: true, locoFlush: false, locosOn: ['ferry', 'tunnel'], ferryAny: 3, ticketReturn: 'box',
+    special: { 'LIEKSA|MURMANSK': { anyFor: 4 } },
     ticketDecks: [{ id: 'standard', name: 'Standard (46)', file: 'nordic_countries.tickets.txt' }],
     view: { w: 1000, lat0: 63 },
   },
@@ -131,10 +173,21 @@ const MAPS = [
     id: 'india', key: 'india', name: 'India', routes: 'india.routes.txt',
     players: [2, 4], trains: 45, stations: 0, deck: STD_DECK, points: STD_POINTS,
     bothDoublesFrom: 4, startHand: 4,
-    setup: { deal: 4, keep: 2 }, draw: { deal: 4, keep: 1 },
-    bonuses: { mandala: [0, 5, 10, 20, 30, 40, 50] },
+    setup: { deal: 4, keep: 2 }, draw: { deal: 3, keep: 1 },
+    // Mandala: TOTAL bonus by number of qualifying tickets (0, 1, 2, 3, 4, 5 or more)
+    bonuses: { longest: 10, mandala: [0, 5, 10, 20, 30, 40] }, longestName: 'Indian Express',
     ticketDecks: [{ id: 'standard', name: 'Standard (58)', file: 'india.tickets.txt' }],
     view: { w: 1000, lat0: 22 },
+  },
+  {
+    id: 'switzerland', key: 'switzerland', name: 'Switzerland', routes: 'switzerland.routes.txt',
+    players: [2, 3], trains: 40, stations: 0, deck: STD_DECK, points: STD_POINTS,
+    bothDoublesFrom: 3, startHand: 4,
+    setup: { deal: 5, keep: 2 }, draw: { deal: 3, keep: 1 },
+    bonuses: { longest: 10 }, longestName: 'Transalpine Express',
+    freeLocoDraw: true, locoFlush: true, locosOn: ['tunnel'], ticketReturn: 'box',
+    ticketDecks: [{ id: 'standard', name: 'Standard (46)', file: 'switzerland.tickets.txt' }],
+    view: { w: 1000, lat0: 47 },
   },
 ];
 
@@ -142,14 +195,15 @@ const MAPS = [
 const COLOR = { GRAY: 'gray', PINK: 'pink', WHITE: 'white', BLUE: 'blue', YELLOW: 'yellow', ORANGE: 'orange', BLACK: 'black', RED: 'red', GREEN: 'green' };
 function canon(name) { name = name.trim().toUpperCase(); return ALIAS[name] || name; }
 
+// Route file: optional list of city names, then one route per line: CITY LEN COLOUR CITY
+// (negative length = tunnel, LEN.LOCOS = ferry). Lines starting with # are comments.
+// Without a city list, the cities are taken from the routes in order of appearance.
 function parseRoutes(file) {
-  const lines = fs.readFileSync(path.join(SRC, file), 'utf8').split(/\r?\n/);
+  const lines = fs.readFileSync(path.join(SRC, file), 'utf8').split(/\r?\n/).map(l => l.trim()).filter(l => l && !l.startsWith('#'));
   const cities = []; const routes = [];
-  let i = 0;
-  for (; i < lines.length && lines[i].trim(); i++) cities.push(canon(lines[i]));
-  for (; i < lines.length; i++) {
-    const m = lines[i].trim().match(/^(.+?) (-?[\d.]+) ([A-Z]+) (.+)$/);
-    if (!m) continue;
+  for (const line of lines) {
+    const m = line.match(/^(.+?) (-?[\d.]+) ([A-Z]+) (.+)$/);
+    if (!m) { cities.push(canon(line)); continue; }
     const [, a, n, c, b] = m;
     let kind = 'train', len, locos = 0;
     if (n.startsWith('-')) { kind = 'tunnel'; len = +n.slice(1); }
@@ -158,13 +212,24 @@ function parseRoutes(file) {
     if (!COLOR[c]) throw new Error('bad colour ' + c);
     routes.push({ a: canon(a), b: canon(b), len, color: COLOR[c], kind, locos });
   }
+  if (!cities.length) for (const r of routes) for (const c of [r.a, r.b]) if (!cities.includes(c)) cities.push(c);
   return { cities, routes };
 }
+// Ticket file: CITY PTS CITY, or (country tickets) FROM -> TO PTS, TO PTS ... [(x2 cards)]
 function parseTickets(file) {
-  return fs.readFileSync(path.join(SRC, file), 'utf8').split(/\r?\n/).map(l => l.trim()).filter(Boolean).map(l => {
+  const out = [];
+  fs.readFileSync(path.join(SRC, file), 'utf8').split(/\r?\n/).map(l => l.trim()).filter(l => l && !l.startsWith('#')).forEach(l => {
+    if (l.includes('->')) {
+      const copies = /\(x(\d+) cards?\)/.test(l) ? +l.match(/\(x(\d+) cards?\)/)[1] : 1;
+      const [from, rest] = l.replace(/\(.*\)/, '').split('->');
+      const opts = rest.split(',').map(s => s.trim().match(/^(.+) (\d+)$/)).map(m => ({ to: canon(m[1]), pts: +m[2] }));
+      for (let k = 0; k < copies; k++) out.push({ a: canon(from), opts });
+      return;
+    }
     const m = l.match(/^(.+?) (\d+) (.+)$/);
-    return { a: canon(m[1]), b: canon(m[3]), pts: +m[2] };
+    out.push({ a: canon(m[1]), b: canon(m[3]), pts: +m[2] });
   });
+  return out;
 }
 
 // ---------------------------------------------------------------- layout
@@ -209,23 +274,55 @@ function layout(cfg, cityKeys, routes, table) {
 }
 
 // ---------------------------------------------------------------- build
-function slug(k) { return k.toLowerCase().replace(/[^a-z]+/g, '-').replace(/^-|-$/g, ''); }
+function slug(k) { return k.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''); }
 
 for (const cfg of MAPS) {
-  const table = CITY[cfg.key];
-  const { cities, routes } = parseRoutes(cfg.routes);
+  const table = Object.assign({}, CITY[cfg.key]);
+  const parsed = parseRoutes(cfg.routes);
+  const routes = parsed.routes;
+  let cities = parsed.cities;
+  // Country edges: every track into a country gets its own border dot, numbered per country.
+  const countryNames = COUNTRIES[cfg.key] || {};
+  const countryDots = {}; // COUNTRY -> [dot keys]
+  if (Object.keys(countryNames).length) {
+    cities = cities.filter(c => !countryNames[c]);
+    for (const r of routes) for (const end of ['a', 'b']) {
+      const k = r[end];
+      if (!countryNames[k]) continue;
+      const swiss = end === 'a' ? r.b : r.a;
+      const where = BORDER[k + '|' + swiss + '|' + r.color];
+      if (!where) throw new Error(cfg.id + ': no border spot for ' + k + '|' + swiss + '|' + r.color);
+      const list = countryDots[k] = countryDots[k] || [];
+      const key = k + ' ' + (list.length + 1);
+      list.push(key);
+      table[key] = [countryNames[k], where[0], where[1]];
+      cities.push(key);
+      r[end] = key;
+    }
+  }
   for (const c of cities) if (!table[c]) throw new Error(cfg.id + ': no coords for ' + c);
   for (const r of routes) for (const c of [r.a, r.b]) if (!cities.includes(c)) throw new Error(cfg.id + ': unknown city ' + c);
   const { pos, h } = layout(cfg, cities, routes, table);
-  const outCities = cities.map(k => ({ id: slug(k), name: table[k][0], x: pos[k][0], y: pos[k][1] }));
+  const countryOf = {};
+  for (const [k, dots] of Object.entries(countryDots)) for (const d of dots) countryOf[d] = slug(k);
+  const outCities = cities.map(k => {
+    const o = { id: slug(k), name: table[k][0], x: pos[k][0], y: pos[k][1] };
+    if (countryOf[k]) o.country = countryOf[k];
+    return o;
+  });
   // routes: twins share a pair key; order twins so that their offsets are stable
   const outRoutes = routes.map((r, i) => {
     const [a, b] = [slug(r.a), slug(r.b)].sort();
     const o = { id: 'r' + i, a, b, len: r.len, color: r.color };
     if (r.kind !== 'train') o.kind = r.kind;
     if (r.locos) o.locos = r.locos;
+    const sp = (cfg.special || {})[[r.a, r.b].sort().join('|')];
+    if (sp) Object.assign(o, sp);
     return o;
   });
+  const countries = Object.keys(countryDots).length
+    ? Object.fromEntries(Object.entries(countryDots).map(([k, dots]) => [slug(k), { name: countryNames[k], cities: dots.map(slug) }]))
+    : null;
   const byPair = {};
   outRoutes.forEach(r => { (byPair[r.a + '|' + r.b] = byPair[r.a + '|' + r.b] || []).push(r); });
   Object.values(byPair).forEach(list => {
@@ -234,7 +331,10 @@ for (const cfg of MAPS) {
   });
   const ticketDecks = cfg.ticketDecks.map(d => {
     const t = parseTickets(d.file).map(t => {
-      for (const c of [t.a, t.b]) if (!cities.includes(c)) throw new Error(cfg.id + ' ticket city ' + c);
+      const known = c => cities.includes(c) || !!countryNames[c];
+      for (const c of [t.a].concat(t.opts ? t.opts.map(o => o.to) : [t.b])) if (!known(c)) throw new Error(cfg.id + ' ticket city ' + c);
+      // country ticket: {a: city or country id, opts: [{to: country id, pts}]}
+      if (t.opts) return { a: slug(t.a), opts: t.opts.map(o => ({ to: slug(o.to), pts: o.pts })) };
       const o = { a: slug(t.a), b: slug(t.b), pts: t.pts };
       if (d.longFrom && t.pts >= d.longFrom) o.long = true;
       return o;
@@ -247,9 +347,11 @@ for (const cfg of MAPS) {
     id: cfg.id, name: cfg.name, players: cfg.players, trains: cfg.trains, stations: cfg.stations,
     stationPoints: cfg.stationPoints || 0, startHand: cfg.startHand, bothDoublesFrom: cfg.bothDoublesFrom,
     setup: cfg.setup, draw: cfg.draw, deck: cfg.deck, points: cfg.points, bonuses: cfg.bonuses,
-    longestName: cfg.longestName || 'Longest Route', nordicLocos: !!cfg.nordicLocos,
-    size: [1000, h], cities: outCities, routes: outRoutes, ticketDecks,
+    longestName: cfg.longestName || 'Longest Route', nordicLocos: !!cfg.freeLocoDraw,
   };
+  for (const k of ['freeLocoDraw', 'locoFlush', 'locosOn', 'ferryAny', 'ticketReturn']) if (cfg[k] !== undefined) out[k] = cfg[k];
+  if (countries) out.countries = countries;
+  Object.assign(out, { size: [1000, h], cities: outCities, routes: outRoutes, ticketDecks });
   fs.writeFileSync(path.join(ROOT, 'maps', cfg.id + '.json'), JSON.stringify(out, null, 1));
   console.log(cfg.id, outCities.length, 'cities', outRoutes.length, 'routes', ticketDecks.map(d => d.id + ':' + d.tickets.length).join(' '), 'h=' + h);
 }

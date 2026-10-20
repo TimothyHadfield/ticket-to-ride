@@ -13,7 +13,7 @@ function cards(s) {
   return n;
 }
 
-for (const id of ['usa', 'europe', 'nordic', 'india']) {
+for (const id of ['usa', 'europe', 'nordic', 'india', 'switzerland']) {
   test(id + ': computer games run to the end by the rules', () => {
     const map = loadMap(id);
     const total = Object.values(map.deck.colors).reduce((a, b) => a + b, 0) + map.deck.loco;

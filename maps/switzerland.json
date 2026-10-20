@@ -1,0 +1,1529 @@
+{
+ "id": "switzerland",
+ "name": "Switzerland",
+ "players": [
+  2,
+  3
+ ],
+ "trains": 40,
+ "stations": 0,
+ "stationPoints": 0,
+ "startHand": 4,
+ "bothDoublesFrom": 3,
+ "setup": {
+  "deal": 5,
+  "keep": 2
+ },
+ "draw": {
+  "deal": 3,
+  "keep": 1
+ },
+ "deck": {
+  "colors": {
+   "pink": 12,
+   "white": 12,
+   "blue": 12,
+   "yellow": 12,
+   "orange": 12,
+   "black": 12,
+   "red": 12,
+   "green": 12
+  },
+  "loco": 14
+ },
+ "points": {
+  "1": 1,
+  "2": 2,
+  "3": 4,
+  "4": 7,
+  "5": 10,
+  "6": 15,
+  "7": 18,
+  "8": 21
+ },
+ "bonuses": {
+  "longest": 10
+ },
+ "longestName": "Transalpine Express",
+ "nordicLocos": true,
+ "freeLocoDraw": true,
+ "locoFlush": true,
+ "locosOn": [
+  "tunnel"
+ ],
+ "ticketReturn": "box",
+ "countries": {
+  "osterreich": {
+   "name": "Österreich",
+   "cities": [
+    "osterreich-1",
+    "osterreich-2",
+    "osterreich-3"
+   ]
+  },
+  "deutschland": {
+   "name": "Deutschland",
+   "cities": [
+    "deutschland-1",
+    "deutschland-2",
+    "deutschland-3",
+    "deutschland-4",
+    "deutschland-5"
+   ]
+  },
+  "italia": {
+   "name": "Italia",
+   "cities": [
+    "italia-1",
+    "italia-2",
+    "italia-3",
+    "italia-4",
+    "italia-5"
+   ]
+  },
+  "france": {
+   "name": "France",
+   "cities": [
+    "france-1",
+    "france-2",
+    "france-3",
+    "france-4"
+   ]
+  }
+ },
+ "size": [
+  1000,
+  708
+ ],
+ "cities": [
+  {
+   "id": "st-gallen",
+   "name": "St. Gallen",
+   "x": 751,
+   "y": 182
+  },
+  {
+   "id": "vaduz",
+   "name": "Vaduz",
+   "x": 763,
+   "y": 246
+  },
+  {
+   "id": "baden",
+   "name": "Baden",
+   "x": 529,
+   "y": 163
+  },
+  {
+   "id": "basel",
+   "name": "Basel",
+   "x": 379,
+   "y": 152
+  },
+  {
+   "id": "olten",
+   "name": "Olten",
+   "x": 453,
+   "y": 202
+  },
+  {
+   "id": "zurich",
+   "name": "Zürich",
+   "x": 581,
+   "y": 194
+  },
+  {
+   "id": "delemont",
+   "name": "Delémont",
+   "x": 341,
+   "y": 200
+  },
+  {
+   "id": "bellinzona",
+   "name": "Bellinzona",
+   "x": 687,
+   "y": 542
+  },
+  {
+   "id": "locarno",
+   "name": "Locarno",
+   "x": 627,
+   "y": 550
+  },
+  {
+   "id": "lugano",
+   "name": "Lugano",
+   "x": 669,
+   "y": 600
+  },
+  {
+   "id": "wassen",
+   "name": "Wassen",
+   "x": 594,
+   "y": 391
+  },
+  {
+   "id": "bern",
+   "name": "Bern",
+   "x": 363,
+   "y": 320
+  },
+  {
+   "id": "fribourg",
+   "name": "Fribourg",
+   "x": 305,
+   "y": 362
+  },
+  {
+   "id": "interlaken",
+   "name": "Interlaken",
+   "x": 445,
+   "y": 397
+  },
+  {
+   "id": "luzern",
+   "name": "Luzern",
+   "x": 530,
+   "y": 296
+  },
+  {
+   "id": "neuchatel",
+   "name": "Neuchâtel",
+   "x": 262,
+   "y": 319
+  },
+  {
+   "id": "solothurn",
+   "name": "Solothurn",
+   "x": 382,
+   "y": 245
+  },
+  {
+   "id": "brig",
+   "name": "Brig",
+   "x": 472,
+   "y": 506
+  },
+  {
+   "id": "sion",
+   "name": "Sion",
+   "x": 345,
+   "y": 532
+  },
+  {
+   "id": "brusio",
+   "name": "Brusio",
+   "x": 894,
+   "y": 513
+  },
+  {
+   "id": "chur",
+   "name": "Chur",
+   "x": 785,
+   "y": 357
+  },
+  {
+   "id": "davos",
+   "name": "Davos",
+   "x": 845,
+   "y": 365
+  },
+  {
+   "id": "sargans",
+   "name": "Sargans",
+   "x": 751,
+   "y": 306
+  },
+  {
+   "id": "schaffhausen",
+   "name": "Schaffhausen",
+   "x": 597,
+   "y": 111
+  },
+  {
+   "id": "kreuzlingen",
+   "name": "Kreuzlingen",
+   "x": 707,
+   "y": 122
+  },
+  {
+   "id": "la-chaux-de-fonds",
+   "name": "La Chaux-de-Fonds",
+   "x": 240,
+   "y": 262
+  },
+  {
+   "id": "martigny",
+   "name": "Martigny",
+   "x": 287,
+   "y": 571
+  },
+  {
+   "id": "geneve",
+   "name": "Genève",
+   "x": 111,
+   "y": 541
+  },
+  {
+   "id": "lausanne",
+   "name": "Lausanne",
+   "x": 198,
+   "y": 447
+  },
+  {
+   "id": "yverdon",
+   "name": "Yverdon",
+   "x": 200,
+   "y": 370
+  },
+  {
+   "id": "winterthur",
+   "name": "Winterthur",
+   "x": 633,
+   "y": 160
+  },
+  {
+   "id": "schwyz",
+   "name": "Schwyz",
+   "x": 608,
+   "y": 306
+  },
+  {
+   "id": "zug",
+   "name": "Zug",
+   "x": 574,
+   "y": 254
+  },
+  {
+   "id": "pfaffikon",
+   "name": "Pfäffikon",
+   "x": 635,
+   "y": 246
+  },
+  {
+   "id": "osterreich-1",
+   "name": "Österreich",
+   "x": 835,
+   "y": 185,
+   "country": "osterreich"
+  },
+  {
+   "id": "osterreich-2",
+   "name": "Österreich",
+   "x": 824,
+   "y": 245,
+   "country": "osterreich"
+  },
+  {
+   "id": "deutschland-1",
+   "name": "Deutschland",
+   "x": 423,
+   "y": 110,
+   "country": "deutschland"
+  },
+  {
+   "id": "italia-1",
+   "name": "Italia",
+   "x": 532,
+   "y": 568,
+   "country": "italia"
+  },
+  {
+   "id": "italia-2",
+   "name": "Italia",
+   "x": 921,
+   "y": 567,
+   "country": "italia"
+  },
+  {
+   "id": "osterreich-3",
+   "name": "Österreich",
+   "x": 926,
+   "y": 320,
+   "country": "osterreich"
+  },
+  {
+   "id": "italia-3",
+   "name": "Italia",
+   "x": 950,
+   "y": 453,
+   "country": "italia"
+  },
+  {
+   "id": "deutschland-2",
+   "name": "Deutschland",
+   "x": 592,
+   "y": 50,
+   "country": "deutschland"
+  },
+  {
+   "id": "deutschland-3",
+   "name": "Deutschland",
+   "x": 672,
+   "y": 72,
+   "country": "deutschland"
+  },
+  {
+   "id": "deutschland-4",
+   "name": "Deutschland",
+   "x": 749,
+   "y": 77,
+   "country": "deutschland"
+  },
+  {
+   "id": "deutschland-5",
+   "name": "Deutschland",
+   "x": 804,
+   "y": 132,
+   "country": "deutschland"
+  },
+  {
+   "id": "france-1",
+   "name": "France",
+   "x": 262,
+   "y": 158,
+   "country": "france"
+  },
+  {
+   "id": "france-2",
+   "name": "France",
+   "x": 246,
+   "y": 624,
+   "country": "france"
+  },
+  {
+   "id": "france-3",
+   "name": "France",
+   "x": 50,
+   "y": 541,
+   "country": "france"
+  },
+  {
+   "id": "france-4",
+   "name": "France",
+   "x": 186,
+   "y": 291,
+   "country": "france"
+  },
+  {
+   "id": "italia-4",
+   "name": "Italia",
+   "x": 691,
+   "y": 657,
+   "country": "italia"
+  },
+  {
+   "id": "italia-5",
+   "name": "Italia",
+   "x": 608,
+   "y": 608,
+   "country": "italia"
+  }
+ ],
+ "routes": [
+  {
+   "id": "r0",
+   "a": "osterreich-1",
+   "b": "st-gallen",
+   "len": 4,
+   "color": "gray",
+   "kind": "tunnel"
+  },
+  {
+   "id": "r1",
+   "a": "osterreich-2",
+   "b": "vaduz",
+   "len": 1,
+   "color": "red",
+   "kind": "tunnel"
+  },
+  {
+   "id": "r2",
+   "a": "baden",
+   "b": "basel",
+   "len": 3,
+   "color": "red",
+   "kind": "tunnel"
+  },
+  {
+   "id": "r3",
+   "a": "baden",
+   "b": "olten",
+   "len": 2,
+   "color": "pink"
+  },
+  {
+   "id": "r4",
+   "a": "baden",
+   "b": "zurich",
+   "len": 1,
+   "color": "yellow"
+  },
+  {
+   "id": "r5",
+   "a": "basel",
+   "b": "deutschland-1",
+   "len": 1,
+   "color": "blue",
+   "kind": "tunnel"
+  },
+  {
+   "id": "r6",
+   "a": "basel",
+   "b": "delemont",
+   "len": 2,
+   "color": "yellow",
+   "kind": "tunnel"
+  },
+  {
+   "id": "r7",
+   "a": "basel",
+   "b": "olten",
+   "len": 2,
+   "color": "orange",
+   "kind": "tunnel"
+  },
+  {
+   "id": "r8",
+   "a": "bellinzona",
+   "b": "locarno",
+   "len": 1,
+   "color": "black",
+   "kind": "tunnel"
+  },
+  {
+   "id": "r9",
+   "a": "bellinzona",
+   "b": "lugano",
+   "len": 1,
+   "color": "red",
+   "kind": "tunnel",
+   "twin": "r10",
+   "lane": -1
+  },
+  {
+   "id": "r10",
+   "a": "bellinzona",
+   "b": "lugano",
+   "len": 1,
+   "color": "yellow",
+   "kind": "tunnel",
+   "twin": "r9",
+   "lane": 1
+  },
+  {
+   "id": "r11",
+   "a": "bellinzona",
+   "b": "wassen",
+   "len": 4,
+   "color": "gray",
+   "kind": "tunnel",
+   "twin": "r12",
+   "lane": -1
+  },
+  {
+   "id": "r12",
+   "a": "bellinzona",
+   "b": "wassen",
+   "len": 4,
+   "color": "gray",
+   "kind": "tunnel",
+   "twin": "r11",
+   "lane": 1
+  },
+  {
+   "id": "r13",
+   "a": "bern",
+   "b": "fribourg",
+   "len": 1,
+   "color": "orange",
+   "twin": "r14",
+   "lane": -1
+  },
+  {
+   "id": "r14",
+   "a": "bern",
+   "b": "fribourg",
+   "len": 1,
+   "color": "yellow",
+   "twin": "r13",
+   "lane": 1
+  },
+  {
+   "id": "r15",
+   "a": "bern",
+   "b": "interlaken",
+   "len": 3,
+   "color": "blue"
+  },
+  {
+   "id": "r16",
+   "a": "bern",
+   "b": "luzern",
+   "len": 4,
+   "color": "gray",
+   "twin": "r17",
+   "lane": -1
+  },
+  {
+   "id": "r17",
+   "a": "bern",
+   "b": "luzern",
+   "len": 4,
+   "color": "gray",
+   "twin": "r16",
+   "lane": 1
+  },
+  {
+   "id": "r18",
+   "a": "bern",
+   "b": "neuchatel",
+   "len": 2,
+   "color": "red"
+  },
+  {
+   "id": "r19",
+   "a": "bern",
+   "b": "solothurn",
+   "len": 2,
+   "color": "black"
+  },
+  {
+   "id": "r20",
+   "a": "brig",
+   "b": "interlaken",
+   "len": 2,
+   "color": "white",
+   "kind": "tunnel"
+  },
+  {
+   "id": "r21",
+   "a": "brig",
+   "b": "italia-1",
+   "len": 3,
+   "color": "green",
+   "kind": "tunnel"
+  },
+  {
+   "id": "r22",
+   "a": "brig",
+   "b": "locarno",
+   "len": 6,
+   "color": "gray",
+   "kind": "tunnel"
+  },
+  {
+   "id": "r23",
+   "a": "brig",
+   "b": "sion",
+   "len": 3,
+   "color": "black",
+   "kind": "tunnel"
+  },
+  {
+   "id": "r24",
+   "a": "brig",
+   "b": "wassen",
+   "len": 4,
+   "color": "red",
+   "kind": "tunnel"
+  },
+  {
+   "id": "r25",
+   "a": "brusio",
+   "b": "chur",
+   "len": 5,
+   "color": "gray",
+   "kind": "tunnel"
+  },
+  {
+   "id": "r26",
+   "a": "brusio",
+   "b": "davos",
+   "len": 4,
+   "color": "blue",
+   "kind": "tunnel"
+  },
+  {
+   "id": "r27",
+   "a": "brusio",
+   "b": "italia-2",
+   "len": 2,
+   "color": "green",
+   "kind": "tunnel"
+  },
+  {
+   "id": "r28",
+   "a": "chur",
+   "b": "davos",
+   "len": 2,
+   "color": "pink",
+   "kind": "tunnel"
+  },
+  {
+   "id": "r29",
+   "a": "chur",
+   "b": "sargans",
+   "len": 1,
+   "color": "white",
+   "kind": "tunnel"
+  },
+  {
+   "id": "r30",
+   "a": "chur",
+   "b": "wassen",
+   "len": 5,
+   "color": "gray",
+   "kind": "tunnel"
+  },
+  {
+   "id": "r31",
+   "a": "davos",
+   "b": "osterreich-3",
+   "len": 3,
+   "color": "gray",
+   "kind": "tunnel"
+  },
+  {
+   "id": "r32",
+   "a": "davos",
+   "b": "italia-3",
+   "len": 3,
+   "color": "gray",
+   "kind": "tunnel"
+  },
+  {
+   "id": "r33",
+   "a": "davos",
+   "b": "sargans",
+   "len": 3,
+   "color": "black",
+   "kind": "tunnel"
+  },
+  {
+   "id": "r34",
+   "a": "deutschland-2",
+   "b": "schaffhausen",
+   "len": 1,
+   "color": "yellow"
+  },
+  {
+   "id": "r35",
+   "a": "deutschland-3",
+   "b": "kreuzlingen",
+   "len": 1,
+   "color": "orange"
+  },
+  {
+   "id": "r36",
+   "a": "deutschland-4",
+   "b": "kreuzlingen",
+   "len": 1,
+   "color": "white"
+  },
+  {
+   "id": "r37",
+   "a": "deutschland-5",
+   "b": "st-gallen",
+   "len": 2,
+   "color": "gray"
+  },
+  {
+   "id": "r38",
+   "a": "delemont",
+   "b": "france-1",
+   "len": 2,
+   "color": "black",
+   "kind": "tunnel"
+  },
+  {
+   "id": "r39",
+   "a": "delemont",
+   "b": "la-chaux-de-fonds",
+   "len": 3,
+   "color": "white",
+   "kind": "tunnel"
+  },
+  {
+   "id": "r40",
+   "a": "delemont",
+   "b": "solothurn",
+   "len": 1,
+   "color": "pink",
+   "kind": "tunnel"
+  },
+  {
+   "id": "r41",
+   "a": "france-2",
+   "b": "martigny",
+   "len": 2,
+   "color": "gray",
+   "kind": "tunnel"
+  },
+  {
+   "id": "r42",
+   "a": "france-3",
+   "b": "geneve",
+   "len": 1,
+   "color": "yellow"
+  },
+  {
+   "id": "r43",
+   "a": "france-4",
+   "b": "la-chaux-de-fonds",
+   "len": 2,
+   "color": "green",
+   "kind": "tunnel"
+  },
+  {
+   "id": "r44",
+   "a": "fribourg",
+   "b": "lausanne",
+   "len": 3,
+   "color": "red",
+   "twin": "r45",
+   "lane": -1
+  },
+  {
+   "id": "r45",
+   "a": "fribourg",
+   "b": "lausanne",
+   "len": 3,
+   "color": "pink",
+   "twin": "r44",
+   "lane": 1
+  },
+  {
+   "id": "r46",
+   "a": "geneve",
+   "b": "lausanne",
+   "len": 4,
+   "color": "blue",
+   "twin": "r47",
+   "lane": -1
+  },
+  {
+   "id": "r47",
+   "a": "geneve",
+   "b": "lausanne",
+   "len": 4,
+   "color": "white",
+   "twin": "r46",
+   "lane": 1
+  },
+  {
+   "id": "r48",
+   "a": "geneve",
+   "b": "yverdon",
+   "len": 6,
+   "color": "gray"
+  },
+  {
+   "id": "r49",
+   "a": "interlaken",
+   "b": "luzern",
+   "len": 4,
+   "color": "pink"
+  },
+  {
+   "id": "r50",
+   "a": "italia-4",
+   "b": "lugano",
+   "len": 2,
+   "color": "white",
+   "kind": "tunnel"
+  },
+  {
+   "id": "r51",
+   "a": "italia-5",
+   "b": "locarno",
+   "len": 2,
+   "color": "orange",
+   "kind": "tunnel"
+  },
+  {
+   "id": "r52",
+   "a": "kreuzlingen",
+   "b": "schaffhausen",
+   "len": 3,
+   "color": "pink"
+  },
+  {
+   "id": "r53",
+   "a": "kreuzlingen",
+   "b": "st-gallen",
+   "len": 1,
+   "color": "green"
+  },
+  {
+   "id": "r54",
+   "a": "kreuzlingen",
+   "b": "winterthur",
+   "len": 2,
+   "color": "yellow"
+  },
+  {
+   "id": "r55",
+   "a": "lausanne",
+   "b": "martigny",
+   "len": 4,
+   "color": "orange",
+   "kind": "tunnel"
+  },
+  {
+   "id": "r56",
+   "a": "lausanne",
+   "b": "neuchatel",
+   "len": 4,
+   "color": "gray"
+  },
+  {
+   "id": "r57",
+   "a": "la-chaux-de-fonds",
+   "b": "neuchatel",
+   "len": 1,
+   "color": "orange",
+   "kind": "tunnel"
+  },
+  {
+   "id": "r58",
+   "a": "la-chaux-de-fonds",
+   "b": "yverdon",
+   "len": 3,
+   "color": "yellow",
+   "kind": "tunnel"
+  },
+  {
+   "id": "r59",
+   "a": "locarno",
+   "b": "lugano",
+   "len": 1,
+   "color": "pink",
+   "kind": "tunnel"
+  },
+  {
+   "id": "r60",
+   "a": "luzern",
+   "b": "olten",
+   "len": 3,
+   "color": "green"
+  },
+  {
+   "id": "r61",
+   "a": "luzern",
+   "b": "schwyz",
+   "len": 1,
+   "color": "blue"
+  },
+  {
+   "id": "r62",
+   "a": "luzern",
+   "b": "zug",
+   "len": 1,
+   "color": "orange",
+   "twin": "r63",
+   "lane": -1
+  },
+  {
+   "id": "r63",
+   "a": "luzern",
+   "b": "zug",
+   "len": 1,
+   "color": "yellow",
+   "twin": "r62",
+   "lane": 1
+  },
+  {
+   "id": "r64",
+   "a": "martigny",
+   "b": "sion",
+   "len": 2,
+   "color": "green",
+   "kind": "tunnel"
+  },
+  {
+   "id": "r65",
+   "a": "neuchatel",
+   "b": "solothurn",
+   "len": 4,
+   "color": "green"
+  },
+  {
+   "id": "r66",
+   "a": "neuchatel",
+   "b": "yverdon",
+   "len": 2,
+   "color": "black"
+  },
+  {
+   "id": "r67",
+   "a": "olten",
+   "b": "solothurn",
+   "len": 1,
+   "color": "blue"
+  },
+  {
+   "id": "r68",
+   "a": "olten",
+   "b": "zurich",
+   "len": 3,
+   "color": "white"
+  },
+  {
+   "id": "r69",
+   "a": "pfaffikon",
+   "b": "sargans",
+   "len": 3,
+   "color": "yellow",
+   "kind": "tunnel"
+  },
+  {
+   "id": "r70",
+   "a": "pfaffikon",
+   "b": "schwyz",
+   "len": 1,
+   "color": "pink"
+  },
+  {
+   "id": "r71",
+   "a": "pfaffikon",
+   "b": "st-gallen",
+   "len": 3,
+   "color": "orange"
+  },
+  {
+   "id": "r72",
+   "a": "pfaffikon",
+   "b": "zurich",
+   "len": 2,
+   "color": "blue"
+  },
+  {
+   "id": "r73",
+   "a": "sargans",
+   "b": "vaduz",
+   "len": 1,
+   "color": "orange",
+   "kind": "tunnel"
+  },
+  {
+   "id": "r74",
+   "a": "schaffhausen",
+   "b": "winterthur",
+   "len": 1,
+   "color": "black",
+   "twin": "r75",
+   "lane": -1
+  },
+  {
+   "id": "r75",
+   "a": "schaffhausen",
+   "b": "winterthur",
+   "len": 1,
+   "color": "white",
+   "twin": "r74",
+   "lane": 1
+  },
+  {
+   "id": "r76",
+   "a": "schaffhausen",
+   "b": "zurich",
+   "len": 3,
+   "color": "orange"
+  },
+  {
+   "id": "r77",
+   "a": "schwyz",
+   "b": "wassen",
+   "len": 2,
+   "color": "green",
+   "kind": "tunnel",
+   "twin": "r78",
+   "lane": -1
+  },
+  {
+   "id": "r78",
+   "a": "schwyz",
+   "b": "wassen",
+   "len": 2,
+   "color": "yellow",
+   "kind": "tunnel",
+   "twin": "r77",
+   "lane": 1
+  },
+  {
+   "id": "r79",
+   "a": "schwyz",
+   "b": "zug",
+   "len": 1,
+   "color": "black",
+   "twin": "r80",
+   "lane": -1
+  },
+  {
+   "id": "r80",
+   "a": "schwyz",
+   "b": "zug",
+   "len": 1,
+   "color": "white",
+   "twin": "r79",
+   "lane": 1
+  },
+  {
+   "id": "r81",
+   "a": "st-gallen",
+   "b": "vaduz",
+   "len": 2,
+   "color": "blue",
+   "kind": "tunnel"
+  },
+  {
+   "id": "r82",
+   "a": "st-gallen",
+   "b": "winterthur",
+   "len": 3,
+   "color": "red"
+  },
+  {
+   "id": "r83",
+   "a": "st-gallen",
+   "b": "zurich",
+   "len": 4,
+   "color": "black"
+  },
+  {
+   "id": "r84",
+   "a": "winterthur",
+   "b": "zurich",
+   "len": 1,
+   "color": "blue",
+   "twin": "r85",
+   "lane": -1
+  },
+  {
+   "id": "r85",
+   "a": "winterthur",
+   "b": "zurich",
+   "len": 1,
+   "color": "pink",
+   "twin": "r84",
+   "lane": 1
+  },
+  {
+   "id": "r86",
+   "a": "zug",
+   "b": "zurich",
+   "len": 1,
+   "color": "green",
+   "twin": "r87",
+   "lane": -1
+  },
+  {
+   "id": "r87",
+   "a": "zug",
+   "b": "zurich",
+   "len": 1,
+   "color": "red",
+   "twin": "r86",
+   "lane": 1
+  }
+ ],
+ "ticketDecks": [
+  {
+   "id": "standard",
+   "name": "Standard (46)",
+   "tickets": [
+    {
+     "a": "basel",
+     "b": "bern",
+     "pts": 5
+    },
+    {
+     "a": "basel",
+     "b": "brig",
+     "pts": 10
+    },
+    {
+     "a": "basel",
+     "b": "st-gallen",
+     "pts": 8
+    },
+    {
+     "a": "bern",
+     "b": "chur",
+     "pts": 10
+    },
+    {
+     "a": "bern",
+     "b": "lugano",
+     "pts": 12
+    },
+    {
+     "a": "bern",
+     "b": "schwyz",
+     "pts": 5
+    },
+    {
+     "a": "bern",
+     "b": "zurich",
+     "pts": 6
+    },
+    {
+     "a": "fribourg",
+     "b": "luzern",
+     "pts": 5
+    },
+    {
+     "a": "geneve",
+     "b": "basel",
+     "pts": 13
+    },
+    {
+     "a": "geneve",
+     "b": "bern",
+     "pts": 8
+    },
+    {
+     "a": "geneve",
+     "b": "sion",
+     "pts": 10
+    },
+    {
+     "a": "geneve",
+     "b": "zurich",
+     "pts": 14
+    },
+    {
+     "a": "interlaken",
+     "b": "winterthur",
+     "pts": 7
+    },
+    {
+     "a": "kreuzlingen",
+     "b": "zurich",
+     "pts": 3
+    },
+    {
+     "a": "lausanne",
+     "b": "interlaken",
+     "pts": 7
+    },
+    {
+     "a": "lausanne",
+     "b": "luzern",
+     "pts": 8
+    },
+    {
+     "a": "lausanne",
+     "b": "st-gallen",
+     "pts": 13
+    },
+    {
+     "a": "la-chaux-de-fonds",
+     "b": "bern",
+     "pts": 3
+    },
+    {
+     "a": "la-chaux-de-fonds",
+     "b": "luzern",
+     "pts": 7
+    },
+    {
+     "a": "la-chaux-de-fonds",
+     "b": "zurich",
+     "pts": 8
+    },
+    {
+     "a": "luzern",
+     "b": "vaduz",
+     "pts": 6
+    },
+    {
+     "a": "luzern",
+     "b": "zurich",
+     "pts": 2
+    },
+    {
+     "a": "lugano",
+     "b": "chur",
+     "pts": 10
+    },
+    {
+     "a": "neuchatel",
+     "b": "winterthur",
+     "pts": 9
+    },
+    {
+     "a": "olten",
+     "b": "schaffhausen",
+     "pts": 5
+    },
+    {
+     "a": "schaffhausen",
+     "b": "martigny",
+     "pts": 15
+    },
+    {
+     "a": "schaffhausen",
+     "b": "st-gallen",
+     "pts": 4
+    },
+    {
+     "a": "schaffhausen",
+     "b": "zug",
+     "pts": 3
+    },
+    {
+     "a": "st-gallen",
+     "b": "brusio",
+     "pts": 9
+    },
+    {
+     "a": "winterthur",
+     "b": "schwyz",
+     "pts": 3
+    },
+    {
+     "a": "zurich",
+     "b": "basel",
+     "pts": 4
+    },
+    {
+     "a": "zurich",
+     "b": "brusio",
+     "pts": 11
+    },
+    {
+     "a": "zurich",
+     "b": "lugano",
+     "pts": 9
+    },
+    {
+     "a": "zurich",
+     "b": "vaduz",
+     "pts": 6
+    },
+    {
+     "a": "bern",
+     "opts": [
+      {
+       "to": "deutschland",
+       "pts": 6
+      },
+      {
+       "to": "osterreich",
+       "pts": 11
+      },
+      {
+       "to": "italia",
+       "pts": 8
+      },
+      {
+       "to": "france",
+       "pts": 5
+      }
+     ]
+    },
+    {
+     "a": "chur",
+     "opts": [
+      {
+       "to": "deutschland",
+       "pts": 6
+      },
+      {
+       "to": "osterreich",
+       "pts": 3
+      },
+      {
+       "to": "italia",
+       "pts": 5
+      },
+      {
+       "to": "france",
+       "pts": 12
+      }
+     ]
+    },
+    {
+     "a": "lugano",
+     "opts": [
+      {
+       "to": "deutschland",
+       "pts": 12
+      },
+      {
+       "to": "osterreich",
+       "pts": 13
+      },
+      {
+       "to": "italia",
+       "pts": 2
+      },
+      {
+       "to": "france",
+       "pts": 14
+      }
+     ]
+    },
+    {
+     "a": "zurich",
+     "opts": [
+      {
+       "to": "deutschland",
+       "pts": 3
+      },
+      {
+       "to": "osterreich",
+       "pts": 7
+      },
+      {
+       "to": "italia",
+       "pts": 11
+      },
+      {
+       "to": "france",
+       "pts": 7
+      }
+     ]
+    },
+    {
+     "a": "deutschland",
+     "opts": [
+      {
+       "to": "osterreich",
+       "pts": 5
+      },
+      {
+       "to": "italia",
+       "pts": 13
+      },
+      {
+       "to": "france",
+       "pts": 5
+      }
+     ]
+    },
+    {
+     "a": "deutschland",
+     "opts": [
+      {
+       "to": "osterreich",
+       "pts": 5
+      },
+      {
+       "to": "italia",
+       "pts": 13
+      },
+      {
+       "to": "france",
+       "pts": 5
+      }
+     ]
+    },
+    {
+     "a": "osterreich",
+     "opts": [
+      {
+       "to": "deutschland",
+       "pts": 5
+      },
+      {
+       "to": "italia",
+       "pts": 6
+      },
+      {
+       "to": "france",
+       "pts": 14
+      }
+     ]
+    },
+    {
+     "a": "osterreich",
+     "opts": [
+      {
+       "to": "deutschland",
+       "pts": 5
+      },
+      {
+       "to": "italia",
+       "pts": 6
+      },
+      {
+       "to": "france",
+       "pts": 14
+      }
+     ]
+    },
+    {
+     "a": "italia",
+     "opts": [
+      {
+       "to": "deutschland",
+       "pts": 13
+      },
+      {
+       "to": "osterreich",
+       "pts": 6
+      },
+      {
+       "to": "france",
+       "pts": 11
+      }
+     ]
+    },
+    {
+     "a": "italia",
+     "opts": [
+      {
+       "to": "deutschland",
+       "pts": 13
+      },
+      {
+       "to": "osterreich",
+       "pts": 6
+      },
+      {
+       "to": "france",
+       "pts": 11
+      }
+     ]
+    },
+    {
+     "a": "france",
+     "opts": [
+      {
+       "to": "deutschland",
+       "pts": 5
+      },
+      {
+       "to": "osterreich",
+       "pts": 14
+      },
+      {
+       "to": "italia",
+       "pts": 11
+      }
+     ]
+    },
+    {
+     "a": "france",
+     "opts": [
+      {
+       "to": "deutschland",
+       "pts": 5
+      },
+      {
+       "to": "osterreich",
+       "pts": 14
+      },
+      {
+       "to": "italia",
+       "pts": 11
+      }
+     ]
+    }
+   ]
+  }
+ ]
+}

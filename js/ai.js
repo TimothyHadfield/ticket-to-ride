@@ -11,7 +11,7 @@
   // ---------------------------------------------------------------- shared reasoning
   function ctx(v, seat) {
     const map = T.mapOf(v), ix = G.index(map), me = v.players[seat];
-    const tickets = T.deckFor(map, v).tickets;
+    const tickets = T.plainTickets ? T.plainTickets(map, v) : T.deckFor(map, v).tickets; // country tickets -> one city pair
     const R = T.rules(v);
     const blocked = r => T.routeOpen(v, r, seat) !== null && v.owner[r.id] !== seat;
     const mineIds = new Set(me.routes);
@@ -50,9 +50,10 @@
     const opts = T.payOptions(c.v, c.seat, routeId);
     if (!opts.length) return null;
     const r = c.ix.routeById[routeId];
-    opts.sort((a, b) => a.locos - b.locos || ((plannedNeed ? plannedNeed[a.color] || 0 : 0) - (plannedNeed ? plannedNeed[b.color] || 0 : 0)) || ((c.me.hand[b.color] || 0) - (c.me.hand[a.color] || 0)));
+    const used = o => o.n + o.locos + (o.any ? Object.values(o.any).reduce((x, y) => x + y, 0) : 0); // fewest cards first (card swaps cost more)
+    opts.sort((a, b) => used(a) - used(b) || a.locos - b.locos || ((plannedNeed ? plannedNeed[a.color] || 0 : 0) - (plannedNeed ? plannedNeed[b.color] || 0 : 0)) || ((c.me.hand[b.color] || 0) - (c.me.hand[a.color] || 0)));
     // tunnels: keep a spare card of the colour if possible (prefer the colour with the most cards)
-    if (r.kind === 'tunnel') opts.sort((a, b) => a.locos - b.locos || (c.me.hand[b.color] || 0) - (c.me.hand[a.color] || 0));
+    if (r.kind === 'tunnel') opts.sort((a, b) => used(a) - used(b) || a.locos - b.locos || (c.me.hand[b.color] || 0) - (c.me.hand[a.color] || 0));
     return opts[0];
   }
 
@@ -269,7 +270,7 @@
       case 'claim': { const r = ix.routeById[action.route]; return 'Claim ' + cn(r.a) + '–' + cn(r.b) + ' (' + r.len + ')'; }
       case 'draw': return action.from === 'deck' ? 'Draw from the deck' : 'Take the face-up ' + (v.faceUp[action.from] === LOCO ? 'locomotive' : v.faceUp[action.from]);
       case 'drawTickets': return 'Draw new tickets';
-      case 'keepTickets': return 'Keep ' + action.keep.map(t => { const k = T.deckFor(map, v).tickets[t]; return cn(k.a) + '–' + cn(k.b); }).join(', ');
+      case 'keepTickets': return 'Keep ' + action.keep.map(t => { const k = (T.plainTickets ? T.plainTickets(map, v) : T.deckFor(map, v).tickets)[t]; return cn(k.a) + '–' + cn(k.b); }).join(', ');
       case 'station': return 'Build a station in ' + cn(action.city);
       case 'tunnelPay': return action.pay ? 'Pay the extra cards' : 'Give up the tunnel';
       default: return 'Pass';
