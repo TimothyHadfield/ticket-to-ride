@@ -1,7 +1,7 @@
 # Ticket to Ride — progress
 
 ## START HERE
-Read order: this file → `CLAUDE.md` → `docs/rules-check.md` → `docs/ideas.md`. Last updated: 2026-10-19 (phase 2 build).
+Read order: this file → `CLAUDE.md` → `docs/rules-check.md` → `docs/ideas.md`. Last updated: 2026-10-20 (visual design pass).
 
 ## Goal right now
 Tim: "Ticket to Ride and all the variants is something that I think is great". Phase 2 (his words): "build regular play online with a computer or other online players for all the games and their common varients that match exactly the play of the in-person game ... Make sure to get everything right like rules and artwork and specific numbers of cards, routes, details, etc."
@@ -47,12 +47,19 @@ Measured computer strength (data/strength.json, 1000 games per pairing, 2 player
 
 ## QA (fresh agent, 2026-10-20, live site)
 - Fixed: phone taps on 28–59 short routes per map were swallowed by city taps (now 0 of 478 fail, measured by tapping every route's middle in WebKit); routes under the zoom buttons; Start racing a map load; Table's first "Drew tickets" capped at 3; 4–5 player chips cut off; online lobby/join polish.
-- Left as is (low): Table final score with "Just mine" ranks a rival on 0 above you on a negative score (the note says rivals' tickets are missing).
+- Fixed in the design pass: Table final score with "Just mine" now lists you first and crowns nobody (rivals' tickets are missing).
+
+## Design pass (2026-10-20, Tim: "review them again for design improvements especially visually")
+- Map: city names grow to ~8.5 screen px on a phone (`--lf` set in board.js `setVB`, boxes sized at LABEL_MAX so the fit view never cuts a name); land is one smooth shape (canvas blur + threshold, `smoothLand`, vector fallback); claimed routes are solid fatter trains; black spaces outlined; double-track gap 6.5 → 7.5.
+- Phone panel: one-line chips, shorter cards (`preserveAspectRatio slice`, art cropped), one-line ticket rows, My tickets moved above Unseen/Longest. Deck/ticket piles look like card backs; the turn chip is outlined warm.
+- Claim sheet: route glows (`Play.claiming` → `sel`) behind a light scrim; laptop sheets sit over the side panel (Settings: centred).
+- Measured: every route's middle tapped at 393px on all 5 maps, 0 of 478 missed (before and after). Before/after screenshots: scratchpad `ttr-design/before|after` (session acb6c2a0).
 
 ## NOT verified
 - Online play with a real second iPhone (verified only with two headless WebKit iPhones against the real Firebase project).
 - Online rooms of 3–5 people (only 2 tested end-to-end; the game object is tested for every count in node).
 - How the hint `why` wording reads to Tim.
+- Design pass on a real iPhone (checked only in headless WebKit at 393px); the land image's soft edge at high zoom.
 
 ## Rejected / parked
 - Ideas 12–17 in docs/ideas.md (parked, reasons there).
