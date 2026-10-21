@@ -5,7 +5,7 @@
   const T = window.TTR, G = window.TTRGraph, AI = window.TTRAI, O = window.TTROdds, B = window.Board;
   const FX = window.FX, SFX = window.TTRSfx; // sounds + animations (js/fx.js is the shared library, js/sfx.js maps game events to it)
   const TABLE = window.TABLE, TT = window.TTRTable; // the real-table kit (js/table.js, shared) + this game's board frame and cards
-  const VERSION = '1.9';
+  const VERSION = '1.10';
   const MAP_IDS = ['usa', 'europe', 'nordic', 'india', 'switzerland'];
   const MAP_NAMES = { usa: 'USA', europe: 'Europe', nordic: 'Nordic Countries', india: 'India', switzerland: 'Switzerland' };
   const LEVELS = ['easy', 'medium', 'hard'];
@@ -169,7 +169,29 @@
       if (!v.classList.contains('active')) continue;
       // laptop, or a phone on its side during a game: the board takes its grid cell
       const game = v.classList.contains('game');
-      if (wide || (game && window.innerWidth > window.innerHeight)) { wrap.style.height = ''; b.ready(); continue; }
+      const F0 = parseFloat(getComputedStyle(wrap).getPropertyValue('--frame')) || 0;
+      if (wide || window.innerWidth > window.innerHeight) {
+        // laptop or phone on its side: the board is the real board's shape (the drawn map's own width : height), as big
+        // as its space allows, centred; it is never stretched to the space's shape (2026-10-21)
+        const wm = getComputedStyle(wrap), mx = parseFloat(wm.marginLeft) + parseFloat(wm.marginRight), my = parseFloat(wm.marginTop) + parseFloat(wm.marginBottom);
+        let aw, ah;
+        if (game) {
+          // a grid cell: let the board fill it to read its size
+          wrap.style.width = wrap.style.height = ''; wrap.style.justifySelf = wrap.style.alignSelf = 'stretch';
+          aw = wrap.offsetWidth; ah = wrap.offsetHeight;
+        } else {
+          // board beside the panel: the panel keeps at least its basis, the board takes the rest
+          const panel = v.querySelector('.panel'), pb = parseFloat(getComputedStyle(panel).flexBasis) || panel.offsetWidth;
+          aw = v.clientWidth - pb - mx; ah = v.clientHeight - my;
+        }
+        if (!aw || !ah) { b.ready(); continue; }
+        const r = b.ratio(aw - 2 * F0), iw = aw - 2 * F0, ih = ah - 2 * F0;
+        let w = aw, h = ah;
+        if (iw / ih > r) w = Math.round(ih * r + 2 * F0); else h = Math.round(iw / r + 2 * F0);
+        wrap.style.width = w + 'px'; wrap.style.height = h + 'px'; wrap.style.justifySelf = wrap.style.alignSelf = 'center';
+        b.ready(); continue;
+      }
+      wrap.style.width = ''; wrap.style.justifySelf = wrap.style.alignSelf = '';
       if (!wrap.style.height) wrap.style.height = '200px'; // on screen so it can be measured
       const box = b.ready();
       // the map sits inside the board's printed frame (the score track)
@@ -193,7 +215,7 @@
     if (boards[id]) { boards[id].setMap(map); boards[id].toAuto(); Object.assign(boards[id].handlers, handlers); return boards[id]; }
     const wrap = $('#v-' + id + ' .board-wrap');
     const h = Object.assign({}, handlers);
-    const b = B.create(wrap, map, { onRoute: r => h.onRoute && h.onRoute(r), onCity: c => h.onCity && h.onCity(c), onEmpty: () => h.onEmpty && h.onEmpty() });
+    const b = B.create(wrap, map, { onRoute: r => h.onRoute && h.onRoute(r), onCity: c => h.onCity && h.onCity(c), onEmpty: () => h.onEmpty && h.onEmpty(), cityActive: () => !h.cityActive || h.cityActive() });
     b.handlers = h;
     b.frame = TT.frame(wrap); // the board's printed edge with the score track and the players' markers
     boards[id] = b;
@@ -272,7 +294,7 @@
       const mapId = tb ? tb.mapId : (Table.setupMap || 'usa');
       const map = await getMap(mapId);
       Table.map = map;
-      Table.board = makeBoard('table', map, { onRoute: Table.onRoute, onCity: Table.onCity, onEmpty: () => { Table.sel = null; Table.render(); } });
+      Table.board = makeBoard('table', map, { onRoute: Table.onRoute, onCity: Table.onCity, cityActive: () => !!(S.table && S.table.mode === 'station'), onEmpty: () => { Table.sel = null; Table.render(); } });
       $('#sub').textContent = map.name;
       Table.render();
       sizeBoards();
@@ -541,7 +563,7 @@
       const mapId = p ? p.state.mapId : (Play.setupMap || 'usa');
       const map = await getMap(mapId);
       Play.map = map;
-      Play.board = makeBoard('play', map, { onRoute: Play.onRoute, onCity: Play.onCity });
+      Play.board = makeBoard('play', map, { onRoute: Play.onRoute, onCity: Play.onCity, cityActive: () => !!Play.stationMode });
       $('#sub').textContent = map.name;
       Play.render();
       sizeBoards();
@@ -949,7 +971,7 @@
         const map = await getMap(mapId);
         if (Play.net !== net) return;
         Play.map = map;
-        Play.board = makeBoard('play', map, { onRoute: Play.onRoute, onCity: Play.onCity });
+        Play.board = makeBoard('play', map, { onRoute: Play.onRoute, onCity: Play.onCity, cityActive: () => !!Play.stationMode });
         if (S.tab === 'play') { $('#sub').textContent = map.name; sizeBoards(); }
       }
       if (snap.pub && snap.mySeat >= 0) {

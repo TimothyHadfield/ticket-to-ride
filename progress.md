@@ -1,7 +1,7 @@
 # Ticket to Ride — progress
 
 ## START HERE
-Read order: this file → `CLAUDE.md` → `docs/rules-check.md` → `docs/ideas.md`. Last updated: 2026-10-20 (edge pass).
+Read order: this file → `CLAUDE.md` → `docs/rules-check.md` → `docs/ideas.md`. Last updated: 2026-10-20 (visibility pass).
 
 ## Goal right now
 Tim: "Ticket to Ride and all the variants is something that I think is great". Phase 2 (his words): "build regular play online with a computer or other online players for all the games and their common varients that match exactly the play of the in-person game ... Make sure to get everything right like rules and artwork and specific numbers of cards, routes, details, etc."
@@ -35,6 +35,7 @@ Measured computer strength (data/strength.json, 1000 games per pairing, 2 player
 - "add opptional sounds you can add to the games that reflect what's happening in the game accurately as well as win celebrations, and other fun annimations to go along with everything. Just make sure everything is customizable in the settings so the user can play as preffered." (2026-10-20, all games)
 - "the map of the US in TTR looks nothing like the US. Fix this and any other similar problems accross the games" (2026-10-20): every board must read as the real place at a glance; land clearly stands out from sea and lakes.
 - "Could you focus on making each game perfect especially in scenarios that the game doesn't expect or are a little weird." (2026-10-20, all games)
+- "for a lot of the games the cards or board layout is too small to easily see what's going on. Some games just need small design imporvements like filling the screen with the board view and fitting the cards and other things in the empty space, some have severe errors like TTR. Fix this so the view of what's happening and where everything is is very clear. Consider parts of the board that are dense in what's happening and if the user can reasonably see it." (2026-10-20, all games)
 - "could you also make sure that each of the games also have a look to them so that the game (either board or card layout) looks almost identical to how the board or card layout looks like in real life, so it's easy to understand if you've already played it before, and also so it feels more like you're actually playing in real life rather than you're playing it online. Even things like how youre cards or other things are laid out infront of you, make it look like they are actual cards laid out similar to how it looks like in real life. Make the decks look like actual decks. Make the board have the same design as it does in real life with the same layouts. It should look kind of like you're looking through a camera that is connected to a user's glasses that is playing in real life (not actually, but the layout and style of everything should be similar)." (2026-10-20, all games)
 
 ## Traps
@@ -103,7 +104,14 @@ Tim: "Could you focus on making each game perfect especially in scenarios that t
 - Also: empty deck button disabled, station mode cleared after drawing, Table chips show names at 320 with 4–5 players, Table status line no longer wraps word by word, "1 cards".
 - Verified: `tests/edge.test.js` (4 of 5 failed on the old code) + 90/90; Playwright WebKit `ui.mjs` 39/39 after (14 failed before), `twotabs.mjs`.
 
+## Visibility pass (2026-10-20, v1.10, cache ?v=11)
+- The map was never stretched (aspect error 0%); the frame was: on laptop/sideways the board frame filled a cell of another shape, so the map covered only 21–66% of its frame. Now app.js `sizeBoards` sizes the frame to `board.ratio()` (wood shows around it) on laptop and sideways; sideways Table/Lab/setup put the board left, panel right (chips wrap 2 per row there).
+- Zoom control: only + in auto, in a free map corner (board.js `freeCorner`, else the old right strip); − and ⤢ appear once zoomed. City names use the real measured font width, stay inside the board, avoid cars and each other.
+- Crowded tap (two routes / route+city / two cities within 7 screen px): the map glides in 2.6× around the finger first (`magnifyAt`). City taps count only where cities are used (Table station mode, Play station mode, Lab ends) via `cityActive`.
+- Measured (before → after): phone Play map 14% → 19–21% of the screen, names 5.5 → 6.1–6.4 px; phone Table 14% → 29%; sideways Table 6.5% → 27%; laptop Table map fills 51% → 93% of its frame. Route tap sweep 478/478 in WebKit and Chrome (232 need one magnify). zoom-check now 226 checks (new: frame fill > 80% sideways/laptop, − and fit hidden in auto; it waits for glides to settle); old build fails 24. Shots + audit: scratchpad `vis/ticket-to-ride/before|after|audit.md` (session acb6c2a0).
+
 ## NOT verified
+- Visibility pass: real fingers on an iPhone (magnify-on-crowded-tap feel); 320×568 Play map still ~10% of the screen (names ~3.5–4 px) because rivals/supply/hand need the height. Reviewer leftovers not done: North-East USA names now sit inland (New York beside Pittsburgh; pushing them into the sea shrank the phone map 19→17%, tried and reverted); Zürich/München names touch; laptop Play board size shifts a little between states (grid row follows the hand); laptop layout rearrangement (market/tickets into the side panel) is Tim's call.
 - Edge pass: two tabs on a real iPhone (sync measured with two Playwright pages); the Pass button in an online room (engine path same as local, not run online); zoom-check not re-run (Lab layout untouched).
 - Real-table look on a real iPhone; the hand-fan and deal animations by eye at full speed (headless ran at 1–2 fps); (Europe stations and 5-player seats at 320 px now checked in the edge pass.)
 - Sounds by ear (Playwright WebKit on Windows has no Web Audio; sound gating measured in node with a fake AudioContext). Car-by-car clack seen only as running animations, not caught mid-drop in a screenshot. Online sounds from snapshots tested in node only (view diffs = local diffs), not with two phones.

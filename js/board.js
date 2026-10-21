@@ -9,6 +9,8 @@
   // city names: ~15 map units, growing up to LABEL_MAX so they stay >= LABEL_PX on screen when the map is small,
   // and shrinking (in map units) when zoomed in so they stay <= LABEL_PX_MAX on screen
   const LABEL_MIN = 5, LABEL_MAX = 21, LABEL_PX = 8.5, LABEL_PX_MAX = 12.5, LABEL_BASE = 15;
+  // names are kept inside the outermost cities (+ FRAME_PAD map units); OUT_K = how hard (area units per score point)
+  const FRAME_PAD = 16, OUT_K = 150, CAR_HIT = 0.6;
   // small shapes inside each car (Settings: colour-blind marks), one per colour that is easy to confuse
   const CB = {
     red: 'M-1.9 0a1.9 1.9 0 1 0 3.8 0a1.9 1.9 0 1 0-3.8 0z',
@@ -52,9 +54,24 @@
     });
   }
 
+  // a city name's printed width in ems (bold Georgia, as drawn), measured once per name; ~0.58 em a letter without canvas
+  const widths = {};
+  let measureCtx = null;
+  function nameW(s) {
+    if (widths[s]) return widths[s];
+    let w = s.length * 0.58;
+    try {
+      measureCtx = measureCtx || document.createElement('canvas').getContext('2d');
+      if (measureCtx) { measureCtx.font = '700 100px Georgia, "Times New Roman", serif'; w = measureCtx.measureText(s).width / 100 + 0.01 * s.length; }
+    } catch (e) { /* no canvas: the estimate */ }
+    return (widths[s] = w);
+  }
+
   // label spot: the side of the city with the widest gap between its routes
   // ...and away from labels already placed and from other cities (so close cities don't print over each other).
-  function labelSpot(map, c, placed) {
+  // ...and inside the board: a name that sticks out past the outermost cities widens the whole board and so shrinks
+  // the map on a phone (San Francisco / Charleston printed outwards cost a third of the width), so that is penalised
+  function labelSpot(map, c, placed, frame, cars) {
     const angs = [];
     const city = Object.fromEntries(map.cities.map(x => [x.id, x]));
     for (const r of map.routes) {
@@ -63,30 +80,36 @@
       angs.push(Math.atan2(o.y - c.y, o.x - c.x));
     }
     // boxes are sized for the biggest label font (LABEL_MAX), so labels never collide when they grow on a phone
-    const W = c.name.length * 0.56 * LABEL_MAX, H = LABEL_MAX;
-    const spot = a => {
-      const ca = Math.cos(a), sa = Math.sin(a);
-      const anchor = ca > 0.3 ? 'start' : ca < -0.3 ? 'end' : 'middle';
+    const W = nameW(c.name) * LABEL_MAX, H = LABEL_MAX;
+    const spot = (a, far) => {
+      const ca = Math.cos(a) * (far || 1), sa = Math.sin(a) * (far || 1);
+      const anchor = Math.cos(a) > 0.3 ? 'start' : Math.cos(a) < -0.3 ? 'end' : 'middle';
       // the baseline hangs below / sits above / centres on the city, so it stays put whatever the font size
-      const base = sa > 0.3 ? 'hanging' : sa < -0.3 ? 'alphabetic' : 'central';
+      const base = Math.sin(a) > 0.3 ? 'hanging' : Math.sin(a) < -0.3 ? 'alphabetic' : 'central';
       const x = c.x + ca * 14, y = c.y + sa * 13;
       const x0 = anchor === 'start' ? x : anchor === 'end' ? x - W : x - W / 2;
       const y0 = base === 'hanging' ? y : base === 'alphabetic' ? y - H : y - H / 2;
-      return { x, y, anchor, base, box: [x0, y0, x0 + W, y0 + H] };
+      // the box keeps a little air above and below: the printed letters stand ~1.15 em tall, so two names stacked
+      // exactly a line apart still touch (Zürich / München, Santa Fe / Oklahoma City)
+      return { x, y, anchor, base, box: [x0, y0 - H * 0.1, x0 + W, y0 + H * 1.1] };
     };
     const overlap = (p, q) => Math.max(0, Math.min(p[2], q[2]) - Math.max(p[0], q[0])) * Math.max(0, Math.min(p[3], q[3]) - Math.max(p[1], q[1]));
     const cands = [-Math.PI / 2, -Math.PI / 4, 0, Math.PI / 4, Math.PI / 2, 3 * Math.PI / 4, Math.PI, -3 * Math.PI / 4];
     let best = null, bestScore = -Infinity;
-    for (const a of cands) {
+    // each direction close to the dot, or a little further out (a gap between two routes can be further away)
+    for (const far of [1, 1.7]) for (const a of cands) {
       let gap = Math.PI;
       for (const b of angs) { let d = Math.abs(a - b) % (2 * Math.PI); if (d > Math.PI) d = 2 * Math.PI - d; gap = Math.min(gap, d); }
-      const s = spot(a);
-      let hit = 0;
-      for (const p of placed) hit += overlap(s.box, p);
+      const s = spot(a, far);
+      let hit = far > 1 ? 6 : 0;
+      for (const p of placed) hit += 3 * overlap(s.box, p);
       // other cities: a wider keep-out, so a name never sits beside the wrong dot (Chicago / Pittsburgh)
       for (const o of map.cities) if (o !== c) hit += overlap(s.box, [o.x - 9, o.y - 9, o.x + 9, o.y + 9]) + 0.5 * overlap(s.box, [o.x - 20, o.y - 20, o.x + 20, o.y + 20]);
+      // the spaces of routes: a name printed over them hides which colour they are
+      if (cars) for (const k of cars) hit += CAR_HIT * overlap(s.box, k);
+      const out = frame ? (W * H - overlap(s.box, frame)) : 0;
       // mild preference for above / right
-      const score = gap + (a === -Math.PI / 2 ? 0.12 : 0) + (a === 0 ? 0.08 : 0) - hit / 40;
+      const score = gap + (a === -Math.PI / 2 ? 0.12 : 0) + (a === 0 ? 0.08 : 0) - hit / 40 - out / OUT_K;
       if (score > bestScore) { bestScore = score; best = s; }
     }
     placed.push(best.box);
@@ -152,6 +175,9 @@
         routeEls[r.id] = grp;
       }
       const placed = [], labelled = new Set(); labs = []; routesBox = null;
+      const xs = map.cities.map(c => c.x), ys = map.cities.map(c => c.y);
+      const frame = [Math.min(...xs) - FRAME_PAD, Math.min(...ys) - FRAME_PAD, Math.max(...xs) + FRAME_PAD, Math.max(...ys) + FRAME_PAD];
+      const carBoxes = []; for (const g of geo) for (const k of g.cars) carBoxes.push([k.x - 5, k.y - 5, k.x + 5, k.y + 5]);
       for (const c of map.cities) {
         const grp = el('g', Object.assign({ class: 'city', 'data-city': c.id }, c.country ? { 'data-border': c.country } : {}), gCities);
         if (c.country) {
@@ -164,13 +190,13 @@
           el('circle', { class: 'ring', cx: c.x, cy: c.y, r: 10 }, grp);
           el('circle', { class: 'dot', cx: c.x, cy: c.y, r: 6.5 }, grp);
         }
-        const ls = labelSpot(map, c, placed);
-        labs.push({ x: ls.x, y: ls.y, anchor: ls.anchor, base: ls.base, n: c.name.length });
+        const ls = labelSpot(map, c, placed, frame, carBoxes);
+        labs.push({ x: ls.x, y: ls.y, anchor: ls.anchor, base: ls.base, n: nameW(c.name) });
         const t = el('text', { x: ls.x.toFixed(1), y: ls.y.toFixed(1), 'text-anchor': ls.anchor, 'dominant-baseline': ls.base }, grp);
         t.textContent = c.name;
         cityEls[c.id] = grp;
       }
-      measured = false;
+      measured = false; fitKey = ''; obsCache = { f: null };
       fit();
     }
 
@@ -286,7 +312,7 @@
       let [x0, y0, x1, y1] = routesBox;
       for (const c of map.cities) { x0 = Math.min(x0, c.x - 12); y0 = Math.min(y0, c.y - 12); x1 = Math.max(x1, c.x + 12); y1 = Math.max(y1, c.y + 12); }
       for (const l of labs) {
-        const W = l.n * 0.56 * f, H = f;
+        const W = l.n * f, H = f;
         const lx = l.anchor === 'start' ? l.x : l.anchor === 'end' ? l.x - W : l.x - W / 2;
         const ly = l.base === 'hanging' ? l.y : l.base === 'alphabetic' ? l.y - H : l.y - H / 2;
         x0 = Math.min(x0, lx); y0 = Math.min(y0, ly); x1 = Math.max(x1, lx + W); y1 = Math.max(y1, ly + H);
@@ -373,8 +399,45 @@
     // area changes size. Pinch, wheel or + zooms in by hand (physical feel: the map sticks to the fingers, a flick
     // keeps gliding); zooming back out to the fit, the fit button or a double tap on empty board returns to auto.
     // The view box always has the board area's own shape, so the view box is exactly what is on screen.
-    const RESERVE = 48; // screen px kept clear on the right for the zoom buttons
+    // The zoom control sits in a corner of the map. In auto only its + shows; the whole-board fit puts it in a corner
+    // with nothing drawn under it, so the map can use the full width. Only when no corner is free is a strip kept
+    // clear on the right for it (the old behaviour, which cost a phone 13% of the map's width).
+    let reserve = 0, corner = 'br';
     const MAX_ZOOM = 6; // times the auto fit
+    function btnSize() {
+      const p = z && z.querySelector('[data-z=in]');
+      return { w: (p && p.offsetWidth) || 40, h: (p && p.offsetHeight) || 38 };
+    }
+    // what must not sit under the button: city dots (and a station on top), route spaces, names at font f
+    let obsCache = { f: null };
+    function obstacles(f) {
+      if (obsCache.f === f && obsCache.m === map) return obsCache.list;
+      const list = [];
+      for (const c of map.cities) list.push([c.x - 12, c.y - 26, c.x + 12, c.y + 12]);
+      for (const g of geo) for (const k of g.cars) list.push([k.x - 7, k.y - 7, k.x + 7, k.y + 7]);
+      for (const l of labs) {
+        const W = l.n * f, H = f;
+        const lx = l.anchor === 'start' ? l.x : l.anchor === 'end' ? l.x - W : l.x - W / 2;
+        const ly = l.base === 'hanging' ? l.y : l.base === 'alphabetic' ? l.y - H : l.y - H / 2;
+        list.push([lx, ly, lx + W, ly + H]);
+      }
+      obsCache = { f, m: map, list };
+      return list;
+    }
+    // the first corner of view v (scale s) where the + button covers nothing, or null
+    function freeCorner(v, s) {
+      const b = btnSize(), bw = (b.w + 8) / s, bh = (b.h + 8) / s, obs = obstacles(+fontAt(s).toFixed(1));
+      const R = { br: [v.x + v.w - bw, v.y + v.h - bh], tr: [v.x + v.w - bw, v.y], bl: [v.x, v.y + v.h - bh], tl: [v.x, v.y] };
+      for (const k of ['br', 'tr', 'bl', 'tl']) {
+        const [x0, y0] = R[k], x1 = x0 + bw, y1 = y0 + bh;
+        if (!obs.some(o => o[0] < x1 && o[2] > x0 && o[1] < y1 && o[3] > y0)) return k;
+      }
+      return null;
+    }
+    function setCorner(k) {
+      if (corner === k) return;
+      z.classList.remove('c-' + corner); corner = k; z.classList.add('c-' + k);
+    }
     const pts = new Map();
     let drag = null, anim = 0, track = [], auto = true, lastSize = null, lastTap = null;
     function stopAnim() { if (anim) cancelAnimationFrame(anim); anim = 0; }
@@ -388,15 +451,29 @@
     }
     // screen px per map unit when the whole board fits. Names shrink in map units as the board grows, so start from
     // the box at the biggest names and grow a few times; each step still holds the names at the size they'll be drawn.
-    function fitScale(w, h) {
-      const sc = b => Math.min(Math.max(40, w - RESERVE) / b.w, h / b.h);
+    function fitScale(w, h, res) {
+      if (res == null) res = reserve;
+      const sc = b => Math.min(Math.max(40, w - res) / b.w, h / b.h);
       // start a little small (the names at their biggest), then grow: each step's box still fits at the new scale
       let s = 0.9 * sc(boxAt(LABEL_MAX));
       for (let i = 0; i < 3 && sc(content(s)) < s; i++) s = sc(content(s));
       for (let i = 0; i < 6; i++) { const s2 = sc(content(s)); if (s2 <= s * 1.0005) break; s = s2; }
       return s;
     }
-    function autoScale() { const a = area(); return fitScale(a.w, a.h); }
+    // decide the corner (and whether a strip is needed) for the current board area; returns the fit scale
+    let fitKey = '', fitS = 1;
+    function autoScale() {
+      const a = area(), key = a.w + 'x' + a.h + ':' + (map && map.id) + ':' + (routesBox ? routesBox.join() : '') + ':' + labs.length;
+      if (key === fitKey) return fitS;
+      reserve = 0;
+      let s = fitScale(a.w, a.h);
+      const c = measured ? freeCorner(viewAt(0, 0, s), s) : 'br';
+      if (c) setCorner(c);
+      else { setCorner('br'); reserve = btnSize().w + 8; s = fitScale(a.w, a.h); }
+      if (measured) fitKey = key;
+      fitS = s;
+      return s;
+    }
     // one axis: if the board (plus the button strip) is wider than the screen, keep its edges at or past the screen's
     // edges; if it is narrower, centre it (but leave the strip clear)
     function axis(p, start, len, post, vlen) {
@@ -407,7 +484,7 @@
     // the view showing screen scale s, roughly at top-left x, y, kept on the board
     function viewAt(x, y, s) {
       const a = area(), w = a.w / s, h = a.h / s, b = content(s);
-      return { x: axis(x, b.x, b.w, RESERVE / s, w), y: axis(y, b.y, b.h, 0, h), w, h };
+      return { x: axis(x, b.x, b.w, reserve / s, w), y: axis(y, b.y, b.h, 0, h), w, h };
     }
     function autoView() { return viewAt(0, 0, autoScale()); }
     function scaleOf(v) { return area().w / v.w; }
@@ -419,7 +496,7 @@
       if (s <= s0 * 1.001) return null;
       return viewAt(p.x - (cx - r.left) / s, p.y - (cy - r.top) / s, s);
     }
-    function lightFit() { fitBtn.classList.toggle('lit', !auto); fitBtn.setAttribute('aria-pressed', String(!auto)); }
+    function lightFit() { fitBtn.classList.toggle('lit', !auto); fitBtn.setAttribute('aria-pressed', String(!auto)); z.classList.toggle('auto', auto); }
     function setAuto(on) { if (auto !== on) { auto = on; lightFit(); } }
     function zoomAt(cx, cy, k) {
       const v = zoomed(vb, cx, cy, k);
@@ -523,23 +600,46 @@
     function dist() { const a = [...pts.values()]; return Math.hypot(a[0].x - a[1].x, a[0].y - a[1].y) || 1; }
     function mid() { const a = [...pts.values()]; return { x: (a[0].x + a[1].x) / 2, y: (a[0].y + a[1].y) / 2 }; }
 
+    // city taps only count while the screen uses them (Lab ends, station mode); otherwise a tap by a city is a route tap
+    const cityOn = () => !!handlers.onCity && (!handlers.cityActive || handlers.cityActive());
+    const CLOSE_PX = 7; // two things nearer than this (screen px) to the finger count as a crowded spot
+    function magnifyAt(p, routeHit, bd, bd2, bc, bc2) {
+      const s = p.s, s0 = autoScale(), tolU = 16 / s;
+      if (s >= s0 * MAX_ZOOM * 0.98) return false;
+      const near = d => d < tolU;
+      const twoRoutes = routeHit && near(bd2) && (bd2 - bd) * s < CLOSE_PX;
+      const routeCity = routeHit && cityOn() && near(bc) && Math.abs(bc - bd) * s < CLOSE_PX * 0.6;
+      const twoCities = cityOn() && near(bc) && near(bc2) && (bc2 - bc) * s < CLOSE_PX;
+      if (!twoRoutes && !routeCity && !twoCities) return false;
+      const s1 = Math.min(s0 * MAX_ZOOM, s * 2.6), a = area();
+      setAuto(false);
+      glideTo(viewAt(p.x - a.w / s1 / 2, p.y - a.h / s1 / 2, s1), 300);
+      if (handlers.onMagnify) handlers.onMagnify();
+      return true;
+    }
     function tap(cx, cy) {
       const p = toSvg(cx, cy);
       const tol = 16 / p.s; // ~16 screen px
-      let bestCity = null, bc = Infinity;
-      for (const c of map.cities) { const d = Math.hypot(c.x - p.x, c.y - p.y); if (d < bc) { bc = d; bestCity = c.id; } }
-      let best = null, bd = Infinity;
+      let bestCity = null, bc = Infinity, bc2 = Infinity;
+      for (const c of map.cities) { const d = Math.hypot(c.x - p.x, c.y - p.y); if (d < bc) { bc2 = bc; bc = d; bestCity = c.id; } else if (d < bc2) bc2 = d; }
+      // nearest route, and the nearest one between a different pair of cities (the twin of a double doesn't count)
+      let best = null, bd = Infinity, bestPair = null, bd2 = Infinity;
+      const pair = r => r.a < r.b ? r.a + '|' + r.b : r.b + '|' + r.a;
       for (const g of geo) {
         const vx = g.ex - g.sx, vy = g.ey - g.sy, L2 = vx * vx + vy * vy;
         const t = Math.max(0, Math.min(1, ((p.x - g.sx) * vx + (p.y - g.sy) * vy) / L2));
-        const d = Math.hypot(p.x - (g.sx + t * vx), p.y - (g.sy + t * vy));
-        if (d < bd) { bd = d; best = g.r.id; }
+        const d = Math.hypot(p.x - (g.sx + t * vx), p.y - (g.sy + t * vy)), k = pair(g.r);
+        if (d < bd) { if (k !== bestPair) bd2 = bd; bd = d; best = g.r.id; bestPair = k; }
+        else if (d < bd2 && k !== bestPair) bd2 = d;
       }
       const routeHit = handlers.onRoute && bd < Math.max(tol, 9);
+      // a crowded spot (two routes, a route and a city, or two cities within a few screen px of each other): instead
+      // of guessing, glide in around the finger so the next tap is clear. Back out with the fit button or zoom out.
+      if (magnifyAt(p, routeHit, bd, bd2, bc, bc2)) return;
       // a city wins only when the tap is nearer to it than to any route (short routes sit close to their cities)
-      if (handlers.onCity && bc < Math.max(tol, 13) && (!routeHit || bc < bd)) { handlers.onCity(bestCity); return; }
+      if (cityOn() && bc < Math.max(tol, 13) && (!routeHit || bc < bd)) { handlers.onCity(bestCity); return; }
       if (routeHit) { handlers.onRoute(best); return; }
-      if (handlers.onCity && bc < tol * 2.2) { handlers.onCity(bestCity); return; }
+      if (cityOn() && bc < tol * 2.2) { handlers.onCity(bestCity); return; }
       // empty board: a double tap goes back to the whole board
       const now = Date.now();
       if (lastTap && now - lastTap.t < 350 && Math.hypot(cx - lastTap.x, cy - lastTap.y) < 30) { lastTap = null; if (!auto) toAuto(); }
@@ -549,14 +649,14 @@
 
     // zoom buttons: + and − glide; the fit button is lit while zoomed by hand and dimmed in auto
     const z = document.createElement('div');
-    z.className = 'zoom';
+    z.className = 'zoom c-br';
     z.innerHTML = '<button type="button" aria-label="Zoom in" data-z="in">+</button><button type="button" aria-label="Zoom out" data-z="out">−</button><button type="button" aria-label="Show whole map" data-z="fit">⤢</button>';
     const fitBtn = z.querySelector('[data-z=fit]');
     z.addEventListener('click', e => {
       const b = e.target.closest('button'); if (!b) return;
       if (b.dataset.z === 'fit') { toAuto(); return; }
       const r = svg.getBoundingClientRect();
-      const v = zoomed(vb, r.left + (r.width - RESERVE) / 2, r.top + r.height / 2, b.dataset.z === 'in' ? 1.6 : 1 / 1.6);
+      const v = zoomed(vb, r.left + (r.width - reserve) / 2, r.top + r.height / 2, b.dataset.z === 'in' ? 1.6 : 1 / 1.6);
       if (!v) { if (!auto) toAuto(); return; }
       setAuto(false); glideTo(v, 240);
     });
@@ -586,12 +686,14 @@
       toAuto(instant) { toAuto(instant !== false); },
       get auto() { return auto; },
       // first time on screen: measure and show the whole board; returns the box the phone layout sizes the board
-      // area from (the board plus the strip kept clear for the zoom buttons)
+      // area from (the whole board at the full width: the zoom button goes in a free corner)
       ready() {
         if (!measured) toAuto(true);
-        const W = svg.clientWidth || 390, b = content(fitScale(W, 1e6));
-        return { x: b.x, y: b.y, w: b.w + RESERVE * b.w / Math.max(200, W - RESERVE), h: b.h };
+        const W = svg.clientWidth || 390, b = content(fitScale(W, 1e6, 0));
+        return { x: b.x, y: b.y, w: b.w, h: b.h };
       },
+      // the board's own shape (width / height) when it fills an area about w px wide: the frame is sized to it
+      ratio(w) { measure(); const b = content(fitScale(w || 900, 1e6, 0)); return b.w / b.h; },
     };
   }
 

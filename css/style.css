@@ -104,8 +104,11 @@ main { min-height: 0; position: relative; }
   .toptabs button svg { width: 18px; height: 18px; }
   .toptabs button[aria-selected="true"] { background: rgba(240,179,84,.12); }
   .view { flex-direction: row; }
-  .board-wrap { flex: 1; height: auto !important; }
+  .board-wrap { flex: none; } /* sized by app.js sizeBoards to the board's real shape */
   .panel { flex: none; width: 400px; border-top: 0; border-left: 1px solid var(--line); padding: 14px 16px 18px; }
+  /* Table and Lab: the board as big as it fits at its own shape; the panel takes the width left over */
+  #v-table .panel, #v-lab .panel, #v-play:not(.game) .panel { flex: 1 0 400px; width: auto; max-width: 620px; }
+  #v-table.active, #v-lab.active, #v-play.active:not(.game) { justify-content: center; }
 }
 
 /* ------------------------------------------------------------------ board svg */
@@ -552,7 +555,7 @@ table.scores tr.win td { color: var(--accent-warm); font-weight: 700; }
 /* phone held sideways: board on the left, the rest of the table in a column on the right */
 @media (max-width: 899px) and (orientation: landscape) {
   .view.active.tabletop.game { display: grid; grid-template-columns: minmax(0, 1fr) 300px; grid-template-rows: auto auto auto minmax(0, 1fr); grid-template-areas: "board riv" "board sup" "board panel" "board mine"; }
-  .tabletop.game .board-wrap { grid-area: board; height: auto !important; min-height: 0; }
+  .tabletop.game .board-wrap { grid-area: board; min-height: 0; }
   .tabletop.game .rivals { grid-area: riv; }
   .tabletop.game .supply { grid-area: sup; --card-w: 30px; padding-top: 6px; }
   .tabletop.game .panel { grid-area: panel; }
@@ -636,6 +639,29 @@ table.scores tr.win td { color: var(--accent-warm); font-weight: 700; }
   .rivals.tight .tixb .tbl-card { --card-w: 8px; }
   .rivals.tight .heap svg { width: 15px; height: 12px; }
 }
+/* visibility pass: the zoom control sits in whichever corner of the map is free (board.js picks it), so the map can
+   use the full width. In auto only + shows (− and the fit button do nothing there); zoomed in, all three show, growing
+   away from the corner so the + never moves under the finger. */
+.zoom.auto [data-z="out"], .zoom.auto [data-z="fit"] { display: none; }
+.zoom.c-tr, .zoom.c-tl { top: calc(var(--frame) + 5px); bottom: auto; }
+.zoom.c-bl, .zoom.c-tl { left: calc(var(--frame) + 5px); right: auto; }
+.zoom.c-br, .zoom.c-bl { flex-direction: column-reverse; }
+.zoom.c-br button + button, .zoom.c-bl button + button { border-top: 0; border-bottom: 1px solid #cdbd94; }
+
+/* phone on its side: Table and Lab put the board on the left and the panel on the right, like Play (on top, the
+   board got 127 px of height) */
+@media (max-width: 899px) and (orientation: landscape) {
+  #v-table.active, #v-lab.active, #v-play.active:not(.game) { flex-direction: row; align-items: stretch; }
+  #v-table .board-wrap, #v-lab .board-wrap, #v-play:not(.game) .board-wrap { flex: none; }
+  #v-table .panel, #v-lab .panel, #v-play:not(.game) .panel { flex: 1 0 280px; border-top: 0; border-left: 1px solid var(--line); }
+  /* the side column is narrow: the player chips wrap onto a second row instead of squeezing names away */
+  #v-table .players, #v-lab .players { flex-wrap: wrap; overflow: visible; }
+  #v-table .players .pchip, #v-lab .players .pchip { flex: 1 1 96px; }
+  /* ...and the Table's status line keeps its words on one line, the buttons drop below (as on narrow phones) */
+  #v-table .status { flex-wrap: wrap; row-gap: 6px; }
+  #v-table .status .grow { flex: 1 1 150px; }
+}
+
 /* narrow phones: the Table's status line keeps its words on one line (the buttons drop below), and with 4-5 players
    each chip shows the name on top with the score and trains under it */
 @media (max-width: 380px) {

@@ -59,3 +59,9 @@
 - **Built:** Pass when nothing can be drawn + game ends when everyone passes; shared-win ties; station payment check; compact seats for 5 players on phones; two-tab sync and computers pause in hidden tabs; empty deck disabled; station mode reset; Table chips/status at 320. v1.9, cache ?v=10.
 - **Verified:** 69 scenarios (scratchpad `edge/ticket-to-ride/`, session acb6c2a0), 14 failed before, 0 after; tests/edge.test.js failed first on old code; 90/90.
 - **Open:** two tabs and Pass online on a real phone.
+
+## 2026-10-20 — visibility pass (builder under the manager)
+- **Asked:** Tim: "for a lot of the games the cards or board layout is too small to easily see what's going on ... some have severe errors like TTR. Fix this so the view of what's happening and where everything is is very clear."
+- **Built:** board frame sized to the map's shape (laptop, sideways); sideways Table/Lab board-left layout; + only in auto, in a free map corner; measured label widths, labels kept in the board and off cars; crowded taps magnify first; city taps only where cities are used. v1.10, cache ?v=11.
+- **Verified:** 90/90 tests; zoom-check 226/226 (old build 202/226); route tap sweep 478/478 WebKit + Chrome; WebKit shots at 320/393/659-sideways/1280/1440 × 8 states, no scroll/overflow/errors; one reviewer pass (fixed: sideways chips and status line, stacked-label overlaps).
+- **Open:** NE USA names sit inland (New York beside Pittsburgh); 320 px Play map still small; real iPhone fingers.
