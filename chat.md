@@ -65,3 +65,9 @@
 - **Built:** board frame sized to the map's shape (laptop, sideways); sideways Table/Lab board-left layout; + only in auto, in a free map corner; measured label widths, labels kept in the board and off cars; crowded taps magnify first; city taps only where cities are used. v1.10, cache ?v=11.
 - **Verified:** 90/90 tests; zoom-check 226/226 (old build 202/226); route tap sweep 478/478 WebKit + Chrome; WebKit shots at 320/393/659-sideways/1280/1440 × 8 states, no scroll/overflow/errors; one reviewer pass (fixed: sideways chips and status line, stacked-label overlaps).
 - **Open:** NE USA names sit inland (New York beside Pittsburgh); 320 px Play map still small; real iPhone fingers.
+
+## 2026-10-21 — visibility round 2 (builder under the manager)
+- **Asked:** manager for Tim: "the after-shots still waste space": laptop supply into the right panel and a taller map (~60%); phone rival counts into the seat chips, shorter face-up row, map bigger with a slight pan and a fit button, names ≥ 9 px; fix 320 the same way.
+- **Built:** `.deal` right column on laptop; rival count chips; phone home view zoomed to 9 px names around my tickets (fit toggles whole map); smaller face-up cards; bottom row plate · hand · tickets. v1.11, cache ?v=12.
+- **Verified:** tools/play-layout-check.mjs 24/24 (old code failed 10); 90/90; zoom-check 226/226; tap sweep 478/478; 40 WebKit shots; one reviewer pass (fixed: laptop tickets cut off, chip names clipped at 320 and sideways).
+- **Open:** real iPhone; edge names cut in the zoomed phone view.

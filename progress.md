@@ -1,7 +1,7 @@
 # Ticket to Ride — progress
 
 ## START HERE
-Read order: this file → `CLAUDE.md` → `docs/rules-check.md` → `docs/ideas.md`. Last updated: 2026-10-20 (visibility pass).
+Read order: this file → `CLAUDE.md` → `docs/rules-check.md` → `docs/ideas.md`. Last updated: 2026-10-21 (visibility round 2).
 
 ## Goal right now
 Tim: "Ticket to Ride and all the variants is something that I think is great". Phase 2 (his words): "build regular play online with a computer or other online players for all the games and their common varients that match exactly the play of the in-person game ... Make sure to get everything right like rules and artwork and specific numbers of cards, routes, details, etc."
@@ -31,7 +31,7 @@ Measured computer strength (data/strength.json, 1000 games per pairing, 2 player
 ## Standing instructions
 - "Phone layout: the map fills the screen, controls in the leftover space."
 - $0, no copyrighted art or rules text, choices live in Settings, short labels, "?" explains why.
-- "some games have maps and whatnot you can zoom in and out of often. Make it so that there is only an auto zoom that automatically fits the whole board in sight and then you can zoom if you want with easily reseting back to auto mode." (2026-10-20, same in Risk/Pandemic/Carcassonne): auto is the default on load, new game, map change, tab return and rotation; no other zoom modes or saved zoom.
+- "some games have maps and whatnot you can zoom in and out of often. Make it so that there is only an auto zoom that automatically fits the whole board in sight and then you can zoom if you want with easily reseting back to auto mode." (2026-10-20, same in Risk/Pandemic/Carcassonne): auto is the default on load, new game, map change, tab return and rotation; no other zoom modes or saved zoom. Exception (manager, round 2, 2026-10-21): phone portrait Play opens a little zoomed in (names ≥ 9 px) on your tickets, with the fit button one tap from the whole map.
 - "add opptional sounds you can add to the games that reflect what's happening in the game accurately as well as win celebrations, and other fun annimations to go along with everything. Just make sure everything is customizable in the settings so the user can play as preffered." (2026-10-20, all games)
 - "the map of the US in TTR looks nothing like the US. Fix this and any other similar problems accross the games" (2026-10-20): every board must read as the real place at a glance; land clearly stands out from sea and lakes.
 - "Could you focus on making each game perfect especially in scenarios that the game doesn't expect or are a little weird." (2026-10-20, all games)
@@ -110,7 +110,14 @@ Tim: "Could you focus on making each game perfect especially in scenarios that t
 - Crowded tap (two routes / route+city / two cities within 7 screen px): the map glides in 2.6× around the finger first (`magnifyAt`). City taps count only where cities are used (Table station mode, Play station mode, Lab ends) via `cityActive`.
 - Measured (before → after): phone Play map 14% → 19–21% of the screen, names 5.5 → 6.1–6.4 px; phone Table 14% → 29%; sideways Table 6.5% → 27%; laptop Table map fills 51% → 93% of its frame. Route tap sweep 478/478 in WebKit and Chrome (232 need one magnify). zoom-check now 226 checks (new: frame fill > 80% sideways/laptop, − and fit hidden in auto; it waits for glides to settle); old build fails 24. Shots + audit: scratchpad `vis/ticket-to-ride/before|after|audit.md` (session acb6c2a0).
 
+## Visibility round 2 (2026-10-21, v1.11, cache ?v=12)
+Manager, for Tim ("the after-shots still waste space"): laptop deck/face-up/ticket deck into the right panel and the map as tall as fits; phone rival counts folded into the seat chips, face-up row ~25% shorter, map shown bigger with a slight pan (fit button = whole map), names >= 9 px; same at 320.
+- Laptop ≥900: grid `riv | deal` / `board | deal` / `mine | deal`, `.deal` (wrapper of `.supply` + `.panel`, `display: contents` on phone) is the 290 px right column; rivals are one-line chips (counts inline); bottom row = plate · hand · tickets (tickets take max-content). Heights ≤840 get a smaller hand (card-w 42).
+- Phone portrait Play: `Play.homeLabelPx()` = 9 asks board.js for a home scale ≥ 9/LABEL_MAX (capped at MAX_ZOOM×fit), centred on `Play.focus()` (my unfinished tickets' cities); this "home" view counts as auto. Fit button shows (`.zoom.crop`) and toggles whole map ↔ home. One-finger pan works in the cropped home. sizeBoards uses `board.homeBox(w)` for the height. Rival seats are chips with `.cnt` (cards · tickets · trains) everywhere; landscape chips two per row. LABEL_PX 8.5 → 9.
+- Measured (before → after, late 5-player game, WebKit): laptop 1440 map 36% → 49% (board with frame 56%), 1280 31% → 47% (55%); phone 393 map 19% → 33%, names 6.1 → 9 px; 320 map 9% → 25%, names 3.5 → 9 px; face-up cards 62 → 46 px (393), 49 → 37 px (320). Check: `node tools/play-layout-check.mjs [url]` (24 checks; old code failed 10). Also 90/90, zoom-check 226/226, tap sweep 478/478; shots scratchpad `vis/ticket-to-ride/after2` (session acb6c2a0), 40 shots, no scroll/errors.
+
 ## NOT verified
+- Visibility round 2: real iPhone; the zoomed phone home view cuts names at the map edge (pan or fit to see them) and the zoom control can sit over an edge name at 320; at 1280 a 5th+ ticket and the tickets "?" scroll sideways; laptop hand cards smaller than before; phone sideways names stay ~7 px (sideways not in the brief).
 - Visibility pass: real fingers on an iPhone (magnify-on-crowded-tap feel); 320×568 Play map still ~10% of the screen (names ~3.5–4 px) because rivals/supply/hand need the height. Reviewer leftovers not done: North-East USA names now sit inland (New York beside Pittsburgh; pushing them into the sea shrank the phone map 19→17%, tried and reverted); Zürich/München names touch; laptop Play board size shifts a little between states (grid row follows the hand); laptop layout rearrangement (market/tickets into the side panel) is Tim's call.
 - Edge pass: two tabs on a real iPhone (sync measured with two Playwright pages); the Pass button in an online room (engine path same as local, not run online); zoom-check not re-run (Lab layout untouched).
 - Real-table look on a real iPhone; the hand-fan and deal animations by eye at full speed (headless ran at 1–2 fps); (Europe stations and 5-player seats at 320 px now checked in the edge pass.)

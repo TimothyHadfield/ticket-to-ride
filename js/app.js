@@ -5,7 +5,7 @@
   const T = window.TTR, G = window.TTRGraph, AI = window.TTRAI, O = window.TTROdds, B = window.Board;
   const FX = window.FX, SFX = window.TTRSfx; // sounds + animations (js/fx.js is the shared library, js/sfx.js maps game events to it)
   const TABLE = window.TABLE, TT = window.TTRTable; // the real-table kit (js/table.js, shared) + this game's board frame and cards
-  const VERSION = '1.10';
+  const VERSION = '1.11';
   const MAP_IDS = ['usa', 'europe', 'nordic', 'india', 'switzerland'];
   const MAP_NAMES = { usa: 'USA', europe: 'Europe', nordic: 'Nordic Countries', india: 'India', switzerland: 'Switzerland' };
   const LEVELS = ['easy', 'medium', 'hard'];
@@ -202,11 +202,17 @@
         // the rest of the table (rivals, supply, my seat, status) keeps its size; the board gets what is left
         const cs = getComputedStyle(v), gap = parseFloat(cs.rowGap) || 0;
         let rest = parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom), n = 0;
-        for (const e of v.children) if (e !== wrap && e.offsetParent) { const m = getComputedStyle(e); rest += e.offsetHeight + parseFloat(m.marginTop) + parseFloat(m.marginBottom); n++; }
+        // (a wrapper shown as display: contents, like Play's .deal on a phone, counts by its children)
+        const kids = [...v.children].flatMap(e => getComputedStyle(e).display === 'contents' ? [...e.children] : [e]);
+        for (const e of kids) if (e !== wrap && e.offsetParent) { const m = getComputedStyle(e); rest += e.offsetHeight + parseFloat(m.marginTop) + parseFloat(m.marginBottom); n++; }
         const wm = getComputedStyle(wrap);
         maxH = Math.floor(v.clientHeight - rest - gap * n - parseFloat(wm.marginTop) - parseFloat(wm.marginBottom));
       }
-      wrap.style.height = Math.max(120, Math.min(Math.round((W - 2 * F) * box.h / box.w + 2 * F), maxH)) + 'px';
+      // a board whose default view is zoomed in (Play on a phone: names at least 9 px) takes all the height left, up to
+      // the map's height at that zoom; others stop at the whole map's height at the full width
+      const tall = b.homeBox && b.homeBox(W - 2 * F);
+      const want = tall ? tall.h + 2 * F : (W - 2 * F) * box.h / box.w + 2 * F;
+      wrap.style.height = Math.max(120, Math.min(Math.round(want), maxH)) + 'px';
     }
   }
   window.addEventListener('resize', sizeBoards);
@@ -215,7 +221,8 @@
     if (boards[id]) { boards[id].setMap(map); boards[id].toAuto(); Object.assign(boards[id].handlers, handlers); return boards[id]; }
     const wrap = $('#v-' + id + ' .board-wrap');
     const h = Object.assign({}, handlers);
-    const b = B.create(wrap, map, { onRoute: r => h.onRoute && h.onRoute(r), onCity: c => h.onCity && h.onCity(c), onEmpty: () => h.onEmpty && h.onEmpty(), cityActive: () => !h.cityActive || h.cityActive() });
+    const b = B.create(wrap, map, { onRoute: r => h.onRoute && h.onRoute(r), onCity: c => h.onCity && h.onCity(c), onEmpty: () => h.onEmpty && h.onEmpty(), cityActive: () => !h.cityActive || h.cityActive(),
+      homeLabelPx: () => h.homeLabelPx ? h.homeLabelPx() : 0, focus: () => h.focus ? h.focus() : null });
     b.handlers = h;
     b.frame = TT.frame(wrap); // the board's printed edge with the score track and the players' markers
     boards[id] = b;
@@ -234,17 +241,13 @@
     return `<div class="tcard ${cls || ''}${n === 0 ? ' zero' : ''}${n > 1 ? ' pile' : ''}" data-color="${color}" title="${color === 'loco' ? 'Locomotive' : color}">${window.Cards.svg(color)}${n != null ? `<span class="n">${n}</span>` : ''}</div>`;
   }
   // ---- real-table pieces (js/table.js is the shared kit, js/tabletop.js the board frame + cards)
-  // a rival's seat: name plate with the score, the backs of the cards they hold, their face-down tickets, their train heap
-  function seatHTML(q, i, score, turn, wide, tight) {
+  // a rival's seat: one chip with the name, the score and the counts folded in (cards held, tickets, trains left), so the
+  // map gets the height a second strip of card fans and train heaps took (2026-10-20, visibility round 2)
+  function seatHTML(q, i, score, turn) {
     const n = q.handCount != null ? q.handCount : T.handSize(q.hand);
     const nt = typeof q.tickets === 'number' ? q.tickets : (q.tickets || []).length;
-    const W = wide ? 70 : tight ? 17 : 30, cw = wide ? 19 : tight ? 9 : 11, ch = cw * 67 / 44, k = Math.min(n, wide ? 14 : tight ? 4 : 8);
-    const L = k ? TABLE.fanLayout(k, { width: W, cardW: cw, cardH: ch, spread: 0.45, maxRot: 16 }) : [];
-    const drop = L.length ? Math.max(...L.map(p => p.y)) : 0;
-    const backs = L.map((p, j) => `<span class="tbl-card tbl-mini tbl-back tbl-sunburst ttr-back" style="--x:${p.x}px;--y:${(p.y - drop).toFixed(1)}px;--r:${p.r}deg;z-index:${j + 1}"></span>`).join('');
-    return `<div class="seat${turn ? ' turn' : ''}" data-seat="${i}" role="button" tabindex="0" aria-label="${esc(q.name)}: ${score} points, ${q.trains} trains, ${n} cards, ${nt} tickets">
-      <div class="tbl-plate"><i style="background:${B.PLAYER[i]}"></i><span class="nm">${esc(q.name)}</span><b class="sc">${score}</b></div>
-      <div class="seat-stuff"><span class="backs" style="width:${W}px;height:${Math.ceil(ch + drop + 1)}px" title="${n} cards">${backs}<b>${n}</b></span><span class="tixb" title="${nt} tickets">${nt ? TT.ticketBack() : ''}<b>${nt}</b></span>${TT.heap(B.PLAYER[i], q.trains, 'r' + i, wide)}</div></div>`;
+    return `<div class="seat chip${turn ? ' turn' : ''}" data-seat="${i}" role="button" tabindex="0" aria-label="${esc(q.name)}: ${score} points, ${q.trains} trains, ${n} cards, ${nt} tickets">
+      <div class="tbl-plate"><i style="background:${B.PLAYER[i]}"></i><span class="nm">${esc(q.name)}</span><b class="sc">${score}</b><span class="cnt"><span class="ic ic-c" title="cards"></span>${n}<span class="ic ic-t" title="tickets"></span>${nt}<span class="ic ic-r" style="background:${B.PLAYER[i]}" title="trains"></span>${q.trains}</span></div></div>`;
   }
   // a destination ticket lying in front of me: the two places, the points, a little map with the line, and the chance
   function landDefs(map) {
@@ -558,12 +561,26 @@
   const Play = {
     map: null, board: null, busy: false, gen: 0, hint: null, stationMode: false,
     me() { return S.play ? S.play.me : 0; },
+    // phone held upright, in a game: the map's default view keeps city names at least 9 px (zoomed in, centred on
+    // my tickets); the fit button shows the whole map (2026-10-20, visibility round 2)
+    homeLabelPx() { return S.play && window.innerWidth < 900 && window.innerHeight > window.innerWidth ? 9 : 0; },
+    focus() {
+      const p = S.play, map = Play.map;
+      if (!p || !map || p.state.mapId !== map.id) return null;
+      const pl = p.state.players[p.me], deck = T.deckFor(map, p.state).tickets, ix = G.index(map).cityById;
+      const tix = (Array.isArray(pl.tickets) ? pl.tickets : []).map(t => deck[t]).filter(Boolean);
+      const open = tix.filter(t => !T.ticketOutcome(map, pl.routes, t).ok);
+      const pts = (open.length ? open : tix).flatMap(t => [ix[t.a], ix[t.b]]).filter(Boolean);
+      if (!pts.length) return null;
+      const xs = pts.map(c => c.x), ys = pts.map(c => c.y);
+      return { x: (Math.min(...xs) + Math.max(...xs)) / 2, y: (Math.min(...ys) + Math.max(...ys)) / 2 };
+    },
     async show() {
       const p = S.play;
       const mapId = p ? p.state.mapId : (Play.setupMap || 'usa');
       const map = await getMap(mapId);
       Play.map = map;
-      Play.board = makeBoard('play', map, { onRoute: Play.onRoute, onCity: Play.onCity, cityActive: () => !!Play.stationMode });
+      Play.board = makeBoard('play', map, { onRoute: Play.onRoute, onCity: Play.onCity, cityActive: () => !!Play.stationMode, homeLabelPx: Play.homeLabelPx, focus: Play.focus });
       $('#sub').textContent = map.name;
       Play.render();
       sizeBoards();
@@ -608,7 +625,7 @@
       // four rivals on a phone: smaller card fans and train heaps so every seat fits across
       const tight = !wide && s.players.length >= 5;
       view.querySelector('.rivals').classList.toggle('tight', tight);
-      view.querySelector('.rivals').innerHTML = s.players.map((q, i) => i === me ? '' : seatHTML(q, i, scores[i], turnOf(i), wide, tight)).join('');
+      view.querySelector('.rivals').innerHTML = s.players.map((q, i) => i === me ? '' : seatHTML(q, i, scores[i], turnOf(i))).join('');
       // ---- beside the board: ticket deck, the five face-up cards, the train deck, the discard pile
       const sup = view.querySelector('.supply');
       sup.innerHTML = `
@@ -971,7 +988,7 @@
         const map = await getMap(mapId);
         if (Play.net !== net) return;
         Play.map = map;
-        Play.board = makeBoard('play', map, { onRoute: Play.onRoute, onCity: Play.onCity, cityActive: () => !!Play.stationMode });
+        Play.board = makeBoard('play', map, { onRoute: Play.onRoute, onCity: Play.onCity, cityActive: () => !!Play.stationMode, homeLabelPx: Play.homeLabelPx, focus: Play.focus });
         if (S.tab === 'play') { $('#sub').textContent = map.name; sizeBoards(); }
       }
       if (snap.pub && snap.mySeat >= 0) {

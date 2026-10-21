@@ -642,7 +642,7 @@ table.scores tr.win td { color: var(--accent-warm); font-weight: 700; }
 /* visibility pass: the zoom control sits in whichever corner of the map is free (board.js picks it), so the map can
    use the full width. In auto only + shows (− and the fit button do nothing there); zoomed in, all three show, growing
    away from the corner so the + never moves under the finger. */
-.zoom.auto [data-z="out"], .zoom.auto [data-z="fit"] { display: none; }
+.zoom.auto [data-z="out"], .zoom.auto:not(.crop) [data-z="fit"] { display: none; }
 .zoom.c-tr, .zoom.c-tl { top: calc(var(--frame) + 5px); bottom: auto; }
 .zoom.c-bl, .zoom.c-tl { left: calc(var(--frame) + 5px); right: auto; }
 .zoom.c-br, .zoom.c-bl { flex-direction: column-reverse; }
@@ -671,4 +671,77 @@ table.scores tr.win td { color: var(--accent-warm); font-weight: 700; }
   .players:has(> .pchip:nth-child(4)) .pchip .nm { grid-column: 1 / -1; grid-row: 1; }
   .players:has(> .pchip:nth-child(4)) .pchip .sc { grid-column: 1; grid-row: 2; font-size: 16px; }
   .players:has(> .pchip:nth-child(4)) .pchip .mt { grid-column: 2; grid-row: 2; align-self: center; }
+}
+
+/* visibility round 2 (2026-10-20): the map gets the space. Play's supply and panel share a wrapper that is invisible
+   on a phone and is the right-hand column on a laptop. */
+.deal { display: contents; }
+/* phone: each rival is one chip with the counts folded in (cards, tickets, trains); the face-up row is a quarter
+   shorter */
+.seat.chip .tbl-plate { flex-wrap: wrap; row-gap: 0; column-gap: 4px; line-height: 16px; padding-top: 1px; padding-bottom: 1px; }
+.seat.chip .cnt { line-height: 14px; }
+/* the default view is zoomed in: the fit button (whole map) is a live control, not a dimmed one */
+.zoom.crop [data-z="fit"] { color: var(--print-ink); opacity: 1; }
+.seat.chip .cnt { display: inline-flex; align-items: center; gap: 2px; margin-left: auto; font-size: 10.5px; font-weight: 700; color: #efe6d2; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.seat.chip .ic { display: inline-block; flex: none; border-radius: 1.5px; box-shadow: 0 0 0 1px rgba(0,0,0,.45); }
+.seat.chip .ic + .ic, .seat.chip .cnt .ic:not(:first-child) { margin-left: 3px; }
+.seat.chip .ic-c { width: 6px; height: 9px; background: #24365c; border: 1px solid #f4efe2; }
+.seat.chip .ic-t { width: 9px; height: 6px; background: #8a5524; border: 1px solid #f4efe2; }
+.seat.chip .ic-r { width: 10px; height: 4px; }
+@media (max-width: 899px) {
+  .supply { --card-w: min(30px, calc((100vw - 64px) / 10.6)); }
+  .rivals.tight .seat.chip { padding: 0; }
+  .rivals.tight .seat.chip .tbl-plate { padding: 1px 4px; }
+  /* the hand tucks up under the tickets: no empty band between them */
+  .tabletop.game .mine { row-gap: 0; padding-bottom: 2px; }
+  .tabletop.game .mytix { padding-bottom: 2px; }
+}
+/* laptop: the board between the rivals and my seat, as tall as that leaves; deck, face-up cards and ticket deck at the
+   top of the right-hand column, the helpers under them */
+@media (min-width: 900px) {
+  .view.active.tabletop.game {
+    grid-template-columns: minmax(0, 1fr) 290px; grid-template-rows: auto minmax(0, 1fr) auto;
+    grid-template-areas: "riv deal" "board deal" "mine deal";
+  }
+  .tabletop.game .deal { grid-area: deal; display: flex; flex-direction: column; min-height: 0; border-left: 1px solid var(--line); }
+  .tabletop.game .supply {
+    grid-area: auto; --card-w: 47px; grid-template-columns: repeat(5, var(--card-w)); gap: 10px 7px; padding: 12px 10px 10px;
+    justify-content: center; align-content: start;
+  }
+  .tabletop.game #p-tix { order: 1; }
+  .tabletop.game #p-deck { order: 2; }
+  .tabletop.game .disc { order: 3; grid-column: 3 / span 3; align-self: center; }
+  .tabletop.game .supply .slot, .tabletop.game .supply .row5 .tbl-spot { order: 4; }
+  .tabletop.game .panel { grid-area: auto; flex: 1 1 auto; min-height: 0; border-left: 0; }
+  /* rivals: the plate and the cards / tickets / trains on one line */
+  .tabletop.game .rivals { padding: 8px 16px 0; }
+  .tabletop.game .rivals { gap: 12px; }
+  .tabletop.game .seat.chip { flex: 0 1 250px; padding: 0; background: none; }
+  .tabletop.game .seat.chip .tbl-plate { flex-wrap: nowrap; line-height: 24px; column-gap: 6px; }
+  .tabletop.game .seat.chip .cnt { font-size: 12.5px; gap: 3px; }
+  .tabletop.game .seat.chip .ic-c { width: 8px; height: 12px; }
+  .tabletop.game .seat.chip .ic-t { width: 12px; height: 8px; }
+  .tabletop.game .seat.chip .ic-r { width: 13px; height: 5px; }
+  /* my seat: plate, hand and tickets in one row along the near edge */
+  .tabletop.game .mine { --card-w: 50px; padding: 0 16px 4px; grid-template-columns: auto minmax(230px, 1fr) minmax(0, max-content); }
+  .tabletop.game .mytix { flex-wrap: nowrap; overflow-x: auto; align-content: normal; }
+  .tabletop.game .tkt { width: 136px; height: 56px; }
+  .tabletop.game .tkt .tk-map { width: 50px; height: 34px; }
+}
+/* shorter laptop screens (1280x800): a slightly smaller hand so the board keeps its height */
+@media (min-width: 900px) and (max-height: 840px) {
+  .tabletop.game .mine { --card-w: 42px; }
+  .tabletop.game .rivals { padding-top: 4px; }
+  .tabletop.game .tkt { height: 48px; }
+  .tabletop.game .mytix { padding-bottom: 2px; }
+}
+/* narrowest phones (and a phone on its side): the counts tighten so a fifth player's name and numbers are not clipped */
+@media (max-width: 360px), (max-width: 899px) and (orientation: landscape) {
+  .seat.chip .cnt { font-size: 9.5px; gap: 1px; letter-spacing: -.2px; }
+  .seat.chip .cnt .ic:not(:first-child) { margin-left: 2px; }
+}
+/* phone on its side: the side column is narrow, so the rival chips go two to a row instead of shortening names */
+@media (max-width: 899px) and (orientation: landscape) {
+  .tabletop.game .rivals { flex-wrap: wrap; row-gap: 4px; }
+  .tabletop.game .rivals .seat.chip { flex: 1 1 40%; min-width: 0; }
 }

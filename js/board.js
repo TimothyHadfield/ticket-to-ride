@@ -8,7 +8,7 @@
   const OWN_W = CAR_W + 5;
   // city names: ~15 map units, growing up to LABEL_MAX so they stay >= LABEL_PX on screen when the map is small,
   // and shrinking (in map units) when zoomed in so they stay <= LABEL_PX_MAX on screen
-  const LABEL_MIN = 5, LABEL_MAX = 21, LABEL_PX = 8.5, LABEL_PX_MAX = 12.5, LABEL_BASE = 15;
+  const LABEL_MIN = 5, LABEL_MAX = 21, LABEL_PX = 9, LABEL_PX_MAX = 12.5, LABEL_BASE = 15;
   // names are kept inside the outermost cities (+ FRAME_PAD map units); OUT_K = how hard (area units per score point)
   const FRAME_PAD = 16, OUT_K = 150, CAR_HIT = 0.6;
   // small shapes inside each car (Settings: colour-blind marks), one per colour that is easy to confuse
@@ -486,17 +486,36 @@
       const a = area(), w = a.w / s, h = a.h / s, b = content(s);
       return { x: axis(x, b.x, b.w, reserve / s, w), y: axis(y, b.y, b.h, 0, h), w, h };
     }
-    function autoView() { return viewAt(0, 0, autoScale()); }
+    // the default ("auto") view. Usually the whole board. A screen can ask for names of at least N px instead
+    // (handlers.homeLabelPx, Play on a phone: 9 px, 2026-10-20 "City names must be at least 9 px in the default phone
+    // view, or the view zooms so they are"): then the default view is zoomed in that far, centred on handlers.focus()
+    // (the player's tickets), one-finger drags pan it, and the fit button shows the whole board.
+    function homeScale() {
+      const s0 = autoScale(), px = handlers.homeLabelPx ? +handlers.homeLabelPx() || 0 : 0;
+      return px ? Math.min(s0 * MAX_ZOOM, Math.max(s0, px / LABEL_MAX)) : s0;
+    }
+    function cropped() { return homeScale() > autoScale() * 1.001; }
+    function wholeView() { return viewAt(0, 0, autoScale()); }
+    function autoView() {
+      const s0 = autoScale(), s = homeScale();
+      if (s <= s0 * 1.001) return viewAt(0, 0, s0);
+      const a = area(), b = content(s), f = handlers.focus && handlers.focus();
+      const c = f || { x: b.x + b.w / 2, y: b.y + b.h / 2 };
+      const v = viewAt(c.x - a.w / s / 2, c.y - a.h / s / 2, s);
+      if (measured) setCorner(freeCorner(v, s) || 'br');
+      lightFit();
+      return v;
+    }
     function scaleOf(v) { return area().w / v.w; }
     function clamp(v) { return viewAt(v.x, v.y, scaleOf(v)); }
     // the view after zooming by k around screen point (cx, cy), starting from view v; null = back at the fit (auto)
     function zoomed(v, cx, cy, k) {
       const p = toSvg(cx, cy, v), r = svg.getBoundingClientRect(), s0 = autoScale();
       const s = Math.min(s0 * MAX_ZOOM, scaleOf(v) * k);
-      if (s <= s0 * 1.001) return null;
+      if (s <= s0 * 1.001) return cropped() ? wholeView() : null; // zoomed out to the whole board (a zoomed default: stay there)
       return viewAt(p.x - (cx - r.left) / s, p.y - (cy - r.top) / s, s);
     }
-    function lightFit() { fitBtn.classList.toggle('lit', !auto); fitBtn.setAttribute('aria-pressed', String(!auto)); z.classList.toggle('auto', auto); }
+    function lightFit() { fitBtn.classList.toggle('lit', !auto); fitBtn.setAttribute('aria-pressed', String(!auto)); z.classList.toggle('auto', auto); z.classList.toggle('crop', auto && cropped()); }
     function setAuto(on) { if (auto !== on) { auto = on; lightFit(); } }
     function zoomAt(cx, cy, k) {
       const v = zoomed(vb, cx, cy, k);
@@ -560,7 +579,8 @@
       const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
       if (!drag.moved && Math.hypot(dx, dy) < 7) return;
       drag.moved = true;
-      if (auto) return; // auto mode: a one-finger drag never moves the board
+      if (auto && !cropped()) return; // auto mode: a one-finger drag never moves the board (unless the default is zoomed in)
+      setAuto(false);
       const s = scaleOf(drag.vb);
       setVB(clamp({ x: drag.vb.x - dx / s, y: drag.vb.y - dy / s, w: drag.vb.w, h: drag.vb.h }));
       track.push({ x: e.clientX, y: e.clientY, t: performance.now() });
@@ -578,7 +598,7 @@
       }
       if (pts.size === 0) {
         if (drag && !drag.moved && e.type === 'pointerup') tap(e.clientX, e.clientY);
-        else if (!auto && scaleOf(vb) <= autoScale() * 1.03) toAuto(); // let go just past the fit: settle into auto
+        else if (!auto && !cropped() && scaleOf(vb) <= autoScale() * 1.03) toAuto(); // let go just past the fit: settle into auto
         else if (!auto && drag && drag.moved && !drag.pinch && e.type === 'pointerup' && track.length >= 2) {
           const a = track[0], b = track[track.length - 1], dt = b.t - a.t;
           if (dt > 0 && performance.now() - b.t < 80) {
@@ -654,7 +674,11 @@
     const fitBtn = z.querySelector('[data-z=fit]');
     z.addEventListener('click', e => {
       const b = e.target.closest('button'); if (!b) return;
-      if (b.dataset.z === 'fit') { toAuto(); return; }
+      if (b.dataset.z === 'fit') {
+        // a zoomed default view: the fit button shows the whole board, and tapped again goes back to the default
+        if (auto && cropped()) { stopAnim(); setAuto(false); glideTo(wholeView(), 320); return; }
+        toAuto(); return;
+      }
       const r = svg.getBoundingClientRect();
       const v = zoomed(vb, r.left + (r.width - reserve) / 2, r.top + r.height / 2, b.dataset.z === 'in' ? 1.6 : 1 / 1.6);
       if (!v) { if (!auto) toAuto(); return; }
@@ -694,6 +718,15 @@
       },
       // the board's own shape (width / height) when it fills an area about w px wide: the frame is sized to it
       ratio(w) { measure(); const b = content(fitScale(w || 900, 1e6, 0)); return b.w / b.h; },
+      // a zoomed default view (names >= homeLabelPx): the map's height in px at that zoom for an area w px wide, or null
+      homeBox(w) {
+        const px = handlers.homeLabelPx ? +handlers.homeLabelPx() || 0 : 0;
+        if (!px) return null;
+        measure();
+        const s0 = fitScale(w, 1e6, 0), s = Math.min(s0 * MAX_ZOOM, Math.max(s0, px / LABEL_MAX));
+        if (s <= s0 * 1.001) return null;
+        return { h: content(s).h * s };
+      },
     };
   }
 
