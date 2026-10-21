@@ -1,7 +1,7 @@
 # Ticket to Ride — progress
 
 ## START HERE
-Read order: this file → `CLAUDE.md` → `docs/rules-check.md` → `docs/ideas.md`. Last updated: 2026-10-20 (real-table look).
+Read order: this file → `CLAUDE.md` → `docs/rules-check.md` → `docs/ideas.md`. Last updated: 2026-10-20 (edge pass).
 
 ## Goal right now
 Tim: "Ticket to Ride and all the variants is something that I think is great". Phase 2 (his words): "build regular play online with a computer or other online players for all the games and their common varients that match exactly the play of the in-person game ... Make sure to get everything right like rules and artwork and specific numbers of cards, routes, details, etc."
@@ -34,6 +34,7 @@ Measured computer strength (data/strength.json, 1000 games per pairing, 2 player
 - "some games have maps and whatnot you can zoom in and out of often. Make it so that there is only an auto zoom that automatically fits the whole board in sight and then you can zoom if you want with easily reseting back to auto mode." (2026-10-20, same in Risk/Pandemic/Carcassonne): auto is the default on load, new game, map change, tab return and rotation; no other zoom modes or saved zoom.
 - "add opptional sounds you can add to the games that reflect what's happening in the game accurately as well as win celebrations, and other fun annimations to go along with everything. Just make sure everything is customizable in the settings so the user can play as preffered." (2026-10-20, all games)
 - "the map of the US in TTR looks nothing like the US. Fix this and any other similar problems accross the games" (2026-10-20): every board must read as the real place at a glance; land clearly stands out from sea and lakes.
+- "Could you focus on making each game perfect especially in scenarios that the game doesn't expect or are a little weird." (2026-10-20, all games)
 - "could you also make sure that each of the games also have a look to them so that the game (either board or card layout) looks almost identical to how the board or card layout looks like in real life, so it's easy to understand if you've already played it before, and also so it feels more like you're actually playing in real life rather than you're playing it online. Even things like how youre cards or other things are laid out infront of you, make it look like they are actual cards laid out similar to how it looks like in real life. Make the decks look like actual decks. Make the board have the same design as it does in real life with the same layouts. It should look kind of like you're looking through a camera that is connected to a user's glasses that is playing in real life (not actually, but the layout and style of everything should be similar)." (2026-10-20, all games)
 
 ## Traps
@@ -92,8 +93,19 @@ Measured computer strength (data/strength.json, 1000 games per pairing, 2 player
 - Research: scratchpad `table/ticket-to-ride/real.md` (session acb6c2a0). Before/after shots: scratchpad `table/ticket-to-ride/before|after` (phone 393×659, desk 1280×800, land 659×393, small 320×568 × setup/mid/late/over/table) — no page scroll, no overflow, no console errors. Two read-only review passes; fixed: claimed trains vs printed spaces, smaller phone zoom, heap shrinks with count, thicker decks, ticket deck set apart, discs inside the track, tickets fit 2–3 across.
 - Not done (reviewer asks): the printed route-points chart (1/2/4/7/10/15) in a board corner; a fanned ticket stack instead of a scrolling row past 3 tickets.
 
+## Edge pass (2026-10-20)
+Tim: "Could you focus on making each game perfect especially in scenarios that the game doesn't expect or are a little weird." 69 scenarios tested (list + evidence: scratchpad `edge/ticket-to-ride/scenarios.md`, session acb6c2a0), 14 failed, all fixed:
+- Stuck player (no cards or tickets to draw) had no way to move: now "Nothing left to draw" + Pass; everyone passing in turn ends the game (not in the rulebook, see rules-check).
+- Dead heat said "You win!": now "Tie: You and Red", all tied rows crowned (Table: "Final score · tie").
+- Station paid with −1 locomotive gave a free card (engine now refuses non-whole payments).
+- 5 players at 320 px / phone sideways / laptop at 200%: rival seats overflowed 15–20 px; four rivals now get compact seats (`.rivals.tight`).
+- Same game in two tabs: the stale tab wrote an old turn back. Tabs now adopt each other's saves (`storage` event); computers wait while a tab is hidden.
+- Also: empty deck button disabled, station mode cleared after drawing, Table chips show names at 320 with 4–5 players, Table status line no longer wraps word by word, "1 cards".
+- Verified: `tests/edge.test.js` (4 of 5 failed on the old code) + 90/90; Playwright WebKit `ui.mjs` 39/39 after (14 failed before), `twotabs.mjs`.
+
 ## NOT verified
-- Real-table look on a real iPhone; the hand-fan and deal animations by eye at full speed (headless ran at 1–2 fps); Europe stations and 4–5 player seat rows at 320 px (screenshots were USA, 4 players).
+- Edge pass: two tabs on a real iPhone (sync measured with two Playwright pages); the Pass button in an online room (engine path same as local, not run online); zoom-check not re-run (Lab layout untouched).
+- Real-table look on a real iPhone; the hand-fan and deal animations by eye at full speed (headless ran at 1–2 fps); (Europe stations and 5-player seats at 320 px now checked in the edge pass.)
 - Sounds by ear (Playwright WebKit on Windows has no Web Audio; sound gating measured in node with a fake AudioContext). Car-by-car clack seen only as running animations, not caught mid-drop in a screenshot. Online sounds from snapshots tested in node only (view diffs = local diffs), not with two phones.
 - Auto zoom with real fingers on an iPhone (synthetic pointer events only); route-tap sweep (477/478) not re-run after the auto fit got slightly bigger.
 - Real maps on a real iPhone screen (land/sea contrast judged in headless WebKit screenshots only); Tim's eye on the new land/sea colours.

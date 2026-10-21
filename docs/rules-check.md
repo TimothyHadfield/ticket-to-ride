@@ -90,6 +90,14 @@ Tests: `tests/rules.test.js` (one test per rule below), `tests/maps.test.js` (co
 | Longest path | 10, named "Transalpine Express" | [SUI] (10 points), name from [SUI-board] only |
 | City ticket values | all 34 equal the shortest route on our data (test) | measured |
 
+## Odd endings (edge pass 2026-10-20, `tests/edge.test.js`)
+| Fact | Value | Sources |
+|---|---|---|
+| Nothing left to draw | A player who can't draw train cards or tickets may pass (the app shows "Nothing left to draw" + Pass) | [USA] (each turn is one of three actions; none possible) |
+| Nobody can move | If every player passes in turn, the game ends and is scored. **Not in any rulebook** (it would otherwise never end) | our handling |
+| Ties | Total, then most completed tickets, then (Europe) fewest stations used, then longest route; still level = a **shared win** ("Tie: …") | [USA], [EU], [NOR] |
+| Station payment | whole cards only, never negative (a −1 locomotive used to add a card) | engine check |
+
 ## Not confirmed
 - **Nordic Helsinki–Kirkenes ticket: 13 or 15?** [FMS] says 13, [NOR-dh] says 15, no photo found. We use **13** (it equals the shortest route, like every other Nordic ticket).
 - **Nordic three face-up locomotives:** the rulebook says nothing; [NOR-edp] says the usual sweep does **not** apply; [BGA-maps] says drawing "matches Switzerland" (which sweeps). We **do not sweep**.

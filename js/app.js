@@ -5,7 +5,7 @@
   const T = window.TTR, G = window.TTRGraph, AI = window.TTRAI, O = window.TTROdds, B = window.Board;
   const FX = window.FX, SFX = window.TTRSfx; // sounds + animations (js/fx.js is the shared library, js/sfx.js maps game events to it)
   const TABLE = window.TABLE, TT = window.TTRTable; // the real-table kit (js/table.js, shared) + this game's board frame and cards
-  const VERSION = '1.8';
+  const VERSION = '1.9';
   const MAP_IDS = ['usa', 'europe', 'nordic', 'india', 'switzerland'];
   const MAP_NAMES = { usa: 'USA', europe: 'Europe', nordic: 'Nordic Countries', india: 'India', switzerland: 'Switzerland' };
   const LEVELS = ['easy', 'medium', 'hard'];
@@ -213,10 +213,10 @@
   }
   // ---- real-table pieces (js/table.js is the shared kit, js/tabletop.js the board frame + cards)
   // a rival's seat: name plate with the score, the backs of the cards they hold, their face-down tickets, their train heap
-  function seatHTML(q, i, score, turn, wide) {
+  function seatHTML(q, i, score, turn, wide, tight) {
     const n = q.handCount != null ? q.handCount : T.handSize(q.hand);
     const nt = typeof q.tickets === 'number' ? q.tickets : (q.tickets || []).length;
-    const W = wide ? 70 : 30, cw = wide ? 19 : 11, ch = cw * 67 / 44, k = Math.min(n, wide ? 14 : 8);
+    const W = wide ? 70 : tight ? 17 : 30, cw = wide ? 19 : tight ? 9 : 11, ch = cw * 67 / 44, k = Math.min(n, wide ? 14 : tight ? 4 : 8);
     const L = k ? TABLE.fanLayout(k, { width: W, cardW: cw, cardH: ch, spread: 0.45, maxRot: 16 }) : [];
     const drop = L.length ? Math.max(...L.map(p => p.y)) : 0;
     const backs = L.map((p, j) => `<span class="tbl-card tbl-mini tbl-back tbl-sunburst ttr-back" style="--x:${p.x}px;--y:${(p.y - drop).toFixed(1)}px;--r:${p.r}deg;z-index:${j + 1}"></span>`).join('');
@@ -519,9 +519,10 @@
       if (R.globetrotter) cols.push(['Globe', 'globePts']);
       if (R.mandala) cols.push(['Mandala', 'mandalaPts']);
       const missing = S.settings.privacy === 'mine' ? '<p class="note">Only your tickets are in the app, so rivals\' ticket points are missing. Use "Pass the phone" in Settings to count everyone.</p>' : '';
-      const sh = openSheet(`<h2>Final score</h2>
+      const tie = !partial && (res.tied || []).length > 1;
+      const sh = openSheet(`<h2>Final score${tie ? ' · tie' : ''}</h2>
         <table class="scores"><tr><th>Player</th>${cols.map(c => `<th>${c[0]}</th>`).join('')}<th>Total</th></tr>
-        ${rows.map((r, i) => `<tr class="${i === 0 && !partial ? 'win' : ''}"><td>${esc(r.name)}</td>${cols.map(c => `<td>${r[c[1]]}</td>`).join('')}<td><b>${r.total}</b></td></tr>`).join('')}</table>
+        ${rows.map((r, i) => `<tr class="${!partial && (i === 0 || (res.tied || []).includes(r.seat)) ? 'win' : ''}"><td>${esc(r.name)}</td>${cols.map(c => `<td>${r[c[1]]}</td>`).join('')}<td><b>${r.total}</b></td></tr>`).join('')}</table>
         <p class="note">${map.id === 'europe' ? 'European Express' : 'Longest route'}: ${rows.map(r => esc(r.name) + ' ' + r.longest).join(' · ')}</p>${missing}
         <div class="acts"><button class="btn" data-x>Close</button></div>`);
       sh.querySelector('[data-x]').onclick = () => closeSheet();
@@ -556,6 +557,8 @@
       const study = S.settings.study && !p.online;
       const legal = T.legal(s, me);
       const myTurn = s.turn === me && s.phase === 'main';
+      // no train cards or tickets left to draw: the only moves are a claim, a station or passing
+      const stuck = myTurn && !s.drew && !s.players[me].pending && !s.pendingTunnel && !legal.some(t => t === 'draw' || t === 'drawTickets');
       const deck = T.deckFor(map, s).tickets;
       const pl = s.players[me];
       // status
@@ -565,6 +568,7 @@
       else if (s.pendingTunnel && s.turn === me) status = 'Tunnel: pay ' + s.pendingTunnel.extra + ' more?';
       else if (myTurn && pl.pending) status = 'Choose tickets to keep';
       else if (myTurn && s.drew) status = 'Take your second card';
+      else if (myTurn && stuck) status = 'Nothing left to draw';
       else if (myTurn) status = Play.stationMode ? 'Tap a city for your station' : 'Your turn';
       else status = esc(s.players[s.turn].name) + ' is playing…';
       if (s.lastRound != null && s.phase !== 'over') status += ' · last round';
@@ -579,13 +583,16 @@
       const scores = s.players.map((_, i) => s.phase === 'over' && s.result ? s.result.rows[i].total : T.liveRoutePoints(s, i));
       const turnOf = i => s.turn === i && s.phase !== 'over';
       // ---- the far side of the table: each rival's seat (name plate, held card backs, face-down tickets, train heap)
-      view.querySelector('.rivals').innerHTML = s.players.map((q, i) => i === me ? '' : seatHTML(q, i, scores[i], turnOf(i), wide)).join('');
+      // four rivals on a phone: smaller card fans and train heaps so every seat fits across
+      const tight = !wide && s.players.length >= 5;
+      view.querySelector('.rivals').classList.toggle('tight', tight);
+      view.querySelector('.rivals').innerHTML = s.players.map((q, i) => i === me ? '' : seatHTML(q, i, scores[i], turnOf(i), wide, tight)).join('');
       // ---- beside the board: ticket deck, the five face-up cards, the train deck, the discard pile
       const sup = view.querySelector('.supply');
       sup.innerHTML = `
         <button type="button" class="stk-btn" id="p-tix" aria-label="Draw tickets (${s.ticketDeck.length} left)" ${legal.includes('drawTickets') ? '' : 'disabled'}><span class="stk"></span></button>
         <div class="row5">${s.faceUp.map((c, i) => c ? `<button type="button" class="slot" data-face="${i}" aria-label="Take ${c === 'loco' ? 'locomotive' : c}">${TT.trainCard(c)}</button>` : '<span class="tbl-spot"></span>').join('')}</div>
-        <button type="button" class="stk-btn" id="p-deck" aria-label="Draw from the deck (${s.trainDeck.length} left)" ${legal.includes('draw') ? '' : 'disabled'}><span class="stk"></span></button>
+        <button type="button" class="stk-btn" id="p-deck" aria-label="Draw from the deck (${s.trainDeck.length} left)" ${legal.includes('draw') && (s.trainDeck.length || s.discard.length) ? '' : 'disabled'}><span class="stk"></span></button>
         <div class="disc" aria-label="Discard pile"></div>`;
       const thick = { perCard: wide ? 0.12 : 0.1, max: wide ? 10 : 8 };
       TABLE.deck(sup.querySelector('#p-tix .stk'), s.ticketDeck.length, Object.assign({ pattern: 'lattice', cls: 'tbl-mini ttr-tback' }, thick));
@@ -613,6 +620,7 @@
         <div class="row" style="margin-top:10px"><button class="btn small" id="p-new">${p.online ? 'Leave room' : 'New game'}</button>${p.online ? `<span class="grow small muted">Room ${esc(Play.net && Play.net.snap ? Play.net.snap.code : '')}</span>` : ''}</div>`;
       panel.innerHTML = `
         <div class="status"><span class="dot" style="background:${fxColors[s.turn]}"></span><span class="grow st-text">${status}</span>
+          ${stuck ? '<button class="btn small primary" id="p-pass">Pass</button>' : ''}
           ${s.phase === 'main' && myTurn ? '<button class="btn small" id="p-hint">Hint</button>' : ''}
           ${s.phase === 'over' ? '<button class="btn small primary" id="p-score">Scores</button>' : ''}
           <button class="btn small notes-btn" id="p-notes" aria-label="Notes: unseen cards, longest, log">Notes</button></div>
@@ -631,6 +639,7 @@
       on('#p-deck', () => Play.act({ type: 'draw', from: 'deck' }));
       on('#p-tix', () => Play.act({ type: 'drawTickets' }));
       on('#p-hint', Play.showHint);
+      on('#p-pass', () => Play.act({ type: 'pass' }));
       on('#p-score', Play.scores);
       on('#p-new', newGame);
       on('#p-notes', () => {
@@ -786,7 +795,7 @@
       if (p.online) {
         try { T.apply(T.clone(s), Object.assign({}, a)); } catch (e) { if (e.rule) return refuse(e.message.charAt(0).toUpperCase() + e.message.slice(1)); }
         Play.hint = null; Play.hintRoute = null;
-        if (a.type === 'claim' || a.type === 'station') Play.stationMode = false;
+        if (a.type !== 'keepTickets') Play.stationMode = false;
         Play.net.room.act(a); // a refusal arrives as an 'error' event (toast); sounds come with the snapshot
         return;
       }
@@ -794,7 +803,7 @@
         const before = s;
         p.state = T.apply(s, a); Play.record();
         Play.hint = null; Play.hintRoute = null;
-        if (a.type === 'claim' || a.type === 'station') Play.stationMode = false;
+        if (a.type !== 'keepTickets') Play.stationMode = false;
         if (a.type === 'claim' && p.state.owner[a.route] === me) Play.flashRoute(a.route);
         save(); Play.render(); Play.fx(before, p.state); Play.pump();
       } catch (e) {
@@ -805,6 +814,7 @@
     // computers move one action at a time, with a pause so you can follow
     pump() {
       const p = S.play; if (!p || p.online || Play.busy) return;
+      if (document.hidden) return; // a tab in the background waits; the computers carry on when it is shown again
       const s = p.state;
       if (s.phase === 'over') return;
       let seat = null;
@@ -860,7 +870,7 @@
       const opts = [];
       for (const c of T.COLORS) if (h[c]) { const n = Math.min(h[c], cost); if (cost - n <= h.loco) opts.push({ color: c, n, locos: cost - n }); }
       if (h.loco >= cost) opts.push({ color: null, n: 0, locos: cost });
-      if (!opts.length) return refuse('A station costs ' + cost + ' cards of one colour');
+      if (!opts.length) return refuse('A station costs ' + cost + ' card' + (cost === 1 ? '' : 's') + (cost > 1 ? ' of one colour' : ''));
       const sh = openSheet(`<h2>Station in ${esc(cityName(map, id))}</h2><p class="note">Lets you use one rival route into this city for your tickets.</p>
         <div class="paylist">${opts.map((o, i) => `<button type="button" class="payopt" data-o="${i}">${payLabel(o)}</button>`).join('')}</div>
         <div class="acts"><button class="btn" data-x>Cancel</button></div>`);
@@ -1072,9 +1082,12 @@
       if (R.mandala) cols.push(['Mandala', 'mandalaPts']);
       const rows = res.order.map(i => res.rows[i]);
       const won = res.winner === p.me;
-      const sh = openSheet(`<h2>${won ? 'You win!' : esc(s.players[res.winner].name) + ' wins'}</h2>
+      const tied = (res.tied || [res.winner]).length > 1 ? res.tied : null; // level after every tie-break: a shared win
+      const names = list => list.map(i => i === p.me ? 'you' : esc(s.players[i].name)).join(', ').replace(/, ([^,]*)$/, ' and $1');
+      const head = tied ? 'Tie: ' + names(tied).replace(/^you/, 'You') : won ? 'You win!' : esc(s.players[res.winner].name) + ' wins';
+      const sh = openSheet(`<h2>${head}</h2>
         <table class="scores"><tr><th>Player</th>${cols.map(c => `<th>${c[0]}</th>`).join('')}<th>Total</th></tr>
-        ${rows.map((r, i) => `<tr class="${i === 0 ? 'win' : ''}" data-seat="${r.seat}"><td>${esc(r.name)}${s.players[r.seat].level ? ' <span class="muted small">' + LEVEL_NAME[s.players[r.seat].level] + '</span>' : ''}</td>${cols.map(c => `<td data-k="${c[1]}">${r[c[1]]}</td>`).join('')}<td><b>${r.total}</b></td></tr>`).join('')}</table>
+        ${rows.map((r, i) => `<tr class="${i === 0 || (tied && tied.includes(r.seat)) ? 'win' : ''}" data-seat="${r.seat}"><td>${esc(r.name)}${s.players[r.seat].level ? ' <span class="muted small">' + LEVEL_NAME[s.players[r.seat].level] + '</span>' : ''}</td>${cols.map(c => `<td data-k="${c[1]}">${r[c[1]]}</td>`).join('')}<td><b>${r.total}</b></td></tr>`).join('')}</table>
         <div class="sec">Score race</div>${Play.raceSVG(s, res)}
         <div class="sec">Tickets</div>
         ${rows.map(r => `<div class="small" style="margin-bottom:4px"><b style="color:${B.PLAYER[r.seat]}">${esc(r.name)}</b> ${r.tickets.map(x => `<span style="color:${x.ok ? 'var(--good)' : 'var(--bad)'}">${esc(ticketName(map, deck[x.t]))} ${x.pts >= 0 ? '+' : '−'}${Math.abs(x.pts)}</span>`).join(' · ')}</div>`).join('')}
@@ -1269,6 +1282,19 @@
   };
 
   const VIEWS = { table: Table, play: Play, lab: Lab, settings: Settings };
+
+  // the same game open in two tabs: when one saves, the other takes that game instead of overwriting it later
+  window.addEventListener('storage', e => {
+    if (e.key !== KEY || !e.newValue) return;
+    let d; try { d = JSON.parse(e.newValue); } catch (err) { return; }
+    if (!d || typeof d !== 'object') return;
+    S.table = d.table || null;
+    if (!(S.play && S.play.online)) { S.play = d.play || null; Play.gen++; Play.busy = false; }
+    if (d.settings) Object.assign(S.settings, d.settings);
+    if (d.lab) Object.assign(S.lab, d.lab);
+    if (S.tab === 'play' || S.tab === 'table') { closeSheet(true); VIEWS[S.tab].show(); }
+  });
+  document.addEventListener('visibilitychange', () => { if (!document.hidden && S.tab === 'play') Play.pump(); });
 
   // ---------------------------------------------------------------- boot
   function applyCb() { B.cbMarks = !!S.settings.cb; document.body.classList.toggle('cb', B.cbMarks); }

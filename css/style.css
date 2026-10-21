@@ -627,3 +627,22 @@ table.scores tr.win td { color: var(--accent-warm); font-weight: 700; }
 @media (max-width: 360px) {
   .zoom button { width: 28px; height: 26px; font-size: 15px; }
 }
+/* edge pass: four rivals on a phone (5 players) get smaller fans, ticket backs and heaps so every seat fits across */
+@media (max-width: 899px) {
+  .rivals.tight { gap: 3px; padding: 6px 5px 0; }
+  .rivals.tight .seat { padding: 3px 1px; }
+  .rivals.tight .seat-stuff { gap: 2px; }
+  .rivals.tight .backs > b { right: -3px; }
+  .rivals.tight .tixb .tbl-card { --card-w: 8px; }
+  .rivals.tight .heap svg { width: 15px; height: 12px; }
+}
+/* narrow phones: the Table's status line keeps its words on one line (the buttons drop below), and with 4-5 players
+   each chip shows the name on top with the score and trains under it */
+@media (max-width: 380px) {
+  #v-table .status { flex-wrap: wrap; row-gap: 6px; }
+  #v-table .status .grow { flex: 1 1 150px; }
+  .players:has(> .pchip:nth-child(4)) .pchip { padding: 5px 6px; grid-template-columns: auto minmax(0, 1fr); column-gap: 4px; }
+  .players:has(> .pchip:nth-child(4)) .pchip .nm { grid-column: 1 / -1; grid-row: 1; }
+  .players:has(> .pchip:nth-child(4)) .pchip .sc { grid-column: 1; grid-row: 2; font-size: 16px; }
+  .players:has(> .pchip:nth-child(4)) .pchip .mt { grid-column: 2; grid-row: 2; align-self: center; }
+}

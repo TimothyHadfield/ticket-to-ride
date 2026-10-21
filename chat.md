@@ -53,3 +53,9 @@
 - **Built:** wooden table, framed board with 0–100 score track + markers, parchment map, rival seats (backs fan, tickets, train heaps), supply (decks with thickness, 5 face-up, messy discard), my seat (tickets as cards, hand fanned by colour); deal / pay-to-discard / flip animations; fx.js 1.0.3 re-copied; `_table` kit copied. v1.8, cache ?v=9.
 - **Verified:** 85/85 tests; zoom-check 196/201 under load (main 193/201 same run), 201/201 with 4× waits; WebKit shots at 320/393/659-landscape/1280, no scroll/overflow/errors; Effects speed taps leave Computer speed alone; deck draw + face-up take in WebKit, no errors; two reviewer passes.
 - **Open:** real iPhone; route-points chart; ticket stack past 3.
+
+## 2026-10-20 — edge pass (builder under the manager)
+- **Asked:** Tim: "Could you focus on making each game perfect especially in scenarios that the game doesn't expect or are a little weird."
+- **Built:** Pass when nothing can be drawn + game ends when everyone passes; shared-win ties; station payment check; compact seats for 5 players on phones; two-tab sync and computers pause in hidden tabs; empty deck disabled; station mode reset; Table chips/status at 320. v1.9, cache ?v=10.
+- **Verified:** 69 scenarios (scratchpad `edge/ticket-to-ride/`, session acb6c2a0), 14 failed before, 0 after; tests/edge.test.js failed first on old code; 90/90.
+- **Open:** two tabs and Pass online on a real phone.

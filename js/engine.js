@@ -356,7 +356,8 @@
       if (!G.index(map).cityById[a.city]) fail('no such city');
       const cost = stationCost(s, seat);
       const { color, n, locos } = a.pay || {};
-      if (n + locos !== cost) fail('station costs ' + cost + ' cards');
+      if (!Number.isInteger(n) || !Number.isInteger(locos) || n < 0 || locos < 0) fail('bad payment');
+      if (n + locos !== cost) fail('station costs ' + cost + ' card' + (cost === 1 ? '' : 's'));
       if (n > 0 && (!COLORS.includes(color) || p.hand[color] < n)) fail('not enough cards');
       if (p.hand.loco < locos) fail('not enough locomotives');
       if (n > 0) { p.hand[color] -= n; for (let k = 0; k < n; k++) s.discard.push(color); }
@@ -369,7 +370,15 @@
     if (a.type === 'pass') {
       if (legal(s, seat).some(t => t === 'draw' || t === 'drawTickets')) fail('you can still draw');
       log(s, seat, p.name + ' passed.');
-      return endTurn(s);
+      s.passes = (s.passes || 0) + 1;
+      // Nothing left to draw and every player in turn passed: no one can move again, so the game ends
+      // (the rulebook has no rule for this; it would otherwise go round forever).
+      if (s.passes >= s.players.length) {
+        s.drew = 0; s.phase = 'over'; s.result = score(s);
+        log(s, null, 'Nobody can move: game over.');
+        return s;
+      }
+      return endTurn(s, true);
     }
     fail('unknown action ' + a.type);
   }
@@ -387,9 +396,10 @@
     return endTurn(s);
   }
 
-  function endTurn(s) {
+  function endTurn(s, passed) {
     const p = s.players[s.turn];
     s.drew = 0;
+    if (!passed) s.passes = 0;
     if (s.faceUp.some(c => !c)) refillFaceUp(s);
     if (s.lastRound == null && p.trains <= 2) {
       s.lastRound = s.turn; s.turnsLeft = s.players.length;
@@ -489,8 +499,11 @@
     if (R.globetrotter) { const m = Math.max(...rows.map(r => r.done)); if (m > 0) rows.forEach(r => { if (r.done === m) r.globePts = R.globetrotter; }); }
     rows.forEach(r => { r.total = r.routePts + r.ticketPts + r.stationPts + r.longestPts + r.globePts + r.mandalaPts; });
     // ranking: total, then most completed tickets, then (Europe) fewest stations used, then longest route
-    const order = rows.slice().sort((x, y) => y.total - x.total || y.done - x.done || (s.players[y.seat].stations - s.players[x.seat].stations) || y.longest - x.longest);
-    return { rows, winner: order[0].seat, order: order.map(r => r.seat) };
+    const rank = (x, y) => y.total - x.total || y.done - x.done || ((s.players[y.seat].stations || 0) - (s.players[x.seat].stations || 0)) || y.longest - x.longest;
+    const order = rows.slice().sort(rank);
+    // still level after every tie-break: they share the win
+    const tied = order.filter(r => rank(r, order[0]) === 0).map(r => r.seat);
+    return { rows, winner: order[0].seat, order: order.map(r => r.seat), tied };
   }
 
   // Live score during the game (route points only + what is already certain), for scoreboards.

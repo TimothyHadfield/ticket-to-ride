@@ -70,7 +70,7 @@
     if (prev.lastRound == null && next.lastRound != null && next.phase !== 'over') ev.push({ type: 'lastRound', seat: next.lastRound });
     if (next.phase === 'over' && prev.phase !== 'over' && next.result) {
       const row = next.result.rows[me];
-      ev.push({ type: 'over', win: next.result.winner === me, winner: next.result.winner, longest: !!(row && row.longestPts > 0) });
+      ev.push({ type: 'over', win: (next.result.tied || [next.result.winner]).includes(me), winner: next.result.winner, longest: !!(row && row.longestPts > 0) });
     } else if (next.phase === 'main' && next.turn === me && !(prev.phase === 'main' && prev.turn === me)) ev.push({ type: 'yourTurn' });
     return ev;
   }
