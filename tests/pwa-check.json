@@ -1,0 +1,10 @@
+{
+  "repo": "ticket-to-ride",
+  "ready": "!!(window.TTRApp && document.querySelector('#v-play.active') && (document.querySelector('#p-start') || document.querySelector('#v-play .supply #p-deck')))",
+  "play": [
+    "(async () => { const w = ms => new Promise(r => setTimeout(r, ms)); const A = TTRApp; A.S.settings.speed = 'fast'; A.save(); const s = document.querySelector('#p-start'); if (s) s.click(); for (let i = 0; i < 100; i++) { const k = document.querySelector('.sheet [data-best]'); if (k) { k.click(); await w(50); document.querySelector('.sheet [data-ok]').click(); break; } if (A.S.play && !A.S.play.state.players[0].pending) break; await w(100); } for (let i = 0; i < 200; i++) { const st = A.S.play.state; if (st.phase === 'main' && st.turn === 0 && !A.Play.busy) break; await w(100); } window.__turnBefore = A.S.play.state.turnNo; A.Play.act({ type: 'draw', from: 'deck' }); await w(100); A.Play.act({ type: 'draw', from: 'deck' }); })()"
+  ],
+  "played": "(() => { const st = TTRApp.S.play && TTRApp.S.play.state; return !!st && st.turnNo >= window.__turnBefore + 2 && st.turn === 0 && st.phase === 'main'; })()",
+  "safe": "document.querySelector('#tabbar [data-tab=settings]').click()",
+  "debug": "JSON.stringify((() => { const st = TTRApp.S.play && TTRApp.S.play.state; return st ? { turnNo: st.turnNo, before: window.__turnBefore, turn: st.turn, phase: st.phase, busy: TTRApp.Play.busy } : null; })())"
+}

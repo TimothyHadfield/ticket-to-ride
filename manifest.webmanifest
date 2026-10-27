@@ -1,0 +1,18 @@
+{
+  "name": "Ticket to Ride",
+  "short_name": "Ticket to Ride",
+  "description": "Ticket to Ride companion for the real table, computer opponents with measured strength, and a route lab — USA, Europe, Nordic Countries, India and Switzerland, plus online rooms.",
+  "id": "./",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0f1117",
+  "theme_color": "#0f1117",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml" },
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

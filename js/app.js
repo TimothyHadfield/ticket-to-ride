@@ -5,7 +5,7 @@
   const T = window.TTR, G = window.TTRGraph, AI = window.TTRAI, O = window.TTROdds, B = window.Board;
   const FX = window.FX, SFX = window.TTRSfx; // sounds + animations (js/fx.js is the shared library, js/sfx.js maps game events to it)
   const TABLE = window.TABLE, TT = window.TTRTable; // the real-table kit (js/table.js, shared) + this game's board frame and cards
-  const VERSION = '1.11';
+  const VERSION = '1.12';
   const MAP_IDS = ['usa', 'europe', 'nordic', 'india', 'switzerland'];
   const MAP_NAMES = { usa: 'USA', europe: 'Europe', nordic: 'Nordic Countries', india: 'India', switzerland: 'Switzerland' };
   const LEVELS = ['easy', 'medium', 'hard'];
@@ -24,7 +24,7 @@
     let d = null;
     try { d = JSON.parse(localStorage.getItem(KEY)); } catch (e) { d = null; }
     d = d && typeof d === 'object' ? d : {};
-    d.tab = d.tab || 'table';
+    d.tab = d.tab || 'play'; // a first visit opens on Play (2026-10-27: it used to open on the Table companion)
     d.settings = Object.assign({ speed: 'normal', study: false, longest: true, privacy: 'mine', labMap: 'usa', labDeck: null, cb: false }, d.settings || {});
     d.table = d.table || null;
     d.play = d.play || null;
@@ -66,10 +66,10 @@
     const html = TABS.map(([id, label, icon]) => `<button type="button" role="tab" data-tab="${id}" aria-selected="false"><svg aria-hidden="true"><use href="#${icon}"/></svg><span>${label}</span></button>`).join('');
     $('#tabbar').innerHTML = html; $('#toptabs').innerHTML = html;
     document.addEventListener('click', e => { const b = e.target.closest('[data-tab]'); if (b) showTab(b.dataset.tab, true); });
-    window.addEventListener('popstate', e => { const t = (e.state && e.state.tab) || 'table'; showTab(t, false); });
+    window.addEventListener('popstate', e => { const t = (e.state && e.state.tab) || 'play'; showTab(t, false); });
   }
   function showTab(id, push) {
-    if (!TABS.some(t => t[0] === id)) id = 'table';
+    if (!TABS.some(t => t[0] === id)) id = 'play';
     S.tab = id; save();
     document.body.dataset.view = id; // not data-tab: that marks the tab buttons
     document.querySelectorAll('[data-tab]').forEach(b => b.setAttribute('aria-selected', b.dataset.tab === id));
@@ -1346,5 +1346,12 @@
   const start = (location.hash || '').slice(1);
   history.replaceState({ tab: TABS.some(t => t[0] === start) ? start : S.tab }, '', location.hash || '#' + S.tab);
   showTab(TABS.some(t => t[0] === start) ? start : S.tab, false);
+  // home-screen app (js/pwa.js, shared _pwa kit): a new deploy reloads by itself only when nothing would be lost
+  if (window.PWA) window.PWA.safeToReload = () => {
+    const ae = document.activeElement;
+    if (Play.net || (S.play && S.play.online) || sheetEl || Play.busy) return false;
+    if (ae && /^(INPUT|SELECT|TEXTAREA)$/.test(ae.tagName)) return false;
+    return S.tab === 'settings' || S.tab === 'lab' || !S.play || S.play.state.phase === 'over';
+  };
   window.TTRApp = { S, Table, Play, Lab, save, closeSheet }; // for tests / debugging
 })();
