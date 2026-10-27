@@ -71,3 +71,9 @@
 - **Built:** `.deal` right column on laptop; rival count chips; phone home view zoomed to 9 px names around my tickets (fit toggles whole map); smaller face-up cards; bottom row plate · hand · tickets. v1.11, cache ?v=12.
 - **Verified:** tools/play-layout-check.mjs 24/24 (old code failed 10); 90/90; zoom-check 226/226; tap sweep 478/478; 40 WebKit shots; one reviewer pass (fixed: laptop tickets cut off, chip names clipped at 320 and sideways).
 - **Open:** real iPhone; edge names cut in the zoomed phone view.
+
+## 2026-10-27 — improve pass (builder under the manager)
+- **Asked:** manager's per-game brief: open on Play, Hard ≥65% vs Medium, Undo + end-of-game replay, shared `_coach` (guided game + Rules), `_profile` (My stats, achievements, Daily), `_pwa`, richer original art + a train running along claimed routes, keep real maps/auto-zoom/visibility.
+- **Built:** open on Play + PWA (1a7864a); Hard AI 60–72% → 68–78% (26e30ec); guided game, Rules sheet, My stats + Daily, Undo, Replay (09dc6d8); locomotive run + coast tint (4f3418f); claim step rings the exact route (ebaa118); cache ?v=15, v1.14.
+- **Verified:** 96/96 tests (tests/tutorial.test.js failed on the old build: module missing); pwa-check 18/18; play-layout-check 24/24; zoom-check 226/226; WebKit shots 393/320/landscape/1440 (guided game walked to a real tap-claim, rules, My stats, paused locomotive); live-check per push.
+- **Open:** see NOT verified (reviewer leftovers are Tim's calls).

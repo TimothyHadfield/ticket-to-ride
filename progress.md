@@ -1,7 +1,7 @@
 # Ticket to Ride — progress
 
 ## START HERE
-Read order: this file → `CLAUDE.md` → `docs/rules-check.md` → `docs/ideas.md`. Last updated: 2026-10-21 (visibility round 2).
+Read order: this file → `CLAUDE.md` → `docs/rules-check.md` → `docs/ideas.md`. Last updated: 2026-10-27 (improve pass: open on Play, PWA, Hard AI, guided game, My stats, Undo/Replay, locomotive).
 
 ## Goal right now
 Tim: "Ticket to Ride and all the variants is something that I think is great". Phase 2 (his words): "build regular play online with a computer or other online players for all the games and their common varients that match exactly the play of the in-person game ... Make sure to get everything right like rules and artwork and specific numbers of cards, routes, details, etc."
@@ -15,15 +15,20 @@ Tim: "Ticket to Ride and all the variants is something that I think is great". P
 | Lab | built: paths, points per train, busy routes, blocking/detours |
 | Maps | USA (Classic, 1910, Big Cities, Mega), Europe, Nordic, India, Switzerland — rules sourced in docs/rules-check.md |
 | Variants | ticket decks per map; Settings → Rules → "Longest route bonus" switch (house rule) |
+| Learning | guided first game (`js/tutorial.js` on shared `_coach` 1.0.0; offered once on the Play setup, also Play setup + Settings buttons) and a Rules sheet in our own words |
+| My stats | shared `_profile` 1.0.1 (`js/profile-ttr.js`): rated vs computer unless Hint/Undo/Study ("with help"), 12 achievements, Daily game (rotating map, vs Hard; leaving it = loss); tutorial game not recorded |
+| Undo / Replay | Undo vs computers (stack of 60 snapshots, takes back the computers' moves too); Replay after the game shows claims in order (status Stop button, Scores sheet button) |
+| Home-screen app | shared `_pwa` 1.1.0; first visit opens on Play; cache `?v=15` / app v1.14 |
 
-Measured computer strength (data/strength.json, 1000 games per pairing, 2 players, seats rotated, 2026-10-19):
-| Map | Medium beats Easy | Hard beats Medium | Hard beats Easy |
-|---|---|---|---|
-| USA | 75% | 61% | 84% |
-| Europe | 84% | 72% | 96% |
-| Nordic | 81% | 60% | 86% |
-| India | 89% | 69% | 96% |
-| Switzerland | 69% | 65% | 78% |
+Measured computer strength (data/strength.json, 1000 games per pairing, 2 players, seats rotated, 2026-10-27; Hard was 61/72/60/69/65% before):
+| Map | Medium beats Easy | Hard beats Medium |
+|---|---|---|
+| USA | 75% | 68.8% |
+| Europe | 84% | 71.5% |
+| Nordic | 81% | 67.6% |
+| India | 89% | 78.4% |
+| Switzerland | 69% | 67.8% |
+Hard = Steiner-style plan from every ticket start + own ticket-choice knobs (`HARD`/`MED` in ai.js). Tried and dropped: mid-game ticket draws by expected value (Hard fell to 27–58%), blocking rivals' paths (50–58%). Test: `tests/ai.test.js` "≥65% on USA and Nordic".
 
 ## Authorized next steps
 - (2026-10-19) none beyond the phase-2 brief; the manager merges and reports.
@@ -45,7 +50,10 @@ Measured computer strength (data/strength.json, 1000 games per pairing, 2 player
 - The board sits inside a printed frame (`--frame`, 11 px phone / 18 px laptop): `svg.board` is absolutely inset by it. Anything measuring "the board area" must use the svg's rect, not `.board-wrap` (zoom-check's probe was changed for this). Under heavy machine load headless WebKit runs at 1–2 fps and zoom-check's glide waits fail a few checks (main fails the same way); with 4× waits it passes 201/201.
 - Views hold deck **sizes** (numbers); `T.legal()` wants arrays. ai.js wraps this (`legalIn`). The online screen uses `TTROnlineGame.asState(view)`, which fills hidden decks with stand-in cards. Null fillers made the pre-send check refuse every deck draw, which stalled online games (fixed, with a test).
 - Medium used to pick tickets by raw points, which made it no better than Easy on Switzerland. It now uses the same expected-points ticket choice as Hard.
-- phone-view takes its screenshot before `--eval`. For after-eval screenshots use a Playwright script.
+- phone-view takes its screenshot before `--eval`. For after-eval screenshots use a Playwright script. In `--do`, `wait:` takes a CSS selector; use `waitms:N` for time (a `wait:1500` silently does nothing useful).
+- Guided game: the deal is `TTRTutorial.GAME` (USA seed 69, you + Easy); `tests/tutorial.test.js` checks it still gives 3 green cards and a claimable green route. Engine/deck changes can break it: re-search with a seed script. The coach hides under any sheet except the ticket sheet (`sheet.dataset.kind = 'tickets'`); openSheet calls `COACH.update()`.
+- Bump every `?v=` and `data-version` in index.html (and VERSION in app.js) whenever a js/css file changes, or home-screen installs keep the old file.
+- Profile kit: `draw: true` wins over `won`; a shared win is recorded as a draw.
 - Headless WebKit logs "firestore ... access control checks" page errors when a page reloads mid-listen. This is noise from the aborted channel.
 - `git worktree remove` hit "Permission denied" on OneDrive. The weekly sweep cleans up leftovers.
 - Map art: `node tools/build-maps.js [ids]` needs Node 22+ and `npm install` (dev deps world-atlas, us-atlas, d3-geo, topojson); Natural Earth lakes are fetched once into `tools/cache/` (gitignored). It prints per map: art size, how far cities were nudged, the warp's min area ratio (must stay > 0, else it folds) and cities whose real spot is in water. `tests/art.test.js` checks every city is on drawn land.
@@ -117,6 +125,7 @@ Manager, for Tim ("the after-shots still waste space"): laptop deck/face-up/tick
 - Measured (before → after, late 5-player game, WebKit): laptop 1440 map 36% → 49% (board with frame 56%), 1280 31% → 47% (55%); phone 393 map 19% → 33%, names 6.1 → 9 px; 320 map 9% → 25%, names 3.5 → 9 px; face-up cards 62 → 46 px (393), 49 → 37 px (320). Check: `node tools/play-layout-check.mjs [url]` (24 checks; old code failed 10). Also 90/90, zoom-check 226/226, tap sweep 478/478; shots scratchpad `vis/ticket-to-ride/after2` (session acb6c2a0), 40 shots, no scroll/errors.
 
 ## NOT verified
+- Improve pass (2026-10-27): offline play only has maps visited before; the locomotive run seen paused in a screenshot (headless), not at full speed by eye; Replay and Daily never played through to the end on a real phone. Reviewer leftovers (Tim's calls): last computer move not shown in the status line, replay has no pause/step, ticket names truncated in the hand, phone landscape leaves ~50 px wood beside the board, zoom buttons can sit over a city name, rules are text only.
 - Visibility round 2: real iPhone; the zoomed phone home view cuts names at the map edge (pan or fit to see them) and the zoom control can sit over an edge name at 320; at 1280 a 5th+ ticket and the tickets "?" scroll sideways; laptop hand cards smaller than before; phone sideways names stay ~7 px (sideways not in the brief).
 - Visibility pass: real fingers on an iPhone (magnify-on-crowded-tap feel); 320×568 Play map still ~10% of the screen (names ~3.5–4 px) because rivals/supply/hand need the height. Reviewer leftovers not done: North-East USA names now sit inland (New York beside Pittsburgh; pushing them into the sea shrank the phone map 19→17%, tried and reverted); Zürich/München names touch; laptop Play board size shifts a little between states (grid row follows the hand); laptop layout rearrangement (market/tickets into the side panel) is Tim's call.
 - Edge pass: two tabs on a real iPhone (sync measured with two Playwright pages); the Pass button in an online room (engine path same as local, not run online); zoom-check not re-run (Lab layout untouched).

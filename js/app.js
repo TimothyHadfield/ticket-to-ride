@@ -5,7 +5,7 @@
   const T = window.TTR, G = window.TTRGraph, AI = window.TTRAI, O = window.TTROdds, B = window.Board;
   const FX = window.FX, SFX = window.TTRSfx; // sounds + animations (js/fx.js is the shared library, js/sfx.js maps game events to it)
   const TABLE = window.TABLE, TT = window.TTRTable; // the real-table kit (js/table.js, shared) + this game's board frame and cards
-  const VERSION = '1.13';
+  const VERSION = '1.14';
   const MAP_IDS = ['usa', 'europe', 'nordic', 'india', 'switzerland'];
   const MAP_NAMES = { usa: 'USA', europe: 'Europe', nordic: 'Nordic Countries', india: 'India', switzerland: 'Switzerland' };
   const LEVELS = ['easy', 'medium', 'hard'];
