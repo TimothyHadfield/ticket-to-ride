@@ -28,6 +28,7 @@
     d.settings = Object.assign({ speed: 'normal', study: false, longest: true, privacy: 'mine', labMap: 'usa', labDeck: null, cb: false }, d.settings || {});
     d.table = d.table || null;
     d.play = d.play || null;
+    d.mapWins = d.mapWins && typeof d.mapWins === 'object' ? d.mapWins : {}; // wins per map against the computers (for My stats)
     d.lab = Object.assign({ mode: 'path', a: null, b: null, blocked: [], sort: 'ppt' }, d.lab || {});
     return d;
   }
@@ -66,8 +67,14 @@
     const html = TABS.map(([id, label, icon]) => `<button type="button" role="tab" data-tab="${id}" aria-selected="false"><svg aria-hidden="true"><use href="#${icon}"/></svg><span>${label}</span></button>`).join('');
     $('#tabbar').innerHTML = html; $('#toptabs').innerHTML = html;
     document.addEventListener('click', e => { const b = e.target.closest('[data-tab]'); if (b) showTab(b.dataset.tab, true); });
-    window.addEventListener('popstate', e => { const t = (e.state && e.state.tab) || 'play'; showTab(t, false); });
+    window.addEventListener('popstate', e => {
+      // Back with the rules open only closes the rules
+      if (window.COACH && COACH.rulesOpen()) { COACH.closeRules(); history.pushState({ tab: S.tab }, '', '#' + S.tab); return; }
+      const t = (e.state && e.state.tab) || 'play'; showTab(t, false);
+    });
   }
+  // the rules sheet (shared js/coach.js; the text is in js/tutorial.js)
+  function openRules(open) { if (window.COACH && window.TTRTutorial) { closeSheet(true); COACH.rules(Object.assign(window.TTRTutorial.rules(), { open })); } }
   function showTab(id, push) {
     if (!TABS.some(t => t[0] === id)) id = 'play';
     S.tab = id; save();
@@ -76,6 +83,7 @@
     document.querySelectorAll('.view').forEach(v => v.classList.toggle('active', v.id === 'v-' + id));
     if (push) history.pushState({ tab: id }, '', '#' + id); // Back returns to the previous tab
     closeSheet(true);
+    if (window.COACH && id !== 'play') COACH.closeOffer();
     VIEWS[id].show();
     sizeBoards();
   }
@@ -594,6 +602,7 @@
       if (!p || p.state.mapId !== map.id) return Play.renderSetup(panel);
       const s = p.state, me = p.me;
       const study = S.settings.study && !p.online;
+      if (study && !p.study) { p.study = true; save(); } // seeing the computers' cards: not a rated game
       const legal = T.legal(s, me);
       const myTurn = s.turn === me && s.phase === 'main';
       // no train cards or tickets left to draw: the only moves are a claim, a station or passing
@@ -611,6 +620,7 @@
       else if (myTurn) status = Play.stationMode ? 'Tap a city for your station' : 'Your turn';
       else status = esc(s.players[s.turn].name) + ' is playing…';
       if (s.lastRound != null && s.phase !== 'over') status += ' · last round';
+      if (Play.replay) { const R = Play.replay, x = p.claims[R.i - 1]; status = 'Replay · turn ' + (x ? x.t : 0) + ' · ' + R.i + ' of ' + p.claims.length + ' routes'; }
       // odds for my tickets
       const pos = Play.pos(s, me);
       const odds = pl.tickets.length ? O.ticketChances(map, Object.assign(pos, { tickets: pl.tickets.map(i => pos.deckTickets[i]), myCards: T.handSize(pl.hand) })) : { tickets: [] };
@@ -660,8 +670,10 @@
       panel.innerHTML = `
         <div class="status"><span class="dot" style="background:${fxColors[s.turn]}"></span><span class="grow st-text">${status}</span>
           ${stuck ? '<button class="btn small primary" id="p-pass">Pass</button>' : ''}
+          ${Play.replay ? '<button class="btn small primary" id="p-rstop">Stop</button>' : ''}
+          ${Play.canUndo() ? '<button class="btn small" id="p-undo" aria-label="Undo my last move">Undo</button>' : ''}
           ${s.phase === 'main' && myTurn ? '<button class="btn small" id="p-hint">Hint</button>' : ''}
-          ${s.phase === 'over' ? '<button class="btn small primary" id="p-score">Scores</button>' : ''}
+          ${s.phase === 'over' && !Play.replay ? (p.claims && p.claims.length ? '<button class="btn small" id="p-replay">Replay</button>' : '') + '<button class="btn small primary" id="p-score">Scores</button>' : ''}
           <button class="btn small notes-btn" id="p-notes" aria-label="Notes: unseen cards, longest, log">Notes</button></div>
         <div class="notes">${notes}</div>`;
       // the hint is written on a note laid on the board, so nothing below it moves
@@ -678,6 +690,9 @@
       on('#p-deck', () => Play.act({ type: 'draw', from: 'deck' }));
       on('#p-tix', () => Play.act({ type: 'drawTickets' }));
       on('#p-hint', Play.showHint);
+      on('#p-undo', Play.undo);
+      on('#p-replay', Play.startReplay);
+      on('#p-rstop', Play.stopReplay);
       on('#p-pass', () => Play.act({ type: 'pass' }));
       on('#p-score', Play.scores);
       on('#p-new', newGame);
@@ -692,12 +707,19 @@
       // sheets that the state demands
       if (pl.pending && (s.phase === 'setup' || myTurn) && !sheetEl) Play.ticketSheet();
       if (s.pendingTunnel && s.turn === me && !sheetEl) Play.tunnelSheet();
+      if (s.phase === 'over') Play.recordProfile();
       if (s.phase === 'over' && !p.shownScores && !sheetEl) { p.shownScores = true; save(); Play.scores(); }
     },
     renderBoard() {
       const p = S.play; if (!p || !Play.board) return;
       const s = p.state, odds = Play.lastOdds || { tickets: [] };
       const tix = Play.sel != null && odds.tickets[Play.sel];
+      if (Play.replay) {
+        // the end-of-game replay: the routes appear in the order they were claimed
+        const owner = {}, R = Play.replay, last = p.claims[R.i - 1];
+        p.claims.slice(0, R.i).forEach(x => { owner[x.r] = x.s; });
+        return Play.board.render({ owner, stations: R.i >= p.claims.length ? s.stationAt : {}, path: new Set(), endCities: [], highlight: new Set(last ? [last.r] : []) });
+      }
       Play.board.render({
         owner: s.owner, stations: s.stationAt,
         path: new Set(tix ? tix.path : Play.hintRoute ? [Play.hintRoute] : []),
@@ -709,6 +731,12 @@
     record() {
       const p = S.play; if (!p) return;
       const s = p.state; p.race = p.race || [];
+      // every claim in order, for the end-of-game replay
+      if (!p.claims) p.claims = Object.keys(s.owner).length ? null : [];
+      if (p.claims && Object.keys(s.owner).length > p.claims.length) {
+        const had = new Set(p.claims.map(x => x.r));
+        for (const r in s.owner) if (!had.has(r)) p.claims.push({ r, s: s.owner[r], t: s.turnNo });
+      }
       const last = p.race[p.race.length - 1];
       if (last && last.t === s.turnNo) return;
       p.race.push({ t: s.turnNo, pts: s.players.map((_, i) => T.liveRoutePoints(s, i)) });
@@ -775,7 +803,7 @@
     confirmNew() {
       const sh = openSheet(`<h2>Leave this game?</h2><p class="note">It can't be resumed.</p><div class="acts"><button class="btn" data-x>Keep playing</button><button class="btn primary" data-ok>New game</button></div>`);
       sh.querySelector('[data-x]').onclick = () => closeSheet();
-      sh.querySelector('[data-ok]').onclick = () => { closeSheet(true); Play.gen++; S.play = null; save(); Play.render(); };
+      sh.querySelector('[data-ok]').onclick = () => { closeSheet(true); Play.abandonDaily(); Play.gen++; S.play = null; save(); Play.render(); };
     },
     // no game on the table (setup, online lobby): just the board, the rest of the table is cleared
     idle() {
@@ -800,9 +828,18 @@
         <div class="row"><span class="seg" role="group">${Array.from({ length: maxOpp }, (_, i) => i + 1).map(n => `<button type="button" data-opp="${n}" aria-pressed="${n === k}">${n}</button>`).join('')}</span></div>
         <div class="tlist" style="margin-top:8px">${Array.from({ length: k }, (_, i) => `<div class="row"><i style="width:14px;height:14px;border-radius:4px;background:${B.PLAYER[i + 1]};flex:none"></i><span class="grow">${PNAME[i + 1]}</span><span class="seg" role="group">${LEVELS.map(l => `<button type="button" data-lv="${i}" data-l="${l}" aria-pressed="${levels[i] === l}">${LEVEL_NAME[l]}</button>`).join('')}</span></div>`).join('')}</div>
         <div id="p-strength"></div>
-        <div class="row" style="margin-top:12px"><button class="btn primary grow" id="p-start">Start</button><button class="btn" id="p-online">Online</button></div>`;
+        <div class="row" style="margin-top:12px"><button class="btn primary grow" id="p-start">Start</button><button class="btn" id="p-online">Online</button></div>
+        ${window.COACH ? '<div class="row" style="margin-top:8px"><button class="btn small" id="p-learn">Guided first game</button><button class="btn small" id="p-rules">Rules</button></div>' : ''}`;
       Play.board.render({});
       panel.querySelector('#p-online').onclick = () => Play.onlineSheet();
+      if (window.COACH) {
+        panel.querySelector('#p-learn').onclick = () => Play.startTutorial();
+        panel.querySelector('#p-rules').onclick = () => openRules();
+        // first visit: offer the guided game once
+        if (Play.tour && !Play.tour.seen() && !Play.tour.saved() && !COACH.offered('ttr-first')) {
+          COACH.offer({ id: 'ttr-first', title: 'New to Ticket to Ride?', text: 'Play a guided first game against one easy computer.', yes: 'Teach me', no: 'No thanks', onYes: () => Play.startTutorial() });
+        }
+      }
       Strength.note($('#p-strength'), map.id, true);
       panel.querySelector('[name=map]').onchange = async e => { panel.querySelectorAll('button').forEach(b => { b.disabled = true; }); Play.setupMap = e.target.value; Play.setupDeck = null; await Play.show(); };
       const dk = panel.querySelector('[name=deck]'); if (dk) dk.onchange = e => { Play.setupDeck = e.target.value; };
@@ -840,7 +877,11 @@
       }
       try {
         const before = s;
-        p.state = T.apply(s, a); Play.record();
+        const snap = { state: s, race: (p.race || []).slice(), claims: p.claims ? p.claims.slice() : p.claims };
+        p.state = T.apply(s, a);
+        if (Play.undoOwner !== p) { Play.undoStack = []; Play.undoOwner = p; } // a new game (or one adopted from another tab) starts a fresh list
+        Play.undoStack.push(snap); if (Play.undoStack.length > 60) Play.undoStack.shift();
+        Play.record();
         Play.hint = null; Play.hintRoute = null;
         if (a.type !== 'keepTickets') Play.stationMode = false;
         if (a.type === 'claim' && p.state.owner[a.route] === me) Play.flashRoute(a.route);
@@ -848,6 +889,98 @@
       } catch (e) {
         if (e.rule) refuse(e.message.charAt(0).toUpperCase() + e.message.slice(1)); else { console.error(e); toast('Something went wrong'); }
       }
+    },
+    // Undo (games against the computers only): back to just before my last move; the computers' moves after it
+    // are taken back too. The deck order is part of the game, so a redrawn card is the same card. Undo or Hint
+    // makes the game count as "with help" in My stats (not rated).
+    undoStack: [],
+    canUndo() { const p = S.play; return !!(p && !p.online && !Play.replay && p.state.phase !== 'over' && Play.undoOwner === p && Play.undoStack.length); },
+    undo() {
+      const p = S.play; if (!Play.canUndo()) return;
+      const u = Play.undoStack.pop();
+      Play.gen++; Play.busy = false;
+      p.state = u.state; p.race = u.race; p.claims = u.claims; p.helped = true;
+      Play.hint = null; Play.hintRoute = null; Play.stationMode = false; Play.claiming = null;
+      closeSheet(true); save(); Play.render(); FX.play('slide'); Play.pump();
+      if (window.COACH) COACH.emit('undo');
+    },
+    // My stats (shared _profile kit): a finished game against the computers is recorded once. Rated unless
+    // Hint, Undo or Study mode was used ("with help"); the guided first game is not recorded.
+    recordProfile() {
+      const p = S.play; if (!window.Profile || !p || p.online || p.recorded || p.tutorial || p.state.phase !== 'over' || !p.state.result) return;
+      p.recorded = true;
+      const s = p.state, helped = !!(p.helped || p.study);
+      const r = window.TTRProfile.result(s, p.me, { helped, daily: !!p.daily, map: Play.map && Play.map.id === s.mapId ? Play.map : null });
+      if (r.won) { S.mapWins[s.mapId] = (S.mapWins[s.mapId] || 0) + 1; }
+      save();
+      Profile.recordResult(p.daily ? Object.assign(r, { date: p.daily }) : r);
+    },
+    // Daily game: the same map, deck and deal for everyone today, against one Hard computer
+    async startDaily() {
+      if (!window.Profile) return;
+      const day = Profile.daily.date();
+      if (S.play && S.play.daily === day && S.play.state.phase !== 'over') { Profile.closePanel(); showTab('play', true); return toast('Your Daily game is on the table'); }
+      if (Profile.daily.played(day)) return Profile.openPanel({ tab: 'daily' });
+      if (S.play && S.play.online) { Profile.closePanel(); return toast('Leave the online room first'); }
+      Play.abandonDaily();
+      Profile.closePanel();
+      const d = window.TTRProfile.dailyGame(Profile.daily.seed(day));
+      const map = await getMap(d.mapId);
+      const seats = [{ name: 'You', kind: 'human' }].concat(d.levels.map((l, i) => ({ name: PNAME[i + 1], kind: 'cpu', level: l })));
+      Play.gen++;
+      S.play = { me: 0, daily: day, state: T.newGame(map, { seed: d.seed, deckId: map.ticketDecks[0].id, seats, options: {} }) };
+      Play.hint = null; Play.sel = null; Play.stationMode = false;
+      save();
+      if (S.tab !== 'play') showTab('play', true); else await Play.show();
+      FX.play('shuffle'); toast('Daily game: ' + map.name + ' against Hard');
+    },
+    // the guided first game (js/tutorial.js + shared js/coach.js): a fixed deal, you against one Easy computer.
+    // Not recorded in My stats.
+    tour: null,
+    async startTutorial() {
+      if (!window.COACH || !Play.tour) return;
+      COACH.closeOffer(); closeSheet(true);
+      if (S.play && S.play.online) return toast('Leave the online room first');
+      Play.abandonDaily();
+      const g = window.TTRTutorial.GAME, map = await getMap(g.mapId);
+      const seats = [{ name: 'You', kind: 'human' }].concat(g.levels.map((l, i) => ({ name: PNAME[i + 1], kind: 'cpu', level: l })));
+      Play.gen++; Play.stopReplay(true);
+      S.play = { me: 0, tutorial: true, state: T.newGame(map, { seed: g.seed, deckId: map.ticketDecks[0].id, seats, options: {} }) };
+      Play.hint = null; Play.sel = null; Play.stationMode = false;
+      save();
+      Play.tour.reset();
+      if (S.tab !== 'play') showTab('play', true); else await Play.show();
+      if (Play.board) Play.board.toAuto();
+      FX.play('shuffle');
+      Play.tour.start();
+    },
+    // leaving an unfinished Daily game (new game, another Daily) counts it as lost, so it can't be retried
+    abandonDaily() {
+      const p = S.play;
+      if (!window.Profile || !p || !p.daily || p.recorded || p.state.phase === 'over') return;
+      p.recorded = true;
+      Profile.recordResult({ mode: 'computer', level: 'hard', won: false, daily: true, date: p.daily });
+      toast('Daily game left: counted as a loss');
+    },
+    // after the game: every claimed route appears again on the board in the order it was claimed
+    replay: null,
+    startReplay() {
+      const p = S.play; if (!p || p.state.phase !== 'over') return;
+      if (!p.claims || p.claims.length !== Object.keys(p.state.owner).length || !p.claims.length) return toast('No replay for this game');
+      closeSheet(true); Play.stopReplay(true);
+      Play.replay = { i: 0, hold: 0 };
+      const step = Math.max(180, Math.round(delay() * 0.55));
+      Play.replay.timer = setInterval(() => {
+        const R = Play.replay; if (!R || S.play !== p || S.tab !== 'play') return Play.stopReplay();
+        if (R.i >= p.claims.length) { if (++R.hold > 3) Play.stopReplay(); return; }
+        R.i++; R.hold = 0; Play.render(); FX.play('place');
+      }, step);
+      Play.render();
+    },
+    stopReplay(quiet) {
+      if (!Play.replay) return;
+      clearInterval(Play.replay.timer); Play.replay = null;
+      if (!quiet && S.tab === 'play') Play.render();
     },
     flashRoute(id) { Play.flash = id; clearTimeout(Play.flashT); Play.flashT = setTimeout(() => { Play.flash = null; if (S.tab === 'play') Play.render(); }, 1400); },
     // computers move one action at a time, with a pause so you can follow
@@ -928,7 +1061,7 @@
         <p class="note">Keep at least ${min}. Numbers: trains more, chance, value.</p>
         <div class="tlist" id="pk" style="margin-top:8px"></div>
         <div class="acts"><button class="btn" data-best>Best set</button><button class="btn primary" data-ok>Keep</button></div>`, null);
-      sh.dataset.modal = '1';
+      sh.dataset.modal = '1'; sh.dataset.kind = 'tickets';
       const draw = () => {
         sh.querySelector('#pk').innerHTML = adv.rows.map((r, k) => {
           const ev = Math.round(r.ev);
@@ -962,6 +1095,7 @@
       const a = AI.choose(v, me, 'hard');
       Play.hint = 'Hint: ' + AI.explain(v, me, a) + (a && a.why ? ' — ' + a.why : '');
       Play.hintRoute = a && a.type === 'claim' ? a.route : null;
+      if (!p.online && !p.helped) { p.helped = true; save(); } // a game with hints counts as "with help" in My stats
       Play.render();
     },
     // ---------------------------------------------------------------- online rooms (js/online.js, shared by Tim's game sites)
@@ -1130,8 +1264,9 @@
         <div class="sec">Score race</div>${Play.raceSVG(s, res)}
         <div class="sec">Tickets</div>
         ${rows.map(r => `<div class="small" style="margin-bottom:4px"><b style="color:${B.PLAYER[r.seat]}">${esc(r.name)}</b> ${r.tickets.map(x => `<span style="color:${x.ok ? 'var(--good)' : 'var(--bad)'}">${esc(ticketName(map, deck[x.t]))} ${x.pts >= 0 ? '+' : '−'}${Math.abs(x.pts)}</span>`).join(' · ')}</div>`).join('')}
-        <div class="acts"><button class="btn" data-x>Close</button><button class="btn primary" data-again>Play again</button></div>`);
+        <div class="acts"><button class="btn" data-x>Close</button>${p.claims && p.claims.length ? '<button class="btn" data-replay>Replay</button>' : ''}<button class="btn primary" data-again>Play again</button></div>`);
       sh.querySelector('[data-x]').onclick = () => closeSheet();
+      const rp = sh.querySelector('[data-replay]'); if (rp) rp.onclick = Play.startReplay;
       sh.querySelector('[data-again]').onclick = () => { closeSheet(true); if (p.online) return Play.netLeave(); Play.gen++; Play.setupMap = map.id; Play.setupDeck = s.deckId; Play.setupOpp = s.players.length - 1; Play.setupLevels = s.players.slice(1).map(q => q.level); S.play = null; save(); Play.render(); };
     },
   };
@@ -1293,6 +1428,7 @@
         <div class="setting"><span class="label">Study mode<div class="note">Show computers' cards and tickets</div></span><label class="switch"><input type="checkbox" id="s-study" ${st.study ? 'checked' : ''}><span></span></label></div>
         <div class="setting"><span class="label">Colour-blind marks<div class="note">A shape for each colour on cards and map spaces</div></span><label class="switch"><input type="checkbox" id="s-cb" ${st.cb ? 'checked' : ''}><span></span></label></div>
         <div class="sec">Rules</div>
+        ${window.COACH ? '<div class="row" style="margin:4px 0 8px"><button class="btn small" id="s-rules">Read the rules</button><button class="btn small" id="s-tour">Replay the guided game</button></div>' : ''}
         <div class="setting"><span class="label">Longest route bonus<div class="note">Off is a common house rule. Nordic and USA 1910 never use it.</div></span><label class="switch"><input type="checkbox" id="s-longest" ${st.longest !== false ? 'checked' : ''}><span></span></label></div>
         <div class="sec">Table</div>
         <div class="setting"><span class="label">Ticket privacy <button class="q" data-help="privacy" aria-label="About ticket privacy">?</button></span><span class="seg" role="group"><button type="button" data-priv="mine" aria-pressed="${st.privacy === 'mine'}">Just mine</button><button type="button" data-priv="pass" aria-pressed="${st.privacy === 'pass'}">Pass the phone</button></span></div>
@@ -1311,6 +1447,7 @@
       $('#s-study').onchange = e => { st.study = e.target.checked; save(); };
       $('#s-cb').onchange = e => { st.cb = e.target.checked; save(); applyCb(); };
       $('#s-longest').onchange = e => { st.longest = e.target.checked; save(); };
+      if (window.COACH) { $('#s-rules').onclick = () => openRules(); $('#s-tour').onclick = () => Play.startTutorial(); }
       FX.renderSettings($('#s-fx')); // its Effects speed buttons use data-fxspeed, so they never touch Computer speed
       $('#s-reset').onclick = () => {
         const sh = openSheet(`<h2>Clear saved games?</h2><p class="note">The table game and the game against the computers are deleted.</p><div class="acts"><button class="btn" data-x>Cancel</button><button class="btn primary" data-ok>Clear</button></div>`);
@@ -1342,10 +1479,32 @@
   const applyStill = () => document.body.classList.toggle('fx-still', !FX.settings.animations);
   FX.init({ game: 'ticket-to-ride', accent: '#6ea8fe', onChange: applyStill });
   applyStill();
+  // My stats (shared _profile kit, everything stays on this device)
+  if (window.Profile && window.TTRProfile) {
+    const paintMe = () => { $('#me-btn').innerHTML = Profile.avatarSVG(Profile.avatar, 26) + '<span>My stats</span>'; };
+    Profile.init({
+      game: 'ticket-to-ride', levels: window.TTRProfile.LEVELS, achievements: window.TTRProfile.achievements(() => S.mapWins),
+      modes: { help: { name: 'Computers, with help' }, online: { hide: true } },
+      daily: { title: 'Daily game', onPlay: () => Play.startDaily() },
+      onChange: what => { if (what === 'me' || what === 'import') paintMe(); },
+    });
+    paintMe();
+    $('#me-btn').onclick = () => Profile.openPanel();
+  } else { const b = $('#me-btn'); if (b) b.remove(); }
+  // the guided first game: steps follow the game's own state; it steps aside on other tabs and under sheets
+  if (window.COACH && window.TTRTutorial) {
+    const tut = () => !!(S.play && S.play.tutorial);
+    Play.tour = COACH.tour({
+      id: 'ttr-first',
+      steps: window.TTRTutorial.steps({ state: () => (tut() ? S.play.state : null), me: () => (S.play ? S.play.me : 0) }),
+      pauseIf: () => S.tab !== 'play' || !tut() || !!Play.replay || (!!sheetEl && sheetEl.dataset.kind !== 'tickets'),
+    });
+  }
   buildTabs();
   const start = (location.hash || '').slice(1);
   history.replaceState({ tab: TABS.some(t => t[0] === start) ? start : S.tab }, '', location.hash || '#' + S.tab);
   showTab(TABS.some(t => t[0] === start) ? start : S.tab, false);
+  if (Play.tour && S.play && S.play.tutorial && S.play.state.phase !== 'over') Play.tour.resume(); // carry on after a reload
   // home-screen app (js/pwa.js, shared _pwa kit): a new deploy reloads by itself only when nothing would be lost
   if (window.PWA) window.PWA.safeToReload = () => {
     const ae = document.activeElement;
