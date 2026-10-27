@@ -1,0 +1,3 @@
+# shared byte-for-byte copies of _fx/_table: never convert line endings
+js/table.js -text
+css/table.css -text

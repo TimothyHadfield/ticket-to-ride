@@ -65,6 +65,9 @@
 .tbl-flip.is-down .tbl-inner { transform: rotateY(180deg); }
 .tbl-inner > .tbl-face { -webkit-backface-visibility: hidden; backface-visibility: hidden; }
 .tbl-inner > .tbl-back { transform: rotateY(180deg); }
+/* don't trust backface-visibility alone (some WebKit builds ignore it): swap faces at the 90° midpoint */
+.tbl-inner > .tbl-face { transition: visibility 0s linear .225s; }
+.tbl-flip:not(.is-down) .tbl-inner > .tbl-back, .tbl-flip.is-down .tbl-inner > .tbl-face:not(.tbl-back) { visibility: hidden; }
 .tbl-instant, .tbl-instant * { transition: none !important; }
 
 /* backs: .tbl-back + .tbl-lattice | .tbl-diamonds | .tbl-sunburst ; colour with --back */
