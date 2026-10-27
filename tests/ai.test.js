@@ -87,3 +87,13 @@ test('strength order on USA (200 games each): hard beats medium, medium beats ea
   assert.ok(hm.winPct.hard > 55, 'hard v medium: ' + JSON.stringify(hm.winPct));
   assert.ok(me.winPct.medium > 55, 'medium v easy: ' + JSON.stringify(me.winPct));
 });
+
+// 2026-10-27 bar: Hard must beat Medium at least 65% head-to-head (it was 60–61% on USA and Nordic).
+// Fixed seeds, so the result is the same every run.
+test('hard beats medium at least 65% on USA and Nordic (1000 games each)', async () => {
+  for (const id of ['usa', 'nordic']) {
+    const r = await runPairing(id, ['medium', 'hard'], 1000, 777001);
+    assert.ok(!r.errors, 'games failed: ' + JSON.stringify(r.errors));
+    assert.ok(r.winPct.hard >= 65, id + ' hard v medium: ' + JSON.stringify(r.winPct));
+  }
+});

@@ -141,9 +141,22 @@
   // Greedy Steiner plan joining the given tickets, re-using routes already chosen.
   // Returns {routes:[route idx to build], trains, failed:[ticket ids], serve: Map(route idx -> ticket id)}.
   function plan(c, tix) {
+    const first = planOrder(c, tix.slice().sort((x, y) => c.dk.tickets[y].pts - c.dk.tickets[x].pts));
+    if (!on(c.level, 'steiner') || tix.length < 2) return first;
+    // Hard: also try building outward from each ticket in turn, nearest ticket next; keep the plan that
+    // leaves fewest tickets unreachable, then needs fewest trains, then fewest separate routes (claim turns)
+    let best = first;
+    const better = (p, q) => p.failed.length - q.failed.length || p.trains - q.trains || p.routes.length - q.routes.length;
+    for (const start of tix) {
+      const order = [start].concat(tix.filter(t => t !== start).sort((x, y) => c.dk.tickets[y].pts - c.dk.tickets[x].pts));
+      const p = planOrder(c, order);
+      if (better(p, best) < 0) best = p;
+    }
+    return best;
+  }
+  function planOrder(c, order) {
     const m = c.m, dk = c.dk;
     const work = Float64Array.from(c.cost);
-    const order = tix.slice().sort((x, y) => dk.tickets[y].pts - dk.tickets[x].pts);
     const routes = [], failed = [], serve = new Map();
     let trains = 0;
     for (const t of order) {
@@ -182,11 +195,11 @@
   }
 
   // Chance of finishing a plan in time: turns needed (draw 2 cards a turn, 1 turn per claim) vs turns left.
-  function finishOdds(c, p, turns, sigma) {
+  function finishOdds(c, p, turns, P) {
     if (p.trains > c.me.trains) return 0.02;
     const cn = cardNeed(c, p.routes);
     const need = cn.short / 1.8 + p.routes.length;
-    return 1 / (1 + Math.exp(-(turns - need - HARD.margin) / sigma));
+    return 1 / (1 + Math.exp(-(turns - need - P.margin) / P.sigma));
   }
 
   // ---------------------------------------------------------------- ticket choice
@@ -204,22 +217,30 @@
     // medium and hard: expected points — each ticket counts +pts if the plan finishes in time, -pts if not;
     // the plan's routes score their own points; trains spent cost what they could earn elsewhere.
     const turns = c.turnsLeft;
-    const P = HARD;
+    // Hard is choosier (each train costs more, more spare turns wanted) except where stations rescue cut tickets
+    const P = level !== 'hard' ? MED : c.R.stations ? Object.assign({}, HARD, { trainCost: HARD.stTrainCost, margin: HARD.stMargin }) : HARD;
     for (let mask = 1; mask < (1 << n); mask++) {
       const keep = pend.filter((_, i) => mask & (1 << i));
       if (keep.length < min) continue;
-      const all = c.openT.concat(keep);
-      const p = plan(c, all);
-      const odds = finishOdds(c, p, turns, P.sigma);
-      let tpts = 0; for (const t of all) if (!p.failed.includes(t)) tpts += tk[t].pts;
-      let fpts = 0; for (const t of p.failed) fpts += tk[t].pts;
-      let rpts = 0; for (const r of p.routes) rpts += c.m.pts[r];
-      let score = tpts * (2 * odds - 1) - fpts + odds * rpts - P.trainCost * p.trains;
-      if (c.R.globetrotter) score += odds * (all.length - p.failed.length) * P.globe;
-      if (!best || score > best.score) best = { score, keep, odds };
+      const h = holdScore(c, keep, turns, P);
+      if (!best || h.score > best.score) best = { score: h.score, keep, odds: h.odds };
     }
     const why = best.keep.length > min ? 'these fit together' : (best.odds > 0.6 ? 'easiest to finish' : 'least risky');
     return { keep: best.keep, why };
+  }
+
+  // Expected points of holding these extra tickets on top of my open ones (the same sum chooseTickets maximises).
+  function holdScore(c, extra, turns, P) {
+    P = P || HARD;
+    const all = c.openT.concat(extra), p = plan(c, all), tk = c.tickets;
+    const odds = finishOdds(c, p, turns, P);
+    let tpts = 0, fpts = 0, rpts = 0;
+    for (const t of all) if (!p.failed.includes(t)) tpts += tk[t].pts;
+    for (const t of p.failed) fpts += tk[t].pts;
+    for (const r of p.routes) rpts += c.m.pts[r];
+    let score = tpts * (2 * odds - 1) - fpts + odds * rpts - P.trainCost * p.trains;
+    if (c.R.globetrotter) score += odds * (all.length - p.failed.length) * P.globe;
+    return { score, odds };
   }
 
   // Hard's knobs, tuned by self-play against Medium on all four maps (tools/strength.js --hard={...}).
@@ -228,8 +249,13 @@
   // routeTurn/longBias/handBias: plan prefers fewer, longer routes and colours already in hand;
   // ticketTurns/ticketTrains: when to draw more tickets; finalTurns: when to start cashing cards in; r*: claim order weights.
   const on = (level, f) => level === 'hard' && !HARD.off.includes(f);
-  const HARD = { off: [], sigma: 3, trainCost: 1.5, globe: 1.5, ticketTurns: 11, ticketTrains: 14, handBias: 0.1, routeTurn: 1, longBias: 0.25, margin: 5, finalTurns: 2.5, drawLoco: 0,
-    rLen: 2, rUrg: 0, rRiv: 2.5, rHeat: 4, rTwin: 1.5 };
+  // 2026-10-27: Hard's own ticket knobs (trainCost 1.5 → 2.5, margin 5 → 8; Europe keeps 1.5 / 5) and the
+  // 'steiner' plan took Hard v Medium from 60–61% to 64–79% (1000 games a map). Tried and dropped: mid-game
+  // ticket draws by expected value (Hard fell to 27–58%) and blocking a rival's likely path (50–58%).
+  const HARD = { off: [], sigma: 3, trainCost: 2.5, globe: 1.5, ticketTurns: 11, ticketTrains: 14, handBias: 0.1, routeTurn: 1, longBias: 0.25, margin: 8, finalTurns: 2.5, drawLoco: 0,
+    rLen: 2, rUrg: 0, rRiv: 2.5, rHeat: 4, rTwin: 1.5, stTrainCost: 1.5, stMargin: 5 };
+  // Medium's ticket choice keeps the knobs it was measured with, so tuning Hard never changes Medium
+  const MED = Object.freeze({ sigma: 3, trainCost: 1.5, globe: 1.5, margin: 5 });
 
   // ---------------------------------------------------------------- main decision
   function choose(v, seat, level, rand) {
