@@ -1116,7 +1116,7 @@
     },
     async netRoom() {
       if (Play.net) return Play.net.room;
-      const mod = await import(new URL('js/online.js?v=' + VERSION, location.href).href);
+      const mod = await import(new URL('js/online.js?v=a3d0418b', location.href).href);
       const room = mod.createOnline({ game: window.TTROnlineGame.game, gameId: 'ticket-to-ride', botDelayMs: delay() });
       Play.net = { room, snap: null };
       room.on('change', snap => Play.onSnap(snap));
