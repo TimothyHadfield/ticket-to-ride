@@ -125,6 +125,7 @@ main { min-height: 0; position: relative; }
 .geo-land { fill: var(--land); stroke: var(--land-edge); stroke-width: 1.3px; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
 .geo-land.far { fill: var(--land-far); }
 .geo-home { fill: var(--land); stroke: none; }
+.geo-tint { fill: none; stroke: rgba(150,118,66,.2); stroke-width: 9px; stroke-linejoin: round; vector-effect: non-scaling-stroke; pointer-events: none; }
 .geo-lake { fill: var(--lake); stroke: var(--land-edge); stroke-width: 1px; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
 .geo-states { fill: none; stroke: rgba(120,95,55,.2); stroke-width: .8px; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
 .geo-border { fill: none; stroke: rgba(110,75,40,.5); stroke-width: 1.1px; stroke-dasharray: 5 3; stroke-linejoin: round; vector-effect: non-scaling-stroke; }

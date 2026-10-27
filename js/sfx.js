@@ -114,6 +114,41 @@
     });
   }
 
+  // a locomotive in the player's colour runs along a newly claimed route, the cars dropping in behind it.
+  // Our own drawing: a body, a cab, a funnel and a lamp, pointing the way the route is drawn.
+  const reduced = () => { try { return !!(root.matchMedia && root.matchMedia('(prefers-reduced-motion: reduce)').matches); } catch (e) { return false; } };
+  function engineRun(rects, color, gap) {
+    if (!animOn() || reduced() || !rects || !rects.length) return null;
+    const first = rects[0], grp = first.parentNode && first.parentNode.parentNode, NS = 'http://www.w3.org/2000/svg';
+    if (!grp || !grp.appendChild || !first.parentNode.getAttribute) return null;
+    const at = rects.map(r => { const m = /translate\(([-\d.]+),([-\d.]+)\)\s*rotate\(([-\d.]+)\)/.exec(r.parentNode.getAttribute('transform') || ''); return m ? [+m[1], +m[2], +m[3]] : null; });
+    if (at.some(x => !x)) return null;
+    const L = Math.max(10, +first.getAttribute('width') || 12), W = Math.max(6, +first.getAttribute('height') || 8);
+    const mk = (tag, a, p) => { const e = root.document.createElementNS(NS, tag); for (const k in a) e.setAttribute(k, a[k]); p.appendChild(e); return e; };
+    const eng = mk('g', { class: 'engine', 'pointer-events': 'none' }, grp);
+    const ink = '#1d1a16';
+    mk('rect', { x: -L / 2, y: -W / 2, width: L * 0.62, height: W, rx: 1.6, fill: color, stroke: ink, 'stroke-width': 1 }, eng);            // cab end
+    mk('rect', { x: -L / 2 + L * 0.5, y: -W * 0.36, width: L * 0.42, height: W * 0.72, rx: W * 0.36, fill: color, stroke: ink, 'stroke-width': 1 }, eng); // boiler
+    mk('path', { d: `M${L / 2 - 1} ${-W * 0.42} L${L / 2 + W * 0.45} 0 L${L / 2 - 1} ${W * 0.42} Z`, fill: ink }, eng);                   // cowcatcher
+    mk('rect', { x: -L / 2 + 1.4, y: -W / 2 + 1.4, width: L * 0.3, height: W - 2.8, rx: 0.8, fill: '#f6eedc', opacity: 0.85 }, eng);       // cab window
+    mk('circle', { cx: L * 0.18, cy: 0, r: W * 0.2, fill: ink }, eng);                                                                     // funnel
+    mk('circle', { cx: L / 2 - 1.2, cy: 0, r: W * 0.14, fill: '#ffe9a8' }, eng);                                                           // lamp
+    const tf = p => `translate(${p[0]}px, ${p[1]}px) rotate(${p[2]}deg)`;
+    const last = at[at.length - 1], prev = at.length > 1 ? at[at.length - 2] : [last[0] - Math.cos(last[2] * Math.PI / 180) * L, last[1] - Math.sin(last[2] * Math.PI / 180) * L, last[2]];
+    const beyond = [last[0] + (last[0] - prev[0]) * 0.6, last[1] + (last[1] - prev[1]) * 0.6, last[2]];
+    const frames = at.map((p, i) => ({ transform: tf(p), opacity: 1, offset: i / at.length }));
+    frames[0].opacity = 0;
+    frames.push({ transform: tf(beyond), opacity: 0, offset: 1 });
+    eng.style.transform = tf(at[0]);
+    try {
+      const a = eng.animate(frames, { duration: Math.max(260, gap * (at.length + 1)), easing: 'linear', fill: 'forwards' });
+      const done = () => eng.remove();
+      a.onfinish = done; a.oncancel = done;
+      setTimeout(done, gap * (at.length + 1) + 1500); // safety: never leave an engine on the board
+      return a;
+    } catch (e) { eng.remove(); return null; }
+  }
+
   // ctx: { me, isMine(seat), chip(seat), score(seat), deck(), tix(), face(i), hand(color), ticketRow(i),
   //        status(), cars(routeId) → [rect], colors: [player colours] }
   async function fire(events, ctx) {
@@ -140,8 +175,9 @@
             const g = ghostCard(c, from, ctx); if (g) fly(g, pile, { clone: false, duration: 360 }).then(() => g.remove());
           }, k * 70));
         }
-        const cars = q('cars', e.route) || [], gap = Math.round(75 * speed());
+        const cars = q('cars', e.route) || [], gap = Math.round(95 * speed());
         cars.forEach((c, i) => clackCar(c, i, gap));
+        engineRun(cars, (ctx.colors && ctx.colors[e.seat]) || '#888', gap);
         for (let k = 0; k < e.len; k++) { play('place', { vol: vol * 0.85, pitch: 0.92 + k * 0.035 }); await wait(gap); }
         if (e.len >= 5) play('train', { vol });
         const chip = q('chip', e.seat), sc = q('score', e.seat);

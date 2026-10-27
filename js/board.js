@@ -207,6 +207,8 @@
       p('geo-shelf', a.land);
       p(a.home ? 'geo-land far' : 'geo-land', a.land);
       p('geo-home', a.home);
+      // hand-tinted coast, like an old printed map: a soft band of colour along every shore
+      p('geo-tint', a.land);
       p('geo-lake', a.lakes);
       p('geo-states', a.states);
       p('geo-border', a.borders);
