@@ -100,6 +100,7 @@
     // force a layout so the slide-in transition runs, without waiting on an animation frame
     void sheetEl.offsetHeight;
     scrimEl.classList.add('show'); sheetEl.classList.add('show');
+    if (window.COACH) setTimeout(() => COACH.update(), 0); // the guided game steps aside under a sheet at once
     return sheetEl;
   }
   function closeSheet(instant) {
@@ -1496,7 +1497,20 @@
     const tut = () => !!(S.play && S.play.tutorial);
     Play.tour = COACH.tour({
       id: 'ttr-first',
-      steps: window.TTRTutorial.steps({ state: () => (tut() ? S.play.state : null), me: () => (S.play ? S.play.me : 0) }),
+      steps: window.TTRTutorial.steps({
+        state: () => (tut() ? S.play.state : null), me: () => (S.play ? S.play.me : 0),
+        // the route the claim step points at: one I can pay for now, on the cheapest way of a kept ticket if there is one
+        route: () => {
+          if (!tut() || !Play.map || Play.map.id !== S.play.state.mapId) return null;
+          const s = S.play.state, me = S.play.me, map = Play.map, deck = T.deckFor(map, s).tickets;
+          const ok = map.routes.filter(r => s.owner[r.id] == null && T.canClaim(s, me, r.id) === null);
+          const way = new Set();
+          for (const i of s.players[me].tickets) { const t = deck[i], p = t && t.a && G.shortest(map, t.a, t.b, r => r.len); if (p) p.path.forEach(id => way.add(id)); }
+          const green = ok.filter(x => x.color === 'green');
+          const r = green.find(x => way.has(x.id)) || green[0] || ok.find(x => way.has(x.id)) || ok[0];
+          return r ? r.id : null;
+        },
+      }),
       pauseIf: () => S.tab !== 'play' || !tut() || !!Play.replay || (!!sheetEl && sheetEl.dataset.kind !== 'tickets'),
     });
   }
