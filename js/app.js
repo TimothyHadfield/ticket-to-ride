@@ -5,7 +5,7 @@
   const T = window.TTR, G = window.TTRGraph, AI = window.TTRAI, O = window.TTROdds, B = window.Board;
   const FX = window.FX, SFX = window.TTRSfx; // sounds + animations (js/fx.js is the shared library, js/sfx.js maps game events to it)
   const TABLE = window.TABLE, TT = window.TTRTable; // the real-table kit (js/table.js, shared) + this game's board frame and cards
-  const VERSION = '1.14';
+  const VERSION = '1.15';
   const MAP_IDS = ['usa', 'europe', 'nordic', 'india', 'switzerland'];
   const MAP_NAMES = { usa: 'USA', europe: 'Europe', nordic: 'Nordic Countries', india: 'India', switzerland: 'Switzerland' };
   const LEVELS = ['easy', 'medium', 'hard'];
@@ -802,9 +802,10 @@
       };
     },
     confirmNew() {
-      const sh = openSheet(`<h2>Leave this game?</h2><p class="note">It can't be resumed.</p><div class="acts"><button class="btn" data-x>Keep playing</button><button class="btn primary" data-ok>New game</button></div>`);
+      const p = S.play, counts = !!(window.Profile && p && !p.online && !p.recorded && !p.tutorial && (p.moved || p.daily));
+      const sh = openSheet(`<h2>Leave this game?</h2><p class="note">It can't be resumed${counts ? ' and counts as a loss' : ''}.</p><div class="acts"><button class="btn" data-x>Keep playing</button><button class="btn primary" data-ok>New game</button></div>`);
       sh.querySelector('[data-x]').onclick = () => closeSheet();
-      sh.querySelector('[data-ok]').onclick = () => { closeSheet(true); Play.abandonDaily(); Play.gen++; S.play = null; save(); Play.render(); };
+      sh.querySelector('[data-ok]').onclick = () => { closeSheet(true); Play.abandonGame(); Play.gen++; S.play = null; save(); Play.render(); };
     },
     // no game on the table (setup, online lobby): just the board, the rest of the table is cleared
     idle() {
@@ -882,6 +883,7 @@
         p.state = T.apply(s, a);
         if (Play.undoOwner !== p) { Play.undoStack = []; Play.undoOwner = p; } // a new game (or one adopted from another tab) starts a fresh list
         Play.undoStack.push(snap); if (Play.undoStack.length > 60) Play.undoStack.shift();
+        p.moved = true;   // from your first move, leaving counts as a loss
         Play.record();
         Play.hint = null; Play.hintRoute = null;
         if (a.type !== 'keepTickets') Play.stationMode = false;
@@ -923,7 +925,7 @@
       if (S.play && S.play.daily === day && S.play.state.phase !== 'over') { Profile.closePanel(); showTab('play', true); return toast('Your Daily game is on the table'); }
       if (Profile.daily.played(day)) return Profile.openPanel({ tab: 'daily' });
       if (S.play && S.play.online) { Profile.closePanel(); return toast('Leave the online room first'); }
-      Play.abandonDaily();
+      Play.abandonGame();
       Profile.closePanel();
       const d = window.TTRProfile.dailyGame(Profile.daily.seed(day));
       const map = await getMap(d.mapId);
@@ -942,7 +944,7 @@
       if (!window.COACH || !Play.tour) return;
       COACH.closeOffer(); closeSheet(true);
       if (S.play && S.play.online) return toast('Leave the online room first');
-      Play.abandonDaily();
+      Play.abandonGame();
       const g = window.TTRTutorial.GAME, map = await getMap(g.mapId);
       const seats = [{ name: 'You', kind: 'human' }].concat(g.levels.map((l, i) => ({ name: PNAME[i + 1], kind: 'cpu', level: l })));
       Play.gen++; Play.stopReplay(true);
@@ -955,13 +957,21 @@
       FX.play('shuffle');
       Play.tour.start();
     },
-    // leaving an unfinished Daily game (new game, another Daily) counts it as lost, so it can't be retried
-    abandonDaily() {
+    // leaving an unfinished game against the computers (New game, another Daily, the guided game, Clear) counts it
+    // as lost, so a bad game can't be dropped (and a Daily can't be retried). Not the guided game, not online, and
+    // not a game you haven't made a move in yet (a Daily counts from the start, as before).
+    abandonGame() {
       const p = S.play;
-      if (!window.Profile || !p || !p.daily || p.recorded || p.state.phase === 'over') return;
+      if (!window.Profile || !p || p.online || p.recorded || p.tutorial || p.state.phase === 'over') return;
+      if (!p.moved && !p.daily) return;
       p.recorded = true;
-      Profile.recordResult({ mode: 'computer', level: 'hard', won: false, daily: true, date: p.daily });
-      toast('Daily game left: counted as a loss');
+      const s = p.state, helped = !!(p.helped || p.study);
+      const levels = s.players.filter((_, i) => i !== p.me).map(q => q.level).filter(l => LEVELS.includes(l));
+      const level = levels.length ? levels.reduce((a, b) => (LEVELS.indexOf(b) > LEVELS.indexOf(a) ? b : a)) : null; // the strongest computer at the table
+      const r = { mode: helped ? 'help' : 'computer', level: helped ? null : level, won: false, daily: !!p.daily, extra: { map: s.mapId, players: s.players.length, quit: true } };
+      save();
+      Profile.recordResult(p.daily ? Object.assign(r, { date: p.daily }) : r);
+      toast((p.daily ? 'Daily game' : 'Game') + ' left: counted as a loss');
     },
     // after the game: every claimed route appears again on the board in the order it was claimed
     replay: null,
@@ -1453,7 +1463,7 @@
       $('#s-reset').onclick = () => {
         const sh = openSheet(`<h2>Clear saved games?</h2><p class="note">The table game and the game against the computers are deleted.</p><div class="acts"><button class="btn" data-x>Cancel</button><button class="btn primary" data-ok>Clear</button></div>`);
         sh.querySelector('[data-x]').onclick = () => closeSheet();
-        sh.querySelector('[data-ok]').onclick = () => { Play.gen++; S.table = null; S.play = null; save(); closeSheet(); toast('Cleared'); };
+        sh.querySelector('[data-ok]').onclick = () => { if (S.play && !S.play.online) Play.abandonGame(); Play.gen++; S.table = null; S.play = null; save(); closeSheet(); toast('Cleared'); };
       };
     },
   };

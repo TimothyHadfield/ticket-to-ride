@@ -1,7 +1,7 @@
 # Ticket to Ride — progress
 
 ## START HERE
-Read order: this file → `CLAUDE.md` → `docs/rules-check.md` → `docs/ideas.md`. Last updated: 2026-10-27 (improve pass: open on Play, PWA, Hard AI, guided game, My stats, Undo/Replay, locomotive).
+Read order: this file → `CLAUDE.md` → `docs/rules-check.md` → `docs/ideas.md`. Last updated: 2026-10-27 (v1.15 follow-up: leaving a game vs computers after your first move (New game, Daily, guided game, Settings Clear) counts as a loss in My stats, `Play.abandonGame()` + `S.play.moved`; never the guided game or online; a Daily counts from the start as before; the Leave sheet adds "and counts as a loss" when it will (wording not Tim's, flagged; not screenshotted); `tests/quit.test.mjs` (WebKit 393, seen failing on the old build); build 17. Before that, improve pass: open on Play, PWA, Hard AI, guided game, My stats, Undo/Replay, locomotive).
 
 ## Goal right now
 Tim: "Ticket to Ride and all the variants is something that I think is great". Phase 2 (his words): "build regular play online with a computer or other online players for all the games and their common varients that match exactly the play of the in-person game ... Make sure to get everything right like rules and artwork and specific numbers of cards, routes, details, etc."
