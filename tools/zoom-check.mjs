@@ -13,7 +13,7 @@ const require = createRequire(path.join(os.homedir(), '.claude/tools/package.jso
 const { webkit, devices } = require('playwright');
 
 const BASE = process.argv[2] || 'http://127.0.0.1:8772/';
-const MAPS = ['usa', 'europe', 'nordic', 'india', 'switzerland'];
+const MAPS = ['usa', 'europe', 'nordic', 'india', 'switzerland', 'germany'];
 const SIZES = [{ w: 393, h: 659, phone: true }, { w: 659, h: 393, phone: true }, { w: 1280, h: 800, phone: false }];
 let fails = 0, checks = 0;
 const ok = (cond, msg) => { checks++; if (!cond) { fails++; console.log('FAIL ' + msg); } };

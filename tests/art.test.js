@@ -5,7 +5,7 @@ const test = require('node:test');
 const assert = require('node:assert');
 const fs = require('fs');
 const path = require('path');
-const MAPS = ['usa', 'europe', 'nordic', 'india', 'switzerland'];
+const MAPS = ['usa', 'europe', 'nordic', 'india', 'switzerland', 'germany'];
 
 // the art paths use only M (absolute), l (relative) and z
 function rings(d) {

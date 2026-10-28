@@ -6,7 +6,7 @@ const assert = require('node:assert');
 const path = require('path');
 const G = require('../js/graph.js');
 const load = id => require(path.join(__dirname, '..', 'maps', id + '.json'));
-const MAPS = ['usa', 'europe', 'nordic', 'india', 'switzerland'];
+const MAPS = ['usa', 'europe', 'nordic', 'india', 'switzerland', 'germany'];
 
 // Published facts (sources in docs/rules-check.md)
 const FACTS = {
@@ -16,6 +16,8 @@ const FACTS = {
   india: { cities: 39, routes: 108, tickets: { standard: 58 }, trains: 45, players: [2, 4], cards: 110 },
   // 34 Swiss cities + 17 border dots (5 Germany, 3 Austria, 5 Italy, 4 France)
   switzerland: { cities: 51, routes: 88, tickets: { standard: 46 }, trains: 40, players: [2, 3], cards: 110 },
+  // 35 German cities + 14 border dots (2 Denmark, 3 Netherlands, 3 France, 3 Switzerland, 3 Austria); 55 short + 34 long
+  germany: { cities: 49, routes: 110, tickets: { standard: 89 }, long: 34, trains: 45, players: [2, 5], cards: 110 },
 };
 
 for (const id of MAPS) {
@@ -43,7 +45,8 @@ for (const id of MAPS) {
       assert.ok(r.len >= 1 && r.len <= 9, r.id);
       assert.ok(colors.has(r.color), r.id);
       assert.ok(m.points[r.len], 'score for length ' + r.len);
-      if (r.twin) { const t = m.routes.find(x => x.id === r.twin); assert.ok(t && t.twin === r.id && t.a === r.a && t.b === r.b); }
+      if (r.sibs) for (const id of r.sibs) { const t = m.routes.find(x => x.id === id); assert.ok(t && t.sibs.includes(r.id) && t.a === r.a && t.b === r.b && (r.color === 'gray' || t.color !== r.color), r.id); }
+      else if (r.twin) { const t = m.routes.find(x => x.id === r.twin); assert.ok(t && t.twin === r.id && t.a === r.a && t.b === r.b); }
       if (r.color !== 'gray' && r.twin) assert.notStrictEqual(m.routes.find(x => x.id === r.twin).color, r.color, 'double route with the same colour twice: ' + r.a + '-' + r.b);
     }
     // no city sits on top of another
@@ -59,7 +62,7 @@ test('ticket values equal the shortest route (known exceptions only)', () => {
   // at the shortest-route value. Europe has two tickets one point above. Everything else matches exactly.
   const known = new Set(['usa/classic/los-angeles/new-york', 'usa/classic/los-angeles/miami', 'usa/classic/chicago/los-angeles',
     'usa/classic/new-york/seattle', 'usa/1910/las-vegas/miami', 'usa/mega/las-vegas/miami', 'usa/bigcities/las-vegas/miami', 'usa/classic/oklahoma-city/sault-st-marie', 'usa/bigcities/chicago/los-angeles', 'usa/mega/chicago/los-angeles']);
-  const offByOne = { europe: 2 };
+  const offByOne = { europe: 2, germany: 1 }; // Germany: Kiel–Stuttgart 17 (shortest 16) in every source
   for (const id of MAPS) {
     const m = load(id);
     for (const d of m.ticketDecks) {

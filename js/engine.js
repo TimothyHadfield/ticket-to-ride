@@ -79,8 +79,19 @@
     s.firstPlayer = s.turn;
     for (const p of s.players) for (let k = 0; k < map.startHand; k++) p.hand[s.trainDeck.pop()]++;
     refillFaceUp(s);
+    if (map.passengers) {
+      // Germany: the bag of passengers is drawn onto the board, each place getting its printed count
+      const P = map.passengers, bag = [];
+      for (const c of P.colors) for (let k = 0; k < P.per; k++) bag.push(c);
+      shuffle(s, bag);
+      s.pax = {};
+      for (const [place, k] of Object.entries(P.at)) s.pax[place] = bag.splice(0, k);
+      for (const p of s.players) p.pax = Object.fromEntries(P.colors.map(c => [c, 0]));
+    }
     const R = rules(s);
     for (const p of s.players) {
+      // Germany: each player first says how many long tickets they want (ticketMix), then draws
+      if (R.setup.mix) { p.pending = { tickets: [], min: R.setup.keep, setup: true, mix: true }; continue; }
       const draw = [];
       for (let k = 0; k < (R.setup.long || 0) && s.longDeck.length; k++) draw.push(s.longDeck.pop());
       for (let k = 0; k < R.setup.deal && s.ticketDeck.length; k++) draw.push(s.ticketDeck.pop());
@@ -121,12 +132,11 @@
   // ---------------------------------------------------------------- legality helpers
   function routeOpen(s, r, seat) {
     if (s.owner[r.id] != null) return 'taken';
-    if (r.twin) {
-      const o = s.owner[r.twin];
-      if (o != null) {
-        if (o === seat) return 'own twin';
-        if (!rules(s).bothDoubles) return 'double closed';
-      }
+    // double (twin) or triple (sibs): never two tracks for one player; with 2-3 players only one track at all
+    for (const id of r.sibs || (r.twin ? [r.twin] : [])) {
+      const o = s.owner[id];
+      if (o === seat) return 'own twin';
+      if (o != null && !rules(s).bothDoubles) return 'double closed';
     }
     return null;
   }
@@ -230,7 +240,7 @@
   function legal(s, seat) {
     // what kinds of action this seat may take now (used by UI and computers)
     if (s.phase === 'over') return [];
-    if (s.phase === 'setup') return s.players[seat].pending ? ['keepTickets'] : [];
+    if (s.phase === 'setup') return s.players[seat].pending ? [s.players[seat].pending.mix ? 'ticketMix' : 'keepTickets'] : [];
     if (s.turn !== seat) return [];
     const p = s.players[seat];
     if (s.pendingTunnel) return ['tunnelPay'];
@@ -238,7 +248,7 @@
     if (s.drew === 1) return ['draw'];
     const out = [];
     if (s.faceUp.some(Boolean) || s.trainDeck.length || s.discard.length) out.push('draw');
-    if (s.ticketDeck.length) out.push('drawTickets');
+    if (s.ticketDeck.length || (rules(s).draw.mix && s.longDeck.length)) out.push('drawTickets');
     out.push('claim');
     if (p.stations > 0) out.push('station');
     return out;
@@ -256,14 +266,28 @@
     const R = rules(s);
     const tickets = deckFor(map, s).tickets;
 
+    if (a.type === 'ticketMix') {
+      // Germany setup: draw R.setup.deal tickets, `long` of them from the long deck
+      if (!p.pending || !p.pending.mix) fail('no ticket mix to choose');
+      p.pending.tickets = drawMix(s, R.setup.deal, a.long);
+      p.pending.mix = false;
+      log(s, seat, p.name + ' drew ' + p.pending.tickets.length + ' starting tickets.');
+      return s;
+    }
     if (a.type === 'keepTickets') {
       if (!p.pending) fail('no tickets to choose');
+      if (p.pending.mix) fail('choose how many long tickets first');
       if (s.phase !== 'setup' && s.turn !== seat) fail('not your turn');
       const keep = [...new Set(a.keep || [])];
       if (keep.some(t => !p.pending.tickets.includes(t))) fail('not one of your choices');
       if (keep.length < Math.min(p.pending.min, p.pending.tickets.length)) fail('keep at least ' + p.pending.min);
       p.tickets.push(...keep);
-      for (const t of p.pending.tickets) if (!keep.includes(t)) {
+      if (R.setup.mix) {
+        // Germany: unkept tickets go back to their own deck: shuffled in at the start, at the bottom later
+        const back = p.pending.tickets.filter(t => !keep.includes(t));
+        for (const t of back) (tickets[t].long ? s.longDeck : s.ticketDeck).unshift(t);
+        if (p.pending.setup && back.length) { shuffle(s, s.ticketDeck); shuffle(s, s.longDeck); }
+      } else for (const t of p.pending.tickets) if (!keep.includes(t)) {
         if (tickets[t].long) continue; // unkept long tickets leave the game
         if (R.ticketReturn === 'box') continue; // Nordic, Switzerland: unkept tickets leave the game
         s.ticketDeck.unshift(t); // bottom of the deck
@@ -291,7 +315,7 @@
         if (p.hand.loco < t.locos + extraLocos) fail('not enough locomotives');
         if (extraColor && p.hand[t.color] < t.n + extraColor) fail('not enough cards');
         s.pendingTunnel = null;
-        return finishClaim(s, seat, t.route, { color: t.color, n: t.n + extraColor, locos: t.locos + extraLocos }, t.extra);
+        return finishClaim(s, seat, t.route, { color: t.color, n: t.n + extraColor, locos: t.locos + extraLocos }, t.extra, t.pax);
       }
       s.pendingTunnel = null;
       log(s, seat, p.name + ' gave up the tunnel.');
@@ -327,9 +351,9 @@
     if (s.drew) fail('take your second card');
 
     if (a.type === 'drawTickets') {
-      if (!s.ticketDeck.length) fail('no tickets left');
-      const draw = [];
-      for (let k = 0; k < R.draw.deal && s.ticketDeck.length; k++) draw.push(s.ticketDeck.pop());
+      if (!s.ticketDeck.length && !(R.draw.mix && s.longDeck.length)) fail('no tickets left');
+      const draw = R.draw.mix ? drawMix(s, R.draw.deal, a.long) : [];
+      if (!R.draw.mix) for (let k = 0; k < R.draw.deal && s.ticketDeck.length; k++) draw.push(s.ticketDeck.pop());
       p.pending = { tickets: draw, min: R.draw.keep };
       p.ticketsDrawn++;
       log(s, seat, p.name + ' drew ' + draw.length + ' tickets.');
@@ -347,11 +371,12 @@
         const match = c => c === LOCO || (a.pay.n > 0 && c === a.pay.color);
         const extra = shown.filter(match).length;
         log(s, seat, p.name + ' tried a tunnel: ' + (shown.join(', ') || 'no cards') + ' — ' + extra + ' extra.');
-        if (extra === 0) return finishClaim(s, seat, a.route, a.pay, 0, shown);
+        if (extra === 0) return finishClaim(s, seat, a.route, a.pay, 0, a.pax);
         s.pendingTunnel = { route: a.route, color: a.pay.n > 0 ? a.pay.color : null, n: a.pay.n, locos: a.pay.locos, extra, shown };
+        if (a.pax) s.pendingTunnel.pax = a.pax;
         return s;
       }
-      return finishClaim(s, seat, a.route, a.pay, 0);
+      return finishClaim(s, seat, a.route, a.pay, 0, a.pax);
     }
 
     if (a.type === 'station') {
@@ -388,14 +413,69 @@
     fail('unknown action ' + a.type);
   }
 
+  // Germany ticket draws: `long` from the long deck (as many as it has), the rest from the short deck.
+  function drawMix(s, deal, long) {
+    const want = Math.max(0, Math.min(deal, Math.floor(+long || 0)));
+    const nl = Math.min(want, s.longDeck.length), ns = Math.min(deal - nl, s.ticketDeck.length);
+    const out = [];
+    for (let k = 0; k < nl; k++) out.push(s.longDeck.pop());
+    for (let k = 0; k < ns; k++) out.push(s.ticketDeck.pop());
+    // a short deck that runs out is made up from the long one
+    while (out.length < deal && s.longDeck.length) out.push(s.longDeck.pop());
+    return out;
+  }
+  // Passenger places at the ends of a route: the city id, or for a border dot its country id.
+  function paxPlaces(map, r) { const cn = G.index(map).cityById; return [r.a, r.b].map(id => cn[id].country || id); }
+  // Majority points per colour: most 20 (ties: all), second 10 (only when one player has most; ties: all).
+  function paxPoints(s) {
+    const P = mapOf(s).passengers, pts = s.players.map(() => 0);
+    if (!P) return pts;
+    for (const c of P.colors) {
+      const n = s.players.map(p => (p.pax && p.pax[c]) || 0), top = Math.max(...n);
+      if (top <= 0) continue;
+      const first = n.map((k, i) => k === top ? i : -1).filter(i => i >= 0);
+      first.forEach(i => { pts[i] += P.majority[0]; });
+      if (first.length > 1) continue;
+      const sec = Math.max(0, ...n.filter(k => k < top));
+      if (sec > 0) n.forEach((k, i) => { if (k === sec) pts[i] += P.majority[1]; });
+    }
+    return pts;
+  }
+  // The passenger colour that helps this player most: biggest gain in majority points, then the closest race.
+  function bestPax(s, seat, here) {
+    const me = s.players[seat].pax, base = paxPoints(s)[seat];
+    let best = null;
+    for (const c of [...new Set(here)]) {
+      me[c]++;
+      const gain = paxPoints(s)[seat] - base;
+      me[c]--;
+      const lead = Math.max(0, ...s.players.map((q, i) => i === seat ? 0 : q.pax[c])) - me[c];
+      const v = gain * 100 - Math.abs(lead) + here.filter(x => x === c).length * 0.01;
+      if (!best || v > best.v) best = { c, v };
+    }
+    return best.c;
+  }
+
   function freeLocoDraw(map) { return !!(map.freeLocoDraw || map.nordicLocos); }
 
-  function finishClaim(s, seat, routeId, pay, extra) {
+  function finishClaim(s, seat, routeId, pay, extra, pax) {
     const map = mapOf(s), r = G.index(map).routeById[routeId], p = s.players[seat];
     for (const [c, k] of Object.entries(cardsOf(pay))) { p.hand[c] -= k; for (let i = 0; i < k; i++) s.discard.push(c); }
     s.owner[routeId] = seat; p.routes.push(routeId); p.trains -= r.len;
     const cn = G.index(map).cityById;
     log(s, seat, p.name + ' claimed ' + cn[r.a].name + '–' + cn[r.b].name + ' (' + r.len + ')' + (extra ? ' paying ' + extra + ' extra' : '') + '.');
+    if (s.pax) {
+      // Germany: one passenger from each end (a country is one place), the colour the player picked or the best one
+      const got = [];
+      for (const place of paxPlaces(map, r)) {
+        const here = s.pax[place];
+        if (!here || !here.length) continue;
+        const want = pax && pax[place];
+        const c = here.includes(want) ? want : bestPax(s, seat, here);
+        here.splice(here.indexOf(c), 1); p.pax[c]++; got.push(c);
+      }
+      if (got.length) log(s, seat, p.name + ' took ' + got.length + ' passenger' + (got.length > 1 ? 's' : '') + ' (' + got.join(', ') + ').');
+    }
     // the face-up row may have been short when the deck was empty; try again now that cards are discarded
     if (s.faceUp.some(c => !c)) refillFaceUp(s);
     return endTurn(s);
@@ -498,13 +578,15 @@
         stationPts: R.stations ? p.stations * R.stationPoints : 0, mandalas,
         mandalaPts: R.mandala ? R.mandala[Math.min(mandalas, R.mandala.length - 1)] : 0,
         longestPts: 0, globePts: 0,
+        pax: p.pax ? Object.values(p.pax).reduce((a, b) => a + b, 0) : 0, paxPts: 0,
       };
     });
+    if (map.passengers) paxPoints(s).forEach((v, i) => { rows[i].paxPts = v; });
     if (R.longest) { const m = Math.max(...rows.map(r => r.longest)); if (m > 0) rows.forEach(r => { if (r.longest === m) r.longestPts = R.longest; }); }
     if (R.globetrotter) { const m = Math.max(...rows.map(r => r.done)); if (m > 0) rows.forEach(r => { if (r.done === m) r.globePts = R.globetrotter; }); }
-    rows.forEach(r => { r.total = r.routePts + r.ticketPts + r.stationPts + r.longestPts + r.globePts + r.mandalaPts; });
+    rows.forEach(r => { r.total = r.routePts + r.ticketPts + r.stationPts + r.longestPts + r.globePts + r.mandalaPts + r.paxPts; });
     // ranking: total, then most completed tickets, then (Europe) fewest stations used, then longest route
-    const rank = (x, y) => y.total - x.total || y.done - x.done || ((s.players[y.seat].stations || 0) - (s.players[x.seat].stations || 0)) || y.longest - x.longest;
+    const rank = (x, y) => y.total - x.total || y.done - x.done || y.pax - x.pax || ((s.players[y.seat].stations || 0) - (s.players[x.seat].stations || 0)) || y.longest - x.longest;
     const order = rows.slice().sort(rank);
     // still level after every tie-break: they share the win
     const tied = order.filter(r => rank(r, order[0]) === 0).map(r => r.seat);
@@ -526,7 +608,7 @@
       if (i === seat || s.phase === 'over') return;
       p.handCount = handSize(p.hand); p.hand = null;
       p.ticketCount = p.tickets.length; p.tickets = null;
-      if (p.pending) p.pending = { count: p.pending.tickets.length, min: p.pending.min, setup: p.pending.setup };
+      if (p.pending) p.pending = { count: p.pending.tickets.length, min: p.pending.min, setup: p.pending.setup, mix: p.pending.mix };
     });
     s.viewer = seat;
     return s;
@@ -535,7 +617,7 @@
   const api = {
     COLORS, LOCO, register, maps: MAPS, mapOf, newGame, apply, view, legal, rules, payOptions, canClaim,
     routeOpen, score, liveRoutePoints, routePoints, stationCost, deckFor, handSize, emptyHand, clone,
-    locosWild, swapSize, cardsOf, freeLocoDraw, ticketEnds, ticketOutcome, plainTickets,
+    locosWild, swapSize, cardsOf, freeLocoDraw, ticketEnds, ticketOutcome, plainTickets, paxPoints, paxPlaces, bestPax,
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = api; else root.TTR = api;
 })(typeof window !== 'undefined' ? window : globalThis);

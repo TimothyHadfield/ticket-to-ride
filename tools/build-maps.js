@@ -91,6 +91,21 @@ const CITY = {
     'GUNTAKAL': ['Guntakal', 15.17, 77.37], 'MADRAS': ['Madras', 13.08, 80.27], 'MANGALORE': ['Mangalore', 12.91, 74.86],
     'ERODE': ['Erode', 11.34, 77.72], 'CALICUT': ['Calicut', 11.26, 75.78], 'QUILON': ['Quilon', 8.89, 76.61],
   },
+  // Germany: the 35 cities of Ticket to Ride: Germany (2017), real spots
+  germany: {
+    'KIEL': ['Kiel', 54.32, 10.14], 'ROSTOCK': ['Rostock', 54.09, 12.1], 'SCHWERIN': ['Schwerin', 53.63, 11.41],
+    'HAMBURG': ['Hamburg', 53.55, 9.99], 'BREMERHAVEN': ['Bremerhaven', 53.54, 8.58], 'EMDEN': ['Emden', 53.37, 7.21],
+    'BREMEN': ['Bremen', 53.08, 8.8], 'BERLIN': ['Berlin', 52.52, 13.4], 'MAGDEBURG': ['Magdeburg', 52.13, 11.63],
+    'HANNOVER': ['Hannover', 52.37, 9.73], 'MUNSTER': ['Münster', 51.96, 7.63], 'DUSSELDORF': ['Düsseldorf', 51.23, 6.77],
+    'DORTMUND': ['Dortmund', 51.51, 7.47], 'KASSEL': ['Kassel', 51.31, 9.48], 'ERFURT': ['Erfurt', 50.98, 11.03],
+    'LEIPZIG': ['Leipzig', 51.34, 12.37], 'CHEMNITZ': ['Chemnitz', 50.83, 12.92], 'DRESDEN': ['Dresden', 51.05, 13.74],
+    'KOLN': ['Köln', 50.94, 6.96], 'KOBLENZ': ['Koblenz', 50.36, 7.59], 'MAINZ': ['Mainz', 50.0, 8.27],
+    'FRANKFURT': ['Frankfurt', 50.11, 8.68], 'WURZBURG': ['Würzburg', 49.79, 9.95], 'NURNBERG': ['Nürnberg', 49.45, 11.08],
+    'REGENSBURG': ['Regensburg', 49.01, 12.1], 'SAARBRUCKEN': ['Saarbrücken', 49.24, 6.99], 'MANNHEIM': ['Mannheim', 49.49, 8.47],
+    'KARLSRUHE': ['Karlsruhe', 49.01, 8.4], 'STUTTGART': ['Stuttgart', 48.78, 9.18], 'ULM': ['Ulm', 48.4, 9.99],
+    'AUGSBURG': ['Augsburg', 48.37, 10.9], 'MUNCHEN': ['München', 48.14, 11.58], 'FREIBURG': ['Freiburg', 47.99, 7.84],
+    'KONSTANZ': ['Konstanz', 47.66, 9.18], 'LINDAU': ['Lindau', 47.55, 9.68],
+  },
   switzerland: {
     'BASEL': ['Basel', 47.56, 7.59], 'BADEN': ['Baden', 47.47, 8.31], 'BERN': ['Bern', 46.95, 7.45],
     'BELLINZONA': ['Bellinzona', 46.19, 9.02], 'BRIG': ['Brig', 46.32, 7.99], 'BRUSIO': ['Brusio', 46.26, 10.12],
@@ -109,6 +124,9 @@ const CITY = {
 // Switzerland's border flags: each track to a neighbouring country ends at its own flag (5 Germany, 3 Austria,
 // 5 Italy, 4 France, as on the board). Key: COUNTRY|SWISS CITY|COLOUR -> a real spot just across the border.
 const COUNTRIES = {
+  germany: {
+    'DANEMARK': 'Dänemark', 'NIEDERLANDE': 'Niederlande', 'FRANKREICH': 'Frankreich', 'SCHWEIZ': 'Schweiz', 'OSTERREICH': 'Österreich',
+  },
   switzerland: {
     'DEUTSCHLAND': 'Deutschland', 'ÖSTERREICH': 'Österreich', 'ITALIA': 'Italia', 'FRANCE': 'France',
   },
@@ -122,6 +140,12 @@ const BORDER = {
   'ITALIA|LUGANO|white': [45.81, 9.08], 'ITALIA|LOCARNO|orange': [45.98, 8.6],
   'FRANCE|DELÉMONT|black': [47.5, 6.95], 'FRANCE|LA CHAUX-DE-FONDS|green': [47.06, 6.6],
   'FRANCE|GENÈVE|yellow': [46.2, 5.95], 'FRANCE|MARTIGNY|gray': [45.92, 6.87],
+  // Germany's neighbours (each track ends at its own arrow; spots just across the border)
+  'DANEMARK|KIEL|gray': [54.85, 9.45], 'DANEMARK|BREMERHAVEN|green': [54.95, 8.75],
+  'NIEDERLANDE|EMDEN|white': [53.25, 6.75], 'NIEDERLANDE|MUNSTER|orange': [52.22, 6.85], 'NIEDERLANDE|DUSSELDORF|pink': [51.37, 6.1],
+  'FRANKREICH|SAARBRUCKEN|green': [49.1, 6.85], 'FRANKREICH|KARLSRUHE|black': [48.78, 7.85], 'FRANKREICH|FREIBURG|yellow': [48.05, 7.38],
+  'SCHWEIZ|FREIBURG|orange': [47.56, 7.6], 'SCHWEIZ|KONSTANZ|white': [47.57, 9.05], 'SCHWEIZ|LINDAU|blue': [47.42, 9.4],
+  'OSTERREICH|REGENSBURG|yellow': [48.42, 13.45], 'OSTERREICH|MUNCHEN|red': [47.8, 13.04], 'OSTERREICH|LINDAU|pink': [47.42, 9.85],
 };
 const ALIAS = { 'SEVESTOPOL': 'SEVASTOPOL', 'KIRSTIANSAND': 'KRISTIANSAND', 'HONNINGVAG': 'HONNINGSVAG' };
 
@@ -186,6 +210,22 @@ const MAPS = [
     ticketDecks: [{ id: 'standard', name: 'Standard (58)', file: 'india.tickets.txt' }],
     view: { w: 1000 },
     proj: { lat0: 22, lon0: 80, parallels: [12, 28] }, art: {},
+  },
+  // Germany (2017): passengers (60 meeples, 10 of 6 colours, drawn from a bag onto the cities: Berlin 5, Hamburg /
+  // Köln / Frankfurt / München 4, Leipzig / Stuttgart 3, every other city and country 1); a claim takes one passenger
+  // from each end; majorities per colour score 20 / 10. Tickets: short and long decks, each draw is 4 in any mix
+  // announced first. Globetrotter 15, no longest route. Triple routes (Dortmund–Düsseldorf, Köln–Düsseldorf).
+  {
+    id: 'germany', key: 'germany', name: 'Germany', routes: 'germany.routes.txt',
+    players: [2, 5], trains: 45, stations: 0, deck: STD_DECK, points: STD_POINTS,
+    bothDoublesFrom: 4, startHand: 4,
+    setup: { deal: 4, keep: 2, mix: true }, draw: { deal: 4, keep: 1, mix: true },
+    bonuses: { globetrotter: 15 },
+    passengers: { per: 10, colors: ['red', 'black', 'green', 'yellow', 'blue', 'white'], majority: [20, 10],
+      at: { BERLIN: 5, HAMBURG: 4, KOLN: 4, FRANKFURT: 4, MUNCHEN: 4, LEIPZIG: 3, STUTTGART: 3 }, other: 1 },
+    ticketDecks: [{ id: 'standard', name: 'Standard (89)', file: 'germany.tickets.txt', longFrom: 12 }],
+    view: { w: 1000 },
+    proj: { lat0: 51, lon0: 10, parallels: [48, 54] }, art: { home: 'Germany' },
   },
   {
     id: 'switzerland', key: 'switzerland', name: 'Switzerland', routes: 'switzerland.routes.txt',
@@ -341,14 +381,16 @@ function slug(k) { return k.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase
   outRoutes.forEach(r => { (byPair[r.a + '|' + r.b] = byPair[r.a + '|' + r.b] || []).push(r); });
   Object.values(byPair).forEach(list => {
     if (list.length === 2) { list[0].twin = list[1].id; list[1].twin = list[0].id; list[0].lane = -1; list[1].lane = 1; }
-    if (list.length > 2) throw new Error('triple route ' + list[0].a + list[0].b);
+    // a triple (Germany): every track lists the other two (sibs); twin = the first of them for older readers
+    if (list.length === 3) list.forEach((r, k) => { r.sibs = list.filter(x => x !== r).map(x => x.id); r.twin = r.sibs[0]; r.lane = [-2, 0, 2][k]; });
+    if (list.length > 3) throw new Error('route with 4 tracks ' + list[0].a + list[0].b);
   });
   const ticketDecks = cfg.ticketDecks.map(d => {
     const t = parseTickets(d.file).map(t => {
       const known = c => cities.includes(c) || !!countryNames[c];
       for (const c of [t.a].concat(t.opts ? t.opts.map(o => o.to) : [t.b])) if (!known(c)) throw new Error(cfg.id + ' ticket city ' + c);
       // country ticket: {a: city or country id, opts: [{to: country id, pts}]}
-      if (t.opts) return { a: slug(t.a), opts: t.opts.map(o => ({ to: slug(o.to), pts: o.pts })) };
+      if (t.opts) { const o = { a: slug(t.a), opts: t.opts.map(o => ({ to: slug(o.to), pts: o.pts })) }; if (d.longFrom && Math.max(...t.opts.map(x => x.pts)) >= d.longFrom) o.long = true; return o; }
       const o = { a: slug(t.a), b: slug(t.b), pts: t.pts };
       if (d.longFrom && t.pts >= d.longFrom) o.long = true;
       return o;
@@ -365,6 +407,14 @@ function slug(k) { return k.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase
   };
   for (const k of ['freeLocoDraw', 'locoFlush', 'locosOn', 'ferryAny', 'ticketReturn']) if (cfg[k] !== undefined) out[k] = cfg[k];
   if (countries) out.countries = countries;
+  if (cfg.passengers) {
+    // passengers per place: a city id, or a country id (one spot for the whole country, whichever track reaches it)
+    const P = cfg.passengers, at = {};
+    for (const k of cities) { const key = countryOf[k] || slug(k); if (at[key] == null) at[key] = countryOf[k] ? P.other : (P.at[k] || P.other); }
+    const total = Object.values(at).reduce((a, b) => a + b, 0);
+    if (total !== P.per * P.colors.length) throw new Error(cfg.id + ': ' + total + ' passenger spots for ' + P.per * P.colors.length + ' passengers');
+    out.passengers = { colors: P.colors, per: P.per, majority: P.majority, at };
+  }
   Object.assign(out, { size: [1000, h], cities: outCities, routes: outRoutes, ticketDecks });
   fs.writeFileSync(path.join(ROOT, 'maps', cfg.id + '.json'), JSON.stringify(out, null, 1));
   // the board art (coastlines, lakes, borders) in its own file: the game logic never needs it

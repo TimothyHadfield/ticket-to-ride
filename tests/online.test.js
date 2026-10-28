@@ -6,7 +6,7 @@ const path = require('path');
 const T = require('../js/engine.js');
 const { game, merge } = require('../js/online-game.js');
 
-for (const id of ['usa', 'europe', 'nordic', 'india', 'switzerland']) T.register(require(path.join(__dirname, '..', 'maps', id + '.json')));
+for (const id of ['usa', 'europe', 'nordic', 'india', 'switzerland', 'germany']) T.register(require(path.join(__dirname, '..', 'maps', id + '.json')));
 
 function rngFrom(seed) { let s = seed >>> 0 || 1; return () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; }; }
 
@@ -37,7 +37,7 @@ function checkSecrecy(s) {
 
 test('online game object: whole computer games on every map, secrecy checked every move', () => {
   let games = 0;
-  for (const mapId of ['usa', 'europe', 'nordic', 'india', 'switzerland']) {
+  for (const mapId of ['usa', 'europe', 'nordic', 'india', 'switzerland', 'germany']) {
     const map = T.maps[mapId];
     for (let g = 0; g < 2; g++) {
       const n = map.players[0] + (g % (map.players[1] - map.players[0] + 1));
@@ -60,7 +60,7 @@ test('online game object: whole computer games on every map, secrecy checked eve
       games++;
     }
   }
-  assert.equal(games, 10);
+  assert.equal(games, 12);
 });
 
 test('merge(public, mine) gives the same view the engine gives that seat', () => {
@@ -77,7 +77,7 @@ test('merge(public, mine) gives the same view the engine gives that seat', () =>
 test('a phone checks its own move on asState(its view) before sending it: no legal move is refused', () => {
   const { asState } = require('../js/online-game.js');
   const refused = {};
-  for (const mapId of ['usa', 'europe', 'nordic', 'india', 'switzerland']) {
+  for (const mapId of ['usa', 'europe', 'nordic', 'india', 'switzerland', 'germany']) {
     let s = game.setup(2, { mapId }, rngFrom(21), [{ kind: 'human' }, { kind: 'human' }]);
     let steps = 0;
     while (!game.isOver(s) && steps++ < 3000) {

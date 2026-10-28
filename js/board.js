@@ -25,6 +25,8 @@
     pink: '#d77bd0', white: '#eef0f4', blue: '#4f8ff0', yellow: '#f2cf45', orange: '#f0913a',
     black: '#2b2f3a', red: '#e2504c', green: '#4fbf6a', gray: '#8d93a6', loco: '#b9a3ff',
   };
+  // passenger figures (Germany): six colours, drawn with a dark rim so white and yellow read on land
+  const PAX = { red: '#e2504c', black: '#2b2f3a', green: '#4fbf6a', yellow: '#f2cf45', blue: '#4f8ff0', white: '#f4f1e8' };
   const PLAYER = ['#e2504c', '#4f8ff0', '#f2cf45', '#4fbf6a', '#2b2f3a'];
   const PLAYER_NAME = ['Red', 'Blue', 'Yellow', 'Green', 'Black'];
 
@@ -384,6 +386,18 @@
         for (const [cid, seat] of Object.entries(o.stations)) {
           const c = city[cid];
           el('path', { class: 'station', d: `M${c.x - 9} ${c.y + 2} l9 -9 l9 9 v8 h-18 z`, fill: PLAYER[seat], transform: `translate(0,-14)` }, gMarks);
+        }
+      }
+      // Germany: the passengers waiting at each city (a country's at its first border dot), small figures round the dot
+      if (o.pax) {
+        const at = {};
+        for (const c of map.cities) { const k = c.country || c.id; if (!at[k]) at[k] = c; }
+        for (const [k, list] of Object.entries(o.pax)) {
+          const c = at[k]; if (!c || !list.length) continue;
+          list.forEach((col, i) => {
+            const a = -Math.PI / 2 + (i - (list.length - 1) / 2) * 0.66, R = c.country ? 16 : 18;
+            el('circle', { class: 'pax', cx: (c.x + R * Math.cos(a)).toFixed(1), cy: (c.y + R * Math.sin(a)).toFixed(1), r: 5.4, fill: PAX[col] || col }, gMarks);
+          });
         }
       }
     }

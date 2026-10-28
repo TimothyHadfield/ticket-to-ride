@@ -67,7 +67,10 @@
           <li>Start with 5 tickets, keep 2; returned tickets leave the game. The 9-long route scores 27. Most finished tickets earns the Globetrotter (10), and there is no longest route bonus.</li></ul>
           <h4>India</h4><ul><li>Start with 4 tickets, keep 2. <b>Mandala</b>: a finished ticket joined by two separate paths scores a bonus (1 → 5, 2 → 10, 3 → 20, 4 → 30, 5+ → 40). Indian Express: 10.</li></ul>
           <h4>Switzerland (2–3 players, 40 trains)</h4><ul><li>Locomotives are wild only on tunnels. Some tickets lead to a <b>country</b>: score the best one you reach, or lose the lowest if none.</li>
-          <li>Start with 5 tickets, keep 2; returned tickets leave the game.</li></ul>` },
+          <li>Start with 5 tickets, keep 2; returned tickets leave the game.</li></ul>
+          <h4>Germany (2–5 players, 45 trains)</h4><ul><li><b>Passengers</b>: 60 figures in 6 colours wait in the cities (Berlin 5; Hamburg, Köln, Frankfurt and München 4; Leipzig and Stuttgart 3; the rest 1). Each route you claim lets you take one from each end.</li>
+          <li>At the end, in each colour the player with most passengers scores <b>20</b> and the next <b>10</b> (tied for most: all 20, no second). Most finished tickets earns the Globetrotter (15); there is no longest route bonus.</li>
+          <li>Tickets come in a short and a long deck. Say how many long ones you want, then draw 4: keep 2 at the start, 1 later. Two routes are <b>triples</b>; with 2–3 players only one track of a double or triple can be used.</li></ul>` },
         { id: 'site', short: 'This site', title: 'Options on this site', html: `<ul><li><b>Ticket decks</b> for USA: Classic, 1910 (Globetrotter instead of longest route), Big Cities and Mega Game.</li>
           <li><b>House rules</b> in Settings → Rules, all off unless you switch them on (the computers play by them too):
             <b>no longest route bonus</b>; a <b>Globetrotter</b> bonus (15 for the most finished tickets, ties all) on maps without one;
@@ -77,7 +80,8 @@
           <li><a href="https://www.youtube.com/watch?v=4JhFhyvGdik" target="_blank" rel="noopener">Ticket to Ride – How To Play</a> · Watch It Played, 11 min: the full base game, step by step.</li>
           <li><a href="https://www.youtube.com/watch?v=yPGLlaGrShY" target="_blank" rel="noopener">How to Play Ticket to Ride</a> · Triple S Games, 4 min: the quick version.</li>
           <li><a href="https://www.youtube.com/watch?v=difSEK9A6f0" target="_blank" rel="noopener">How to play Ticket to Ride Europe</a> · Days of Wonder, 5 min: stations, tunnels and ferries.</li>
-          <li><a href="https://www.youtube.com/watch?v=MFscuIQrCq8" target="_blank" rel="noopener">13 tips on how to win at Ticket to Ride</a> · Legendary Tactics, 7 min: strategy.</li></ul>` },
+          <li><a href="https://www.youtube.com/watch?v=MFscuIQrCq8" target="_blank" rel="noopener">13 tips on how to win at Ticket to Ride</a> · Legendary Tactics, 7 min: strategy.</li>
+          <li><a href="https://www.youtube.com/watch?v=nXiErQm2tXs" target="_blank" rel="noopener">Ticket to Ride: Germany Review</a> · The Dice Tower: what the passengers add.</li></ul>` },
       ],
       foot: 'Fan-made summary in our own words, not the publisher’s rulebook. Every number is checked in docs/rules-check.md.',
     };

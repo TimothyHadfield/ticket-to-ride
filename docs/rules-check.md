@@ -17,6 +17,8 @@ Tests: `tests/rules.test.js` (one test per rule below), `tests/maps.test.js` (co
 - [SUI-tchu] EPFL "tCHu" Swiss map data: https://github.com/David-Kyrat/CS108_Project-tCHu/blob/main/src/ch/epfl/tchu/game/ChMap.java
 - [FMS] Route/ticket lists: https://github.com/fernandomsilva/Ticket-to-Ride-Engine
 - [BGA-maps] https://en.doc.boardgamearena.com/Gamehelptickettoridemaps
+- [GER] Germany rulebook text (2017): https://rulespal.com/ticket-to-ride-germany/rulebook
+- [GER-a] Germany route + ticket lists (FaresKobbi): https://github.com/FaresKobbi/TicketToRideGermany ; [GER-b] (PatBiz, with passenger counts per city): https://github.com/PatBiz-School-Projects/SI3_PS5-Part2_Ticket-To-Ride-Germany ; [GER-c] (dj24sene): https://github.com/dj24sene/Ticket_To_Ride_Germany
 - [EOG] https://www.orderofgamers.com/downloads/TicketToRide_v1.1.pdf · [SLY] https://www.steveandamysly.com/2010/07/20/thoughts-on-ticket-to-ride-usa-1910-expansion/
 
 ## USA
@@ -90,6 +92,27 @@ Tests: `tests/rules.test.js` (one test per rule below), `tests/maps.test.js` (co
 | Longest path | 10, named "Transalpine Express" | [SUI] (10 points), name from [SUI-board] only |
 | City ticket values | all 34 equal the shortest route on our data (test) | measured |
 
+## Germany (new, 2026-10-28)
+| Fact | Value | Sources |
+|---|---|---|
+| Players / trains / deck | 2–5 / 45 / standard 110 (14 locos) | [GER] |
+| Cities | 35, plus 14 border dots for 5 countries (Dänemark 2, Niederlande 3, Frankreich 3, Schweiz 3, Österreich 3); any dot counts as that country | [GER-a], [GER-b] |
+| Routes | **110** (total length 313), two **triples** (Dortmund–Düsseldorf, Köln–Düsseldorf), 21 doubles, no tunnels or ferries | [GER-a] and [GER-b] agree route by route (script compare); [GER-c] has 92, all in [GER-a] (it lacks 18 grey parallels) |
+| Tickets | **89 = 55 short (2–11) + 34 long (12–22)**, 17 of them to a country | [GER], [GER-a] and [GER-c] agree on all 89 ([GER-b] has a duplicate Köln–Nürnberg and Frankfurt–München 8, outvoted) |
+| Start tickets | say how many long, then draw 4 in that mix, keep ≥2; returned ones shuffled back into their own deck | [GER] |
+| Mid-game tickets | say the mix, draw 4, keep ≥1; returned ones to the bottom of their own deck | [GER] |
+| Passengers | 60 (10 each of red, black, green, yellow, blue, white) drawn from a bag: Berlin 5; Hamburg, Köln, Frankfurt, München 4; Leipzig, Stuttgart 3; every other city and each country 1 | [GER], counts from [GER-b] (sum 60) |
+| Claiming | take one passenger (your choice of colour) from each end city or country, if any are left | [GER] |
+| Passenger scoring | per colour: most 20, second 10; tied for most: all 20, no second; tied for second: all 10 | [GER] |
+| Bonus | Globetrotter 15 (ties all); no longest-route bonus | [GER] |
+| Doubles / triples | 2–3 players: only one track of a double or triple; 4–5: all, but never two for one player | [GER] |
+| Tie-break | total, then completed tickets, then passengers | [GER] |
+| Route points | 1–7 → 1, 2, 4, 7, 10, 15, 18 | [GER] |
+| City ticket values | 71 of 72 equal the shortest route; Kiel–Stuttgart is 17 (shortest 16) in every source, kept | measured |
+
+## Europe check (2026-10-28)
+Re-checked against [EU]: 47 cities, 101 routes, 18 tunnels, 13 ferries, 46 tickets (6 long), 3 stations at 4 points, no Globetrotter. Nothing to fix. **Europa 1912 tickets were not added**: no complete, matching ticket list was found.
+
 ## Odd endings (edge pass 2026-10-20, `tests/edge.test.js`)
 | Fact | Value | Sources |
 |---|---|---|
@@ -105,5 +128,6 @@ Tests: `tests/rules.test.js` (one test per rule below), `tests/maps.test.js` (co
 - **Switzerland country tickets:** only [SUI-tchu] has the full list; three cards checked on the photo (Bern ×4 options, France→Deutschland 5, France→Österreich 14). Nine options differ from the shortest route by 1–2 (Chur→France 12, Deutschland↔Italia 13, Italia/France 11) — kept as listed.
 - **Switzerland bonus name** "Transalpine Express": board photo only, not in the rule text.
 - **Swiss / border flag positions** on our drawing are real places just across the border, not traced from the board.
+- **Germany passenger counts per city** rest on [GER-b] alone (they add up to 60; the rulebook gives only "the number shown on each city"). No board photo checked. Germany's border dots are real spots just across the border, like Switzerland's.
 - **17 India tickets** rest on [FMS] alone (not visible on the photos).
 - **Route score for length 7** (18) is not printed on any of these five maps; no route has length 7.

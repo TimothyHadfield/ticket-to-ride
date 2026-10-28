@@ -5,9 +5,12 @@
   const T = window.TTR, G = window.TTRGraph, AI = window.TTRAI, O = window.TTROdds, B = window.Board;
   const FX = window.FX, SFX = window.TTRSfx; // sounds + animations (js/fx.js is the shared library, js/sfx.js maps game events to it)
   const TABLE = window.TABLE, TT = window.TTRTable; // the real-table kit (js/table.js, shared) + this game's board frame and cards
-  const VERSION = '1.16';
-  const MAP_IDS = ['usa', 'europe', 'nordic', 'india', 'switzerland'];
-  const MAP_NAMES = { usa: 'USA', europe: 'Europe', nordic: 'Nordic Countries', india: 'India', switzerland: 'Switzerland' };
+  const VERSION = '1.17';
+  const MAP_IDS = ['usa', 'europe', 'nordic', 'india', 'switzerland', 'germany'];
+  const MAP_NAMES = { usa: 'USA', europe: 'Europe', nordic: 'Nordic Countries', india: 'India', switzerland: 'Switzerland', germany: 'Germany' };
+  // Germany's passenger colours, as on the board
+  const PAX_COL = { red: '#e2504c', black: '#2b2f3a', green: '#4fbf6a', yellow: '#f2cf45', blue: '#4f8ff0', white: '#f4f1e8' };
+  const paxPip = c => `<span class="pip" style="background:${PAX_COL[c]}" title="${c}"></span>`;
   const LEVELS = ['easy', 'medium', 'hard'];
   const LEVEL_NAME = { easy: 'Easy', medium: 'Medium', hard: 'Hard' };
   const PNAME = B.PLAYER_NAME;
@@ -592,7 +595,7 @@
       const sh = openSheet(`<h2>Final score${tie ? ' · tie' : ''}</h2>
         <table class="scores"><tr><th>Player</th>${cols.map(c => `<th>${c[0]}</th>`).join('')}<th>Total</th></tr>
         ${rows.map((r, i) => `<tr class="${!partial && (i === 0 || (res.tied || []).includes(r.seat)) ? 'win' : ''}"><td>${esc(r.name)}</td>${cols.map(c => `<td>${r[c[1]]}</td>`).join('')}<td><b>${r.total}</b></td></tr>`).join('')}</table>
-        <p class="note">${map.id === 'europe' ? 'European Express' : 'Longest route'}: ${rows.map(r => esc(r.name) + ' ' + r.longest).join(' · ')}</p>${missing}
+        <p class="note">${map.id === 'europe' ? 'European Express' : 'Longest route'}: ${rows.map(r => esc(r.name) + ' ' + r.longest).join(' · ')}</p>${missing}${map.passengers ? '<p class="note">Passengers are not counted here: add 20 for most and 10 for second in each colour yourself.</p>' : ''}
         <div class="acts"><button class="btn" data-x>Close</button></div>`);
       sh.querySelector('[data-x]').onclick = () => closeSheet();
       // totals count up; with every ticket known ("Pass the phone") the winner gets the confetti in their colour
@@ -699,7 +702,8 @@
       Play.fan = TABLE.fan(mine.querySelector('.hand'), groups.map(c => TT.trainCard(c, 'held' + (pl.hand[c] > 2 ? ' p3' : pl.hand[c] > 1 ? ' p2' : ''), `title="${pl.hand[c]} ${c === 'loco' ? 'locomotive' : c}"`).replace('</div>', `<span class="idx">${pl.hand[c]}</span></div>`)), { pick: false, spread: 0.66, maxRot: 10, lift: 0, minHeight: 40 });
       const notes = `
         <div class="small muted">${Play.unseenHTML(s, me)} <button class="q" data-help="unseen" aria-label="About unseen cards">?</button></div>
-        <div class="small muted" style="margin-top:4px">Longest: ${s.players.map((q, i) => `<b style="color:${fxColors[i]}">${G.longestTrail(map, q.routes).len}</b>`).join(' · ')} <button class="q" data-help="longest" aria-label="About longest route">?</button></div>
+        ${s.pax ? `<div class="sec">Passengers</div>${s.players.map((q, i) => `<div class="small pax-row"><b style="color:${fxColors[i]}">${esc(q.name)}</b>${map.passengers.colors.map(c => `${paxPip(c)}${q.pax[c]}`).join(' ')}</div>`).join('')}<p class="note">Each colour: most 20, second 10.</p>`
+          : `<div class="small muted" style="margin-top:4px">Longest: ${s.players.map((q, i) => `<b style="color:${fxColors[i]}">${G.longestTrail(map, q.routes).len}</b>`).join(' · ')} <button class="q" data-help="longest" aria-label="About longest route">?</button></div>`}
         ${study ? `<div class="sec">Study: computers' hands</div>${studyHTML}` : ''}
         <div class="sec">Log</div><div class="log">${logLines}</div>
         <div class="row" style="margin-top:10px"><button class="btn small" id="p-new">${p.online ? 'Leave room' : 'New game'}</button>${p.online ? `<span class="grow small muted">Room ${esc(Play.net && Play.net.snap ? Play.net.snap.code : '')}</span>` : ''}</div>`;
@@ -724,7 +728,7 @@
       view.querySelectorAll('.rivals [data-seat]').forEach(b => b.onclick = () => Play.guess(+b.dataset.seat));
       const on = (id, f) => { const e = view.querySelector(id); if (e) e.onclick = f; };
       on('#p-deck', () => Play.act({ type: 'draw', from: 'deck' }));
-      on('#p-tix', () => Play.act({ type: 'drawTickets' }));
+      on('#p-tix', () => T.rules(s).draw.mix ? Play.mixSheet(false) : Play.act({ type: 'drawTickets' }));
       on('#p-hint', Play.showHint);
       on('#p-undo', Play.undo);
       on('#p-replay', Play.startReplay);
@@ -745,7 +749,7 @@
       sizeBoards();
       fitTickets(view.querySelector('.mine'));
       // sheets that the state demands
-      if (pl.pending && (s.phase === 'setup' || myTurn) && !sheetEl) Play.ticketSheet();
+      if (pl.pending && (s.phase === 'setup' || myTurn) && !sheetEl) { if (pl.pending.mix) Play.mixSheet(true); else Play.ticketSheet(); }
       if (s.pendingTunnel && s.turn === me && !sheetEl) Play.tunnelSheet();
       if (s.phase === 'over') Play.recordProfile();
       if (s.phase === 'over' && !p.shownScores && !sheetEl) { p.shownScores = true; save(); Play.scores(); }
@@ -761,7 +765,7 @@
         return Play.board.render({ owner, stations: R.i >= p.claims.length ? s.stationAt : {}, path: new Set(), endCities: [], highlight: new Set(last ? [last.r] : []) });
       }
       Play.board.render({
-        owner: s.owner, stations: s.stationAt,
+        owner: s.owner, stations: s.stationAt, pax: s.pax,
         path: new Set(tix ? tix.path : Play.hintRoute ? [Play.hintRoute] : []),
         endCities: tix ? [tix.t.a, tix.t.b] : [], sel: Play.claiming || Play.hintRoute,
         highlight: new Set(Play.flash ? [Play.flash] : []),
@@ -1093,16 +1097,45 @@
       Play.confirmClaim(id, opts);
     },
     confirmClaim(id, opts) {
-      const map = Play.map, r = G.index(map).routeById[id];
+      const map = Play.map, r = G.index(map).routeById[id], s = S.play.state;
+      // Germany: pick one passenger at each end (the best colour for you is picked to start with)
+      const pax = {}, ends = s.pax ? T.paxPlaces(map, r).filter(k => s.pax[k] && s.pax[k].length) : [];
+      for (const k of ends) pax[k] = T.bestPax(T.clone(s), S.play.me, s.pax[k]);
+      const paxHTML = ends.map(k => `<div class="pax-pick" data-place="${k}"><span class="small grow">${esc(cityName(map, k))}</span>${[...new Set(s.pax[k])].map(c => `<button type="button" class="pp" data-c="${c}" style="background:${PAX_COL[c]}" aria-label="${c} passenger" aria-pressed="${pax[k] === c}"></button>`).join('')}</div>`).join('');
       const sh = openSheet(`<h2>${esc(cityName(map, r.a))} – ${esc(cityName(map, r.b))}</h2>
         <p class="note">${r.len} trains · +${T.routePoints(map, r.len)} points${r.kind === 'tunnel' ? ' · tunnel: 3 cards are turned over and each match costs one more' : ''}${r.locos ? ' · needs ' + r.locos + ' locomotive' + (r.locos > 1 ? 's' : '') : ''}</p>
+        ${paxHTML ? `<div class="sec">Passenger to take</div>${paxHTML}` : ''}
         <div class="paylist">${opts.map((o, i) => `<button type="button" class="payopt" data-o="${i}">${payLabel(o)}${o.any ? ' <span class="muted small">(swap)</span>' : ''}</button>`).join('')}</div>
         <div class="acts"><button class="btn" data-x>Cancel</button></div>`, () => { Play.claiming = null; if (S.tab === 'play') Play.render(); });
+      sh.querySelectorAll('.pax-pick [data-c]').forEach(b => b.onclick = () => {
+        const k = b.closest('[data-place]').dataset.place; pax[k] = b.dataset.c;
+        b.parentNode.querySelectorAll('[data-c]').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+      });
       // show which route is being claimed: it glows on the map, which stays visible behind a light scrim
       scrimEl.classList.add('light');
       Play.claiming = id; Play.renderBoard();
-      sh.querySelectorAll('[data-o]').forEach(b => b.onclick = () => { closeSheet(true); Play.act({ type: 'claim', route: id, pay: opts[+b.dataset.o] }); });
+      sh.querySelectorAll('[data-o]').forEach(b => b.onclick = () => { closeSheet(true); Play.act(Object.assign({ type: 'claim', route: id, pay: opts[+b.dataset.o] }, ends.length ? { pax } : {})); });
       sh.querySelector('[data-x]').onclick = () => closeSheet();
+    },
+    // Germany: say how many of the 4 tickets come from the long deck (setup: keep 2 or more; later: keep 1 or more)
+    mixSheet(setup) {
+      const s = S.play.state, R = T.rules(s), rule = setup ? R.setup : R.draw;
+      let k = setup ? 1 : 0;
+      const longLeft = typeof s.longDeck === 'number' ? s.longDeck : s.longDeck.length;
+      const sh = openSheet(`<h2>${setup ? 'Starting tickets' : 'Draw tickets'}</h2>
+        <p class="note">You draw ${rule.deal} and keep at least ${rule.keep}. Long tickets are worth 12–22 points. How many long ones?</p>
+        <div class="row" style="margin-top:8px"><span class="seg" role="group" id="mx">${Array.from({ length: rule.deal + 1 }, (_, i) => `<button type="button" data-k="${i}" ${i > longLeft ? 'disabled' : ''}>${i}</button>`).join('')}</span></div>
+        <p class="note" id="mx-say"></p>
+        <div class="acts">${setup ? '' : '<button class="btn" data-x>Cancel</button>'}<button class="btn primary" data-ok>Draw</button></div>`, null);
+      if (setup) sh.dataset.modal = '1';
+      const draw = () => {
+        sh.querySelectorAll('#mx [data-k]').forEach(b => b.setAttribute('aria-pressed', String(+b.dataset.k === k)));
+        sh.querySelector('#mx-say').textContent = (rule.deal - k) + ' short, ' + k + ' long';
+      };
+      sh.querySelectorAll('#mx [data-k]').forEach(b => b.onclick = () => { k = +b.dataset.k; draw(); });
+      const x = sh.querySelector('[data-x]'); if (x) x.onclick = () => closeSheet();
+      sh.querySelector('[data-ok]').onclick = () => { closeSheet(true); Play.act({ type: setup ? 'ticketMix' : 'drawTickets', long: k }); };
+      draw();
     },
     onCity(id) {
       const p = S.play; if (!p || !Play.stationMode) return;
@@ -1323,6 +1356,7 @@
       if (R.longest) cols.push([map.id === 'europe' ? 'Express' : 'Longest', 'longestPts']);
       if (R.globetrotter) cols.push(['Globe', 'globePts']);
       if (R.mandala) cols.push(['Mandala', 'mandalaPts']);
+      if (map.passengers) cols.push(['Passengers', 'paxPts']);
       const rows = res.order.map(i => res.rows[i]);
       const won = res.winner === p.me;
       const tied = (res.tied || [res.winner]).length > 1 ? res.tied : null; // level after every tie-break: a shared win
@@ -1407,7 +1441,7 @@
           ${rows.map(r => `<tr data-t="${r.i}"${r.i === L.ticket ? ' style="background:var(--card)"' : ''}><td>${esc(ticketName(map, r.t))}${r.t.long ? ' <span style="color:var(--accent-warm)">long</span>' : ''}</td><td>${ticketPts(r.t)}</td><td>${r.trains === Infinity ? '—' : r.trains}</td><td style="color:${r.ppt >= 2.2 ? 'var(--good)' : r.ppt >= 1.7 ? 'var(--accent-warm)' : 'var(--bad)'}">${r.ppt.toFixed(2)}</td></tr>`).join('')}</table>`;
         if (sel) { boardOpts.path = new Set(sel.path); boardOpts.endCities = [sel.t.a, sel.t.b]; boardOpts.dimOthers = true; }
       } else {
-        const list = map.routes.slice().filter(r => !r.twin || r.lane === -1).sort((x, y) => H.raw[y.id] - H.raw[x.id]).slice(0, 15);
+        const list = map.routes.slice().filter(r => !r.twin || r.lane === -1 || r.lane === -2).sort((x, y) => H.raw[y.id] - H.raw[x.id]).slice(0, 15);
         const selR = L.route && G.index(map).routeById[L.route];
         let detail = '';
         if (selR) {
@@ -1509,10 +1543,10 @@
         <div class="sec">Sound &amp; effects</div>
         <div id="s-fx"></div>
         <div class="sec">How strong are the computers? <button class="q" data-help="strength" aria-label="How strong">?</button></div>
-        <div class="row"><span class="seg" role="group">${MAP_IDS.map(id => `<button type="button" data-sm="${id}" aria-pressed="${(Settings.sm || 'usa') === id}">${MAP_NAMES[id].split(' ')[0]}</button>`).join('')}</span></div>
+        <div class="row"><span class="seg" role="group" style="flex-wrap:wrap;max-width:100%">${MAP_IDS.map(id => `<button type="button" data-sm="${id}" aria-pressed="${(Settings.sm || 'usa') === id}">${MAP_NAMES[id].split(' ')[0]}</button>`).join('')}</span></div>
         <div id="s-strength"></div>
         <div class="sec">About</div>
-        <p class="note">Maps: USA (Classic, 1910, Big Cities, Mega Game tickets), Europe, Nordic Countries, India, Switzerland. Board drawings are our own; coastlines, lakes and borders come from Natural Earth (public domain). Every route, ticket and rule is checked in <a href="https://github.com/TimothyHadfield/ticket-to-ride/blob/main/docs/rules-check.md" target="_blank" rel="noopener">rules-check</a>. Ticket to Ride is a Days of Wonder game; this is an unofficial fan tool.</p>
+        <p class="note">Maps: USA (Classic, 1910, Big Cities, Mega Game tickets), Europe, Nordic Countries, India, Switzerland, Germany. Board drawings are our own; coastlines, lakes and borders come from Natural Earth (public domain). Every route, ticket and rule is checked in <a href="https://github.com/TimothyHadfield/ticket-to-ride/blob/main/docs/rules-check.md" target="_blank" rel="noopener">rules-check</a>. Ticket to Ride is a Days of Wonder game; this is an unofficial fan tool.</p>
         <div class="row" style="margin-top:10px"><button class="btn small" id="s-reset">Clear saved games</button><span class="grow"></span><span class="small muted">v${VERSION}</span></div>`;
       Strength.note($('#s-strength'), Settings.sm || 'usa');
       panel.querySelectorAll('[data-speed]').forEach(b => b.onclick = () => { st.speed = b.dataset.speed; save(); Settings.show(); });

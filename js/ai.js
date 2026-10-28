@@ -27,12 +27,14 @@
       locos[i] = r.locos || 0; tunnel[i] = r.kind === 'tunnel' ? 1 : 0;
       if (r.twin && idxOf[r.twin] != null) twin[i] = idxOf[r.twin];
     });
+    // the other tracks of a double or triple (Germany has triples): sibs[i] = route indices
+    const sibs = map.routes.map(r => Int32Array.from((r.sibs || (r.twin ? [r.twin] : [])).map(id => idxOf[id]).filter(x => x != null)));
     const adjR = Array.from({ length: N }, () => []), adjV = Array.from({ length: N }, () => []);
     for (let i = 0; i < R; i++) { adjR[ra[i]].push(i); adjV[ra[i]].push(rb[i]); adjR[rb[i]].push(i); adjV[rb[i]].push(ra[i]); }
     const pts = new Float64Array(R);
     for (let i = 0; i < R; i++) pts[i] = T.routePoints(map, len[i]);
     m = {
-      map, ix, N, R, ra, rb, len, col, locos, tunnel, twin, idOf, idxOf, pts,
+      map, ix, N, R, ra, rb, len, col, locos, tunnel, twin, sibs, idOf, idxOf, pts,
       adjR: adjR.map(a => Int32Array.from(a)), adjV: adjV.map(a => Int32Array.from(a)),
       dist: new Float64Array(N), prev: new Int32Array(N), done: new Uint8Array(N), path: [],
       decks: {},
@@ -98,11 +100,14 @@
     const cost = new Float64Array(m.R);
     const open = new Uint8Array(m.R); // claimable in principle (free, fits my trains)
     const handAware = on(level, 'cost');
+    const paxVal = paxValues(v, seat, m, level);
     for (let i = 0; i < m.R; i++) {
-      const o = owner[i], tw = m.twin[i];
-      if (o === seat || (tw >= 0 && owner[tw] === seat)) { cost[i] = 0; continue; }
+      const o = owner[i], sb = m.sibs[i];
+      let sibMine = false, sibTaken = false;
+      for (let k = 0; k < sb.length; k++) { if (owner[sb[k]] === seat) sibMine = true; else if (owner[sb[k]] >= 0) sibTaken = true; }
+      if (o === seat || sibMine) { cost[i] = 0; continue; }
       if (o >= 0) { cost[i] = (stationCity[m.ra[i]] || stationCity[m.rb[i]]) ? 0 : Infinity; continue; }
-      if (tw >= 0 && owner[tw] >= 0 && !bothDoubles) { cost[i] = Infinity; continue; }
+      if (sibTaken && !bothDoubles) { cost[i] = Infinity; continue; }
       if (m.len[i] > me.trains) { cost[i] = Infinity; continue; }
       open[i] = 1;
       let c = m.len[i] + (m.tunnel[i] ? 0.5 : 0) + m.locos[i] * 0.5;
@@ -110,6 +115,7 @@
         const have = m.col[i] < 0 ? maxColor : handC[m.col[i]];
         c -= HARD.handBias * Math.min(have, m.len[i]);
         c += HARD.routeTurn - HARD.longBias * (m.pts[i] - m.len[i]);
+        if (paxVal) c = Math.max(0.2, c - HARD.paxCost * paxVal[i]);
       }
       cost[i] = c;
     }
@@ -119,9 +125,25 @@
     for (const id of me.routes) { const i = m.idxOf[id]; uf[find(m.ra[i])] = find(m.rb[i]); }
     const open_t = [], done_t = [];
     for (const t of me.tickets) (find(dk.ta[t]) === find(dk.tb[t]) ? done_t : open_t).push(t);
-    const c = { v, seat, level, map, m, dk, me, R, owner, cost, open, handC, locoN, maxColor, find, openT: open_t, doneT: done_t, ix: m.ix, tickets: dk.tickets };
+    const c = { v, seat, level, map, m, dk, me, R, owner, cost, open, handC, locoN, maxColor, find, openT: open_t, doneT: done_t, ix: m.ix, tickets: dk.tickets, paxVal };
     c.turnsLeft = turnsLeft(c);
     return c;
+  }
+
+  // Germany: what the passengers at a route's two ends are worth to me now (majority points gained, at least
+  // HARD.paxBase for any passenger at all). null on maps without passengers, and for Easy.
+  function paxValues(v, seat, m, level) {
+    if (!v.pax || level === 'easy') return null;
+    const map = m.map, me = v.players[seat].pax, base = T.paxPoints(v)[seat], place = {};
+    for (const [k, here] of Object.entries(v.pax)) {
+      if (!here.length) { place[k] = 0; continue; }
+      let g = 0;
+      for (const col of new Set(here)) { me[col]++; g = Math.max(g, T.paxPoints(v)[seat] - base); me[col]--; }
+      place[k] = Math.max(g, HARD.paxBase);
+    }
+    const out = new Float64Array(m.R);
+    for (let i = 0; i < m.R; i++) for (const k of T.paxPlaces(map, map.routes[i])) out[i] += place[k] || 0;
+    return out;
   }
 
   // My own turns left before the game ends (estimate from how fast each player is spending trains).
@@ -163,7 +185,7 @@
       if (dijkstra(m, work, dk.ta[t], dk.tb[t]) < 0) { failed.push(t); continue; }
       for (const r of m.path) {
         if (work[r] === 0) continue;
-        work[r] = 0; if (m.twin[r] >= 0) work[m.twin[r]] = 0;
+        work[r] = 0; for (const x of m.sibs[r]) work[x] = 0;
         routes.push(r); trains += m.len[r]; serve.set(r, t);
       }
     }
@@ -253,7 +275,8 @@
   // 'steiner' plan took Hard v Medium from 60–61% to 64–79% (1000 games a map). Tried and dropped: mid-game
   // ticket draws by expected value (Hard fell to 27–58%) and blocking a rival's likely path (50–58%).
   const HARD = { off: [], sigma: 3, trainCost: 2.5, globe: 1.5, ticketTurns: 11, ticketTrains: 14, handBias: 0.1, routeTurn: 1, longBias: 0.25, margin: 8, finalTurns: 2.5, drawLoco: 0,
-    rLen: 2, rUrg: 0, rRiv: 2.5, rHeat: 4, rTwin: 1.5, stTrainCost: 1.5, stMargin: 5 };
+    rLen: 2, rUrg: 0, rRiv: 2.5, rHeat: 4, rTwin: 1.5, stTrainCost: 1.5, stMargin: 5,
+    paxBase: 2, paxCost: 0, rPax: 0.5 }; // Germany passengers: 1000 games each, Hard v Medium 66% (route cost bias 0.05–0.3 tested: 58–65%)
   // Medium's ticket choice keeps the knobs it was measured with, so tuning Hard never changes Medium
   const MED = Object.freeze({ sigma: 3, trainCost: 1.5, globe: 1.5, margin: 5 });
 
@@ -269,6 +292,7 @@
     const rname = r => cn(c.m.map.routes[r].a) + '–' + cn(c.m.map.routes[r].b);
     c.tname = tname; c.rname = rname;
 
+    if (legal.includes('ticketMix')) { const k = mixLong(c, level, rand, true); return { type: 'ticketMix', seat, long: k, why: k + ' long ticket' + (k === 1 ? '' : 's') }; }
     if (legal.includes('keepTickets')) { const k = chooseTickets(c, level, rand); return { type: 'keepTickets', seat, keep: k.keep, why: k.why }; }
     if (legal.includes('tunnelPay')) return tunnelPay(c, level, rand);
 
@@ -309,13 +333,13 @@
       if (on(level, 'points')) {
         const minTrains = Math.min(...v.players.map(q => q.trains));
         if (legal.includes('drawTickets') && !endgame && c.turnsLeft >= HARD.ticketTurns && c.me.trains >= HARD.ticketTrains && minTrains > 8)
-          return { type: 'drawTickets', seat, why: 'tickets done and time left: more tickets' };
+          return { type: 'drawTickets', seat, long: mixLong(c, level, rand, false), why: 'tickets done and time left: more tickets' };
         const pm = pointsMove(c, rand);
         if (pm) return pm;
       } else {
         const minTrains = Math.min(...v.players.map(q => q.trains));
         if (level !== 'easy' && legal.includes('drawTickets') && !endgame && c.me.trains >= 18 && minTrains > 8)
-          return { type: 'drawTickets', seat, why: 'tickets done: more tickets' };
+          return { type: 'drawTickets', seat, long: mixLong(c, level, rand, false), why: 'tickets done: more tickets' };
         const pts = bestPointsClaim(c, 3);
         if (pts) return pts;
       }
@@ -330,10 +354,19 @@
 
     // 5. draw cards
     if (legal.includes('draw')) return drawCard(c, level, rand, false);
-    if (legal.includes('drawTickets')) return { type: 'drawTickets', seat, why: 'nothing else to do' };
+    if (legal.includes('drawTickets')) return { type: 'drawTickets', seat, long: mixLong(c, level, rand, false), why: 'nothing else to do' };
     const any = bestPointsClaim(c, 1);
     if (any) return any;
     return { type: 'pass', seat, why: 'nothing left to do' };
+  }
+
+  // Germany: how many of the 4 tickets to take from the long deck. Start: one long (two for Easy now and then);
+  // later: long tickets only with plenty of trains and turns left.
+  function mixLong(c, level, rand, setup) {
+    if (!(setup ? c.R.setup : c.R.draw).mix) return 0;
+    if (level === 'easy') return Math.floor(rand() * 3);
+    if (setup) return 1;
+    return c.turnsLeft >= 14 && c.me.trains >= 25 ? 1 : 0;
   }
 
   // T.legal() reads trainDeck/ticketDeck as arrays, but a view holds only their sizes (numbers):
@@ -341,7 +374,7 @@
   function legalIn(v, seat) {
     if (typeof v.ticketDeck !== 'number' && typeof v.trainDeck !== 'number') return T.legal(v, seat);
     const sz = x => (typeof x === 'number' ? { length: x } : x);
-    return T.legal(Object.assign({}, v, { trainDeck: sz(v.trainDeck), ticketDeck: sz(v.ticketDeck) }), seat);
+    return T.legal(Object.assign({}, v, { trainDeck: sz(v.trainDeck), ticketDeck: sz(v.ticketDeck), longDeck: sz(v.longDeck) }), seat);
   }
 
   function claimable(c, r) { return c.open[r] && T.canClaim(c.v, c.seat, c.m.idOf[r]) === null; }
@@ -356,7 +389,7 @@
   // How bad it would be to lose this route: extra trains for the detour (10 = no way round), more if rivals are near.
   function urgency(c, r) {
     const m = c.m;
-    const cost = Float64Array.from(c.cost); cost[r] = Infinity; if (m.twin[r] >= 0) cost[m.twin[r]] = Infinity;
+    const cost = Float64Array.from(c.cost); cost[r] = Infinity; for (const x of m.sibs[r]) cost[x] = Infinity;
     const d = dijkstra(m, cost, m.ra[r], m.rb[r]);
     return d < 0 ? 10 : Math.min(10, d - m.len[r]);
   }
@@ -371,7 +404,7 @@
     const m = c.m;
     if (!on(level, 'rank')) return m.len[r] * 2;
     const P = HARD, twinClose = m.twin[r] >= 0 && !c.R.bothDoubles ? 1 : 0;
-    return m.len[r] * P.rLen + (P.rUrg ? urgency(c, r) * P.rUrg : 0) + rivalsNear(c, r) * P.rRiv + (c.dk.heat[r] / c.dk.maxHeat) * P.rHeat + twinClose * P.rTwin;
+    return m.len[r] * P.rLen + (P.rUrg ? urgency(c, r) * P.rUrg : 0) + rivalsNear(c, r) * P.rRiv + (c.dk.heat[r] / c.dk.maxHeat) * P.rHeat + twinClose * P.rTwin + (c.paxVal ? c.paxVal[r] * P.rPax : 0);
   }
 
   function claimWhy(c, r, level) {
@@ -415,7 +448,7 @@
   // Points for a claim right now: the route, plus every open ticket it finishes (+2×, since it no longer loses points).
   function claimValue(c, r) {
     const m = c.m;
-    let val = m.pts[r];
+    let val = m.pts[r] + (c.paxVal ? c.paxVal[r] : 0);
     if (c.openT.length) {
       const a = c.find(m.ra[r]), b = c.find(m.rb[r]);
       if (a !== b) for (const t of c.openT) {
@@ -435,7 +468,7 @@
     if (best < 0) return null;
     const pay = bestPay(c, best);
     if (!pay) return null;
-    const fin = bv > c.m.pts[best];
+    const fin = bv > c.m.pts[best] + (c.paxVal ? c.paxVal[best] : 0);
     return { type: 'claim', seat: c.seat, route: c.m.idOf[best], pay, why: fin ? 'finishes a ticket before the end' : 'most points before the end' };
   }
 
@@ -443,7 +476,8 @@
     let best = -1, bs = 0;
     for (let r = 0; r < c.m.R; r++) {
       if (c.m.len[r] < minLen || !claimable(c, r)) continue;
-      if (c.m.pts[r] > bs) { bs = c.m.pts[r]; best = r; }
+      const v = c.m.pts[r] + (c.paxVal ? c.paxVal[r] : 0);
+      if (v > bs) { bs = v; best = r; }
     }
     if (best < 0) return null;
     const pay = bestPay(c, best);
@@ -465,7 +499,7 @@
       const short = Math.max(0, L - have) + Math.max(0, m.locos[r] - c.locoN);
       const turns = 1 + short / 1.8;
       if (turns > c.turnsLeft + 0.5) continue;
-      let val = m.pts[r] + (c.R.longest && (myCity[m.ra[r]] || myCity[m.rb[r]]) ? L * 0.4 : 0);
+      let val = m.pts[r] + (c.R.longest && (myCity[m.ra[r]] || myCity[m.rb[r]]) ? L * 0.4 : 0) + (c.paxVal ? c.paxVal[r] : 0);
       const rate = val / turns;
       if (rate > bv) { bv = rate; best = r; }
       if (short === 0 && claimable(c, r) && rate > brv) { brv = rate; bestReady = r; }
@@ -613,7 +647,8 @@
     switch (action.type) {
       case 'claim': { const r = ix.routeById[action.route]; return 'Claim ' + cn(r.a) + '–' + cn(r.b) + ' (' + r.len + ')'; }
       case 'draw': return action.from === 'deck' ? 'Draw from the deck' : 'Take the face-up ' + (v.faceUp[action.from] === LOCO ? 'locomotive' : v.faceUp[action.from]);
-      case 'drawTickets': return 'Draw new tickets';
+      case 'drawTickets': return 'Draw new tickets' + (action.long ? ' (' + action.long + ' long)' : '');
+      case 'ticketMix': return 'Draw ' + (4 - action.long) + ' short and ' + action.long + ' long tickets';
       case 'keepTickets': return 'Keep ' + action.keep.map(t => { const k = (T.plainTickets ? T.plainTickets(map, v) : T.deckFor(map, v).tickets)[t]; return cn(k.a) + '–' + cn(k.b); }).join(', ');
       case 'station': return 'Build a station in ' + cn(action.city);
       case 'tunnelPay': return action.pay ? 'Pay the extra cards' : 'Give up the tunnel';

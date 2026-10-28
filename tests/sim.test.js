@@ -13,7 +13,7 @@ function cards(s) {
   return n;
 }
 
-for (const id of ['usa', 'europe', 'nordic', 'india', 'switzerland']) {
+for (const id of ['usa', 'europe', 'nordic', 'india', 'switzerland', 'germany']) {
   test(id + ': computer games run to the end by the rules', () => {
     const map = loadMap(id);
     const total = Object.values(map.deck.colors).reduce((a, b) => a + b, 0) + map.deck.loco;
@@ -26,7 +26,7 @@ for (const id of ['usa', 'europe', 'nordic', 'india', 'switzerland']) {
         const p = s.players[row.seat];
         assert.ok(p.trains >= 0);
         assert.strictEqual(row.routePts, p.routes.reduce((a, r) => a + T.routePoints(map, G.index(map).routeById[r].len), 0));
-        assert.strictEqual(row.total, row.routePts + row.ticketPts + row.stationPts + row.longestPts + row.globePts + row.mandalaPts);
+        assert.strictEqual(row.total, row.routePts + row.ticketPts + row.stationPts + row.longestPts + row.globePts + row.mandalaPts + (row.paxPts || 0));
         // trains used = sum of claimed lengths
         assert.strictEqual(map.trains - p.trains, p.routes.reduce((a, r) => a + G.index(map).routeById[r].len, 0));
       }

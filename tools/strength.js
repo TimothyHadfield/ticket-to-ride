@@ -1,5 +1,5 @@
 // Measures how strong each computer level is, by self-play on every map, and writes data/strength.json.
-//   node tools/strength.js [games=2000] [maps=usa,europe,nordic,india] [--no-write] [--only=medium-hard] [--hard={"trainCost":1}]
+//   node tools/strength.js [games=2000] [maps=usa,europe,nordic,india] [--no-write] [--merge] [--only=medium-hard] [--hard={"trainCost":1}]
 // Pairings: Easy v Medium, Medium v Hard, Easy v Hard (2 players); Easy/Medium/Hard (3 players, every map);
 // a 4-player mix (Hard, Medium, Medium, Easy) on USA and Europe. Seats rotate so every level sits in every seat
 // equally often (the first player is also random). Games run in parallel worker threads.
@@ -102,6 +102,8 @@ async function main() {
   console.log('total', total, 'games in', secs.toFixed(1) + 's =', (total / secs).toFixed(1), 'games/s on', threads, 'threads');
   if (!flag('no-write')) {
     fs.mkdirSync(path.join(__dirname, '..', 'data'), { recursive: true });
+    // --merge: keep the other maps already measured, replace only the maps run now
+    if (flag('merge')) { try { const old = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'data', 'strength.json'), 'utf8')); out.maps = Object.assign(old.maps || {}, out.maps); } catch (e) { /* nothing to keep */ } }
     fs.writeFileSync(path.join(__dirname, '..', 'data', 'strength.json'), JSON.stringify(out, null, 2) + '\n');
     console.log('wrote data/strength.json');
   }

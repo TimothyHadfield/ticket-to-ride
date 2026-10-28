@@ -12,7 +12,7 @@ const rid = (m, a, b) => m.routes.find(r => (r.a === a && r.b === b) || (r.a ===
 
 // Walk through games where the moves come from a random mix of levels; at every position ask all three
 // levels what they would do (seeing only their own view) and check the engine accepts each answer.
-for (const id of ['usa', 'europe', 'nordic', 'india']) {
+for (const id of ['usa', 'europe', 'nordic', 'india', 'germany']) {
   test(id + ': every level always answers with a legal move', () => {
     const map = loadMap(id);
     const levels = ['easy', 'medium', 'hard'];

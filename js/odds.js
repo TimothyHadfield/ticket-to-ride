@@ -29,7 +29,7 @@
         const r = ix.routeById[id];
         // credit both routes of a double
         h[id] += 1 / paths.length;
-        if (r.twin) h[r.twin] += 1 / paths.length;
+        for (const x of sibsOf(r)) h[x] += 1 / paths.length;
       }
     }
     const max = Math.max(...Object.values(h)) || 1;
@@ -38,6 +38,9 @@
     return out;
   }
 
+  // the other tracks of a double (twin) or a triple (sibs, Germany)
+  const sibsOf = r => r.sibs || (r.twin ? [r.twin] : []);
+
   // Cost function for a seat on a board position.
   // pos: {owner:{routeId:seat}, me, bothDoubles, stationCities:[...] (cities where I have a station)}
   function costFn(map, pos, extraBlocked) {
@@ -45,10 +48,11 @@
     return r => {
       const o = pos.owner[r.id];
       if (o === pos.me) return 0;
-      if (r.twin && pos.owner[r.twin] === pos.me) return 0;
+      const sb = sibsOf(r);
+      if (sb.some(x => pos.owner[x] === pos.me)) return 0;
       if (o != null) return (st.has(r.a) || st.has(r.b)) ? 0 : Infinity;
       if (extraBlocked && extraBlocked.has(r.id)) return Infinity;
-      if (r.twin && pos.owner[r.twin] != null && !pos.bothDoubles) return Infinity;
+      if (!pos.bothDoubles && sb.some(x => pos.owner[x] != null)) return Infinity;
       return r.len;
     };
   }
@@ -92,7 +96,7 @@
           const r = pool[i];
           if (w[i] > 0) {
             taken.add(r.id);
-            if (r.twin && !pos.bothDoubles) taken.add(r.twin);
+            if (!pos.bothDoubles) for (const x of sibsOf(r)) taken.add(x);
             budget -= r.len; wsum -= w[i]; w[i] = 0;
           }
         }
@@ -153,7 +157,7 @@
   // If a route is taken, how much longer does the cheapest path between its ends get?
   function detour(map, routeId, blocked) {
     const ix = G.index(map), r = ix.routeById[routeId];
-    const gone = new Set(blocked || []); gone.add(r.id); if (r.twin) gone.add(r.twin);
+    const gone = new Set(blocked || []); gone.add(r.id); for (const x of sibsOf(r)) gone.add(x);
     const sp = G.shortest(map, r.a, r.b, x => gone.has(x.id) ? Infinity : x.len);
     return sp ? { len: sp.dist, extra: sp.dist - r.len, path: sp.path } : null;
   }
