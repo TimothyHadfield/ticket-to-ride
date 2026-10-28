@@ -77,3 +77,9 @@
 - **Built:** open on Play + PWA (1a7864a); Hard AI 60–72% → 68–78% (26e30ec); guided game, Rules sheet, My stats + Daily, Undo, Replay (09dc6d8); locomotive run + coast tint (4f3418f); claim step rings the exact route (ebaa118); cache ?v=15, v1.14.
 - **Verified:** 96/96 tests (tests/tutorial.test.js failed on the old build: module missing); pwa-check 18/18; play-layout-check 24/24; zoom-check 226/226; WebKit shots 393/320/landscape/1440 (guided game walked to a real tap-claim, rules, My stats, paused locomotive); live-check per push.
 - **Open:** see NOT verified (reviewer leftovers are Tim's calls).
+
+## 2026-10-28 — wave 3 (builder under the manager)
+- **Asked:** Tim: "Just make the games better" (layout, house rules, videos, variants). Brief: Europe check, one more exactly sourced map played by the computers, 2–3 house rules off by default, 2–5 learn videos, leftovers (ticket names cut, replay pause, landscape strip).
+- **Built:** 32fc7f8 (v1.16): house rules (globetrotter, free locomotives, doubles in 2–3 players), 4 Rules videos, whole ticket names, replay pause/step, sideways board fills the height. 026ee31 (v1.17, ?v=22): Germany map with passengers, short/long ticket mix, triple routes; computers play it; Odds/Lab handle triples; Settings map row wraps (was clipped at 320); 5th video (Germany).
+- **Verified:** tests 101 → 114 (germany.test 5 of 7 failed on the old engine; house.test failed first too); w3-check 56/56 usa + germany (old build failed 9); germany-check 85/85; zoom-check 270/270; play-layout 24/24; pwa 18/18; Germany 1000-game ladder Hard>Med 66.3%, Med>Easy 92.5%; WebKit shots at 393/320/659x393/1280/1440; live-check 026ee31 LIVE.
+- **Open:** see NOT verified (Wave 3 line).
