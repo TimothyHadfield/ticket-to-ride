@@ -69,8 +69,15 @@
           <h4>Switzerland (2–3 players, 40 trains)</h4><ul><li>Locomotives are wild only on tunnels. Some tickets lead to a <b>country</b>: score the best one you reach, or lose the lowest if none.</li>
           <li>Start with 5 tickets, keep 2; returned tickets leave the game.</li></ul>` },
         { id: 'site', short: 'This site', title: 'Options on this site', html: `<ul><li><b>Ticket decks</b> for USA: Classic, 1910 (Globetrotter instead of longest route), Big Cities and Mega Game.</li>
-          <li><b>Longest route bonus</b> can be switched off in Settings (a common house rule).</li>
+          <li><b>House rules</b> in Settings → Rules, all off unless you switch them on (the computers play by them too):
+            <b>no longest route bonus</b>; a <b>Globetrotter</b> bonus (15 for the most finished tickets, ties all) on maps without one;
+            a <b>face-up locomotive counts as 1 card</b> (you still draw a second); <b>both double tracks open</b> with 2–3 players.</li>
           <li><b>Undo</b> and <b>Hint</b> work against the computers; a game where you used them counts as “with help” in My stats.</li></ul>` },
+        { id: 'videos', short: 'Videos', title: 'Learn by watching', html: `<p>Videos by other people on YouTube (they open in a new tab).</p><ul class="vids">
+          <li><a href="https://www.youtube.com/watch?v=4JhFhyvGdik" target="_blank" rel="noopener">Ticket to Ride – How To Play</a> · Watch It Played, 11 min: the full base game, step by step.</li>
+          <li><a href="https://www.youtube.com/watch?v=yPGLlaGrShY" target="_blank" rel="noopener">How to Play Ticket to Ride</a> · Triple S Games, 4 min: the quick version.</li>
+          <li><a href="https://www.youtube.com/watch?v=difSEK9A6f0" target="_blank" rel="noopener">How to play Ticket to Ride Europe</a> · Days of Wonder, 5 min: stations, tunnels and ferries.</li>
+          <li><a href="https://www.youtube.com/watch?v=MFscuIQrCq8" target="_blank" rel="noopener">13 tips on how to win at Ticket to Ride</a> · Legendary Tactics, 7 min: strategy.</li></ul>` },
       ],
       foot: 'Fan-made summary in our own words, not the publisher’s rulebook. Every number is checked in docs/rules-check.md.',
     };

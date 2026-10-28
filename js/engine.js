@@ -39,7 +39,12 @@
     };
     // USA 1910 deck plays Globetrotter instead of Longest Route; Mega Game plays both.
     if (map.id === 'usa' && s.deckId === '1910') r.longest = 0;
-    if (s.options && s.options.noLongest) r.longest = 0;
+    const o = s.options || {};
+    if (o.noLongest) r.longest = 0;
+    // house rules (Settings → Rules, off by default)
+    if (o.globe && !r.globetrotter) r.globetrotter = 15; // most completed tickets: 15 (as USA 1910)
+    if (o.doubles) r.bothDoubles = true; // both tracks of a double open with any player count
+    r.freeLocos = freeLocoDraw(map) || !!o.freeLocos; // a face-up locomotive counts as one card
     return r;
   }
 
@@ -296,7 +301,7 @@
     if (p.pending) fail('choose tickets first');
 
     if (a.type === 'draw') {
-      const free = freeLocoDraw(map);
+      const free = R.freeLocos;
       if (a.from === 'deck') {
         const c = drawOne(s);
         if (!c) fail('no cards left');

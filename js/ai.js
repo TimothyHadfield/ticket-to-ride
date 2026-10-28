@@ -509,7 +509,7 @@
   function drawCard(c, level, rand, second) {
     const v = c.v, seat = c.seat, map = c.map;
     const deckLeft = v.trainDeck > 0 || v.discard.length > 0;
-    const okUp = (card) => card && !(second && card === LOCO && !map.nordicLocos);
+    const okUp = (card) => card && !(second && card === LOCO && !c.R.freeLocos);
     if (level === 'easy') {
       const opts = v.faceUp.map((card, i) => ({ card, i })).filter(x => okUp(x.card));
       if (opts.length && rand() < 0.5) { const o = opts[Math.floor(rand() * opts.length)]; return { type: 'draw', seat, from: o.i, why: 'liked the look of it' }; }
@@ -544,7 +544,7 @@
       if (!okUp(card)) return;
       let sc;
       if (card === LOCO) {
-        if (map.nordicLocos) sc = 1.2;
+        if (c.R.freeLocos) sc = 1.2;
         else if (locoWant > 0) sc = 2.2;
         else if (level === 'hard') {
           // one wild card instead of two: worth it only when one card short of everything
@@ -592,7 +592,7 @@
     let best = -1, bv = -Infinity, loco = -1;
     v.faceUp.forEach((card, i) => {
       if (!card) return;
-      if (card === LOCO) { if (map.nordicLocos) { if (red[NC] > bv) { bv = red[NC]; best = i; } } else loco = i; return; }
+      if (card === LOCO) { if (c.R.freeLocos) { if (red[NC] > bv) { bv = red[NC]; best = i; } } else loco = i; return; }
       const val = red[CI[card]] + 0.01 * c.handC[CI[card]];
       if (val > bv) { bv = val; best = i; }
     });

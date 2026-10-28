@@ -7,6 +7,9 @@
   const T = isNode ? require('./engine.js') : root.TTR;
   const AI = isNode ? require('./ai.js') : root.TTRAI;
 
+  // house rules from the room options: only the known switches, as booleans
+  const houseOf = h => { const o = {}; for (const k of ['noLongest', 'globe', 'freeLocos', 'doubles']) if (h && h[k]) o[k] = true; return o; };
+
   const game = {
     id: 'ticket-to-ride',
     minSeats: 2, maxSeats: 5,
@@ -16,7 +19,7 @@
       if (!map) throw new Error('map not loaded: ' + options.mapId);
       if (n < map.players[0] || n > map.players[1]) throw new Error(map.name + ' takes ' + map.players.join('–') + ' players');
       return T.newGame(map, {
-        seed: Math.floor(rng() * 2147483647) + 1, deckId: options.deckId, options: { noLongest: !!options.noLongest },
+        seed: Math.floor(rng() * 2147483647) + 1, deckId: options.deckId, options: Object.assign({ noLongest: !!options.noLongest }, houseOf(options.house)),
         seats: seats.map((x, i) => ({ name: x.name || (x.kind === 'computer' ? 'Computer ' + (i + 1) : 'Player ' + (i + 1)), kind: x.kind === 'computer' ? 'cpu' : 'human', level: x.kind === 'computer' ? (options.level || 'medium') : null })),
       });
     },

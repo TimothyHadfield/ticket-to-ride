@@ -472,6 +472,9 @@ table.scores tr.win td { color: var(--accent-warm); font-weight: 700; }
 .tabletop .status .st-text { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .tabletop .status .btn { min-height: 34px; background: rgba(250,244,228,.12); border-color: rgba(250,244,228,.25); color: #f6efdc; }
 .tabletop .status .btn.primary { background: var(--accent); color: #0d1424; }
+.rp-ctl { display: inline-flex; gap: 3px; flex: none; }
+.rp-ctl .btn.small { padding: 5px 8px; min-width: 32px; }
+.rp-ctl .btn:disabled { opacity: .4; }
 .notes-sheet .sec:first-child { margin-top: 10px; }
 
 /* rivals: the far side of the table */
@@ -549,7 +552,9 @@ table.scores tr.win td { color: var(--accent-warm); font-weight: 700; }
 .tkt .tk-map use { fill: #d9c99c; stroke: #a8946a; stroke-width: 3; }
 .tkt .tk-map line { stroke: #b8352a; stroke-linecap: round; }
 .tkt .tk-map circle { fill: #b8352a; stroke: #2b2116; stroke-width: 3; }
-.tkt .tk-c { position: relative; display: block; font: 700 10.5px/1.2 Georgia, "Times New Roman", serif; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tkt .tk-c { position: relative; display: block; flex: 1 1 auto; min-height: 0; font: 700 10.5px/1.15 Georgia, "Times New Roman", serif; overflow: hidden; }
+/* each place name on its own line, wrapped at spaces if it must; app.js fitTickets() shrinks the type until it fits */
+.tkt .tk-c > span { display: block; }
 .tkt .tk-p { position: absolute; right: 3px; top: 3px; min-width: 20px; height: 20px; padding: 0 3px; border-radius: 10px; background: #2b2116; color: #fbf3dc; font: 800 11.5px/20px system-ui, sans-serif; text-align: center; }
 .tkt { display: flex; flex-direction: column; justify-content: flex-start; }
 .tkt .tk-ch { position: absolute; right: 4px; bottom: 3px; z-index: 1; font: 800 11px/1 system-ui, sans-serif; text-shadow: 0 0 2px #f4ead0, 0 0 2px #f4ead0; }
@@ -568,7 +573,7 @@ table.scores tr.win td { color: var(--accent-warm); font-weight: 700; }
   .tabletop.game .supply { grid-area: sup; --card-w: 30px; padding-top: 6px; }
   .tabletop.game .panel { grid-area: panel; }
   .tabletop.game .mine { grid-area: mine; --card-w: 32px; align-self: end; overflow: hidden; }
-  .tabletop.game .tkt { width: 100px; height: 40px; }
+  .tabletop.game .tkt { width: 100px; height: 48px; }
   .tabletop.game .tkt .tk-map { display: none; }
 }
 

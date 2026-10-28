@@ -5,7 +5,7 @@
   const T = window.TTR, G = window.TTRGraph, AI = window.TTRAI, O = window.TTROdds, B = window.Board;
   const FX = window.FX, SFX = window.TTRSfx; // sounds + animations (js/fx.js is the shared library, js/sfx.js maps game events to it)
   const TABLE = window.TABLE, TT = window.TTRTable; // the real-table kit (js/table.js, shared) + this game's board frame and cards
-  const VERSION = '1.15';
+  const VERSION = '1.16';
   const MAP_IDS = ['usa', 'europe', 'nordic', 'india', 'switzerland'];
   const MAP_NAMES = { usa: 'USA', europe: 'Europe', nordic: 'Nordic Countries', india: 'India', switzerland: 'Switzerland' };
   const LEVELS = ['easy', 'medium', 'hard'];
@@ -74,6 +74,15 @@
     });
   }
   // the rules sheet (shared js/coach.js; the text is in js/tutorial.js)
+  // the rule switches in Settings → Rules, as engine game options (house rules are off unless switched on)
+  function houseRules() {
+    const st = S.settings, o = {};
+    if (st.longest === false) o.noLongest = true;
+    if (st.globe) o.globe = true;
+    if (st.freeLocos) o.freeLocos = true;
+    if (st.doubles) o.doubles = true;
+    return o;
+  }
   function openRules(open) { if (window.COACH && window.TTRTutorial) { closeSheet(true); COACH.rules(Object.assign(window.TTRTutorial.rules(), { open })); } }
   function showTab(id, push) {
     if (!TABS.some(t => t[0] === id)) id = 'play';
@@ -179,6 +188,7 @@
       // laptop, or a phone on its side during a game: the board takes its grid cell
       const game = v.classList.contains('game');
       const F0 = parseFloat(getComputedStyle(wrap).getPropertyValue('--frame')) || 0;
+      if (id === 'play' && !(game && !wide && window.innerWidth > window.innerHeight)) { v.style.gridTemplateColumns = ''; const sup = v.querySelector('.supply'); if (sup) sup.style.removeProperty('--card-w'); }
       if (wide || window.innerWidth > window.innerHeight) {
         // laptop or phone on its side: the board is the real board's shape (the drawn map's own width : height), as big
         // as its space allows, centred; it is never stretched to the space's shape (2026-10-21)
@@ -188,6 +198,21 @@
           // a grid cell: let the board fill it to read its size
           wrap.style.width = wrap.style.height = ''; wrap.style.justifySelf = wrap.style.alignSelf = 'stretch';
           aw = wrap.offsetWidth; ah = wrap.offsetHeight;
+          // phone on its side (Play): the side column gives the board the width its shape needs to fill the height,
+          // so no empty wood strip is left above and below it (column kept 250–340 px)
+          if (!wide && id === 'play') {
+            v.style.gridTemplateColumns = ''; const sup0 = v.querySelector('.supply'); if (sup0) sup0.style.removeProperty('--card-w');
+            aw = wrap.offsetWidth; ah = wrap.offsetHeight;
+            const col0 = parseFloat(getComputedStyle(v).gridTemplateColumns.split(' ').pop()) || 300;
+            const ideal = (ah - 2 * F0) * b.ratio(aw - 2 * F0) + 2 * F0;
+            const col = Math.round(Math.max(250, Math.min(340, col0 + aw - ideal)));
+            if (Math.abs(col - col0) > 2) {
+              v.style.gridTemplateColumns = `minmax(0, 1fr) ${col}px`;
+              // the supply row (ticket deck, 5 face-up cards, deck, discard) shrinks with the column
+              const sup = v.querySelector('.supply'); if (sup) sup.style.setProperty('--card-w', Math.min(30, Math.floor((col - 26) / 8.7)) + 'px');
+              aw = wrap.offsetWidth; ah = wrap.offsetHeight;
+            }
+          }
         } else {
           // board beside the panel: the panel keeps at least its basis, the board takes the rest
           const panel = v.querySelector('.panel'), pb = parseFloat(getComputedStyle(panel).flexBasis) || panel.offsetWidth;
@@ -225,6 +250,7 @@
     }
   }
   window.addEventListener('resize', sizeBoards);
+  window.addEventListener('resize', () => { const m = $('#v-play .mine'); if (m) fitTickets(m); });
   function makeBoard(id, map, handlers) {
     // tab shown, map changed or game started: the board goes back to auto (the whole board in view)
     if (boards[id]) { boards[id].setMap(map); boards[id].toAuto(); Object.assign(boards[id].handlers, handlers); return boards[id]; }
@@ -278,7 +304,16 @@
     const r = Math.max(w, h) * 0.03;
     return `<button type="button" class="${cls}${sel ? ' sel' : ''}${(t.orig || t).long ? ' long' : ''}" data-tix="${i}" aria-label="${esc(ticketName(map, t))}, ${ticketPts(t)} points">
       <svg class="tk-map" viewBox="0 0 ${w} ${h}" aria-hidden="true"><use href="#tkland-${map.id}"/>${ends.length === 2 ? `<line x1="${ends[0].x}" y1="${ends[0].y}" x2="${ends[1].x}" y2="${ends[1].y}" stroke-width="${(r * 0.8).toFixed(1)}"/>` : ''}${ends.map(e => `<circle cx="${e.x}" cy="${e.y}" r="${r.toFixed(1)}"/>`).join('')}</svg>
-      <span class="tk-c">${nm.map(esc).join('<br>')}</span><span class="tk-p">${ticketPts(t)}</span>${st}</button>`;
+      <span class="tk-c">${nm.map(x => '<span>' + esc(x) + '</span>').join('')}</span><span class="tk-p">${ticketPts(t)}</span>${st}</button>`;
+  }
+  // ticket cards show both place names whole: the type shrinks (down to 7.5 px) until the names fit the card
+  function fitTickets(root) {
+    root.querySelectorAll('.tkt .tk-c').forEach(e => {
+      e.style.fontSize = '';
+      let px = parseFloat(getComputedStyle(e).fontSize);
+      const over = () => e.scrollWidth > e.clientWidth + 0.5 || e.scrollHeight > e.clientHeight + 0.5;
+      while (over() && px > 7.5) { px -= 0.5; e.style.fontSize = px + 'px'; }
+    });
   }
   function chip(seat, name, score, meta, on, turn) {
     return `<button type="button" class="pchip${on ? ' on' : ''}${turn ? ' turn' : ''}" data-seat="${seat}"><span class="nm"><i style="background:${B.PLAYER[seat]}"></i>${esc(name)}</span><span class="sc">${score}</span><span class="mt">${meta}</span></button>`;
@@ -412,7 +447,7 @@
         toast('Removed ' + cityName(map, r.a) + '–' + cityName(map, r.b), Table.undo);
         return;
       }
-      const why = T.routeOpen({ owner: tb.claims, players: tb.players, mapId: map.id, deckId: tb.deckId }, r, seat);
+      const why = T.routeOpen({ owner: tb.claims, players: tb.players, mapId: map.id, deckId: tb.deckId, options: houseRules() }, r, seat);
       if (why === 'own twin') return refuse(tb.players[seat].name + ' already has the other track');
       if (why === 'double closed') return refuse('With ' + tb.players.length + ' players only one of the two tracks is used');
       const trains = map.trains - Object.entries(tb.claims).filter(([, o]) => o === seat).reduce((a, [rid]) => a + G.index(map).routeById[rid].len, 0);
@@ -534,7 +569,7 @@
       const tb = S.table, map = Table.map;
       // build an engine state from the table and score it
       const s = {
-        mapId: map.id, deckId: tb.deckId, options: { noLongest: S.settings.longest === false }, owner: tb.claims, stationAt: tb.stations || {},
+        mapId: map.id, deckId: tb.deckId, options: houseRules(), owner: tb.claims, stationAt: tb.stations || {},
         players: tb.players.map((p, seat) => ({
           name: p.name, routes: Object.keys(tb.claims).filter(id => tb.claims[id] === seat), tickets: tb.tickets[seat] || [],
           stationCities: Object.keys(tb.stations || {}).filter(c => tb.stations[c] === seat),
@@ -621,7 +656,7 @@
       else if (myTurn) status = Play.stationMode ? 'Tap a city for your station' : 'Your turn';
       else status = esc(s.players[s.turn].name) + ' is playing…';
       if (s.lastRound != null && s.phase !== 'over') status += ' · last round';
-      if (Play.replay) { const R = Play.replay, x = p.claims[R.i - 1]; status = 'Replay · turn ' + (x ? x.t : 0) + ' · ' + R.i + ' of ' + p.claims.length + ' routes'; }
+      if (Play.replay) status = Play.replayText();
       // odds for my tickets
       const pos = Play.pos(s, me);
       const odds = pl.tickets.length ? O.ticketChances(map, Object.assign(pos, { tickets: pl.tickets.map(i => pos.deckTickets[i]), myCards: T.handSize(pl.hand) })) : { tickets: [] };
@@ -671,11 +706,11 @@
       panel.innerHTML = `
         <div class="status"><span class="dot" style="background:${fxColors[s.turn]}"></span><span class="grow st-text">${status}</span>
           ${stuck ? '<button class="btn small primary" id="p-pass">Pass</button>' : ''}
-          ${Play.replay ? '<button class="btn small primary" id="p-rstop">Stop</button>' : ''}
+          ${Play.replay ? `<span class="rp-ctl"><button class="btn small" id="p-rback" aria-label="Previous route" ${Play.replay.i > 0 ? '' : 'disabled'}>‹</button><button class="btn small" id="p-rpause" aria-label="${Play.replay.paused ? 'Play the replay' : 'Pause the replay'}">${Play.replay.paused ? 'Play' : 'Pause'}</button><button class="btn small" id="p-rnext" aria-label="Next route" ${Play.replay.i < p.claims.length ? '' : 'disabled'}>›</button></span><button class="btn small primary" id="p-rstop">Stop</button>` : ''}
           ${Play.canUndo() ? '<button class="btn small" id="p-undo" aria-label="Undo my last move">Undo</button>' : ''}
           ${s.phase === 'main' && myTurn ? '<button class="btn small" id="p-hint">Hint</button>' : ''}
           ${s.phase === 'over' && !Play.replay ? (p.claims && p.claims.length ? '<button class="btn small" id="p-replay">Replay</button>' : '') + '<button class="btn small primary" id="p-score">Scores</button>' : ''}
-          <button class="btn small notes-btn" id="p-notes" aria-label="Notes: unseen cards, longest, log">Notes</button></div>
+          ${Play.replay ? '' : '<button class="btn small notes-btn" id="p-notes" aria-label="Notes: unseen cards, longest, log">Notes</button>'}</div>
         <div class="notes">${notes}</div>`;
       // the hint is written on a note laid on the board, so nothing below it moves
       let note = Play.board && view.querySelector('.board-wrap .board-note');
@@ -694,6 +729,9 @@
       on('#p-undo', Play.undo);
       on('#p-replay', Play.startReplay);
       on('#p-rstop', Play.stopReplay);
+      on('#p-rpause', Play.pauseReplay);
+      on('#p-rback', () => Play.stepReplay(-1));
+      on('#p-rnext', () => Play.stepReplay(1));
       on('#p-pass', () => Play.act({ type: 'pass' }));
       on('#p-score', Play.scores);
       on('#p-new', newGame);
@@ -705,6 +743,7 @@
       on('#p-station', () => { Play.stationMode = !Play.stationMode; Play.render(); });
       view.querySelectorAll('[data-tix]').forEach(b => b.onclick = () => { Play.sel = Play.sel === +b.dataset.tix ? null : +b.dataset.tix; Play.render(); });
       sizeBoards();
+      fitTickets(view.querySelector('.mine'));
       // sheets that the state demands
       if (pl.pending && (s.phase === 'setup' || myTurn) && !sheetEl) Play.ticketSheet();
       if (s.pendingTunnel && s.turn === me && !sheetEl) Play.tunnelSheet();
@@ -849,7 +888,7 @@
       panel.querySelectorAll('[data-lv]').forEach(b => b.onclick = () => { levels[+b.dataset.lv] = b.dataset.l; Play.setupLevels = levels; Play.renderSetup(panel); });
       panel.querySelector('#p-start').onclick = () => {
         const seats = [{ name: 'You', kind: 'human' }].concat(Array.from({ length: k }, (_, i) => ({ name: PNAME[i + 1], kind: 'cpu', level: levels[i] })));
-        const state = T.newGame(map, { seed: (Math.random() * 2 ** 31) >>> 0, deckId: Play.setupDeck || map.ticketDecks[0].id, seats, options: { noLongest: S.settings.longest === false } });
+        const state = T.newGame(map, { seed: (Math.random() * 2 ** 31) >>> 0, deckId: Play.setupDeck || map.ticketDecks[0].id, seats, options: houseRules() });
         S.play = { me: 0, state };
         Play.gen++; Play.hint = null; Play.sel = null; Play.stationMode = false;
         save(); Play.board.toAuto(); Play.render(); FX.play('shuffle'); Play.pump();
@@ -983,10 +1022,30 @@
       const step = Math.max(180, Math.round(delay() * 0.55));
       Play.replay.timer = setInterval(() => {
         const R = Play.replay; if (!R || S.play !== p || S.tab !== 'play') return Play.stopReplay();
+        if (R.paused) return;
         if (R.i >= p.claims.length) { if (++R.hold > 3) Play.stopReplay(); return; }
-        R.i++; R.hold = 0; Play.render(); FX.play('place');
+        R.i++; R.hold = 0; Play.replayRefresh(); FX.play('place');
       }, step);
       Play.render();
+    },
+    replayText() { const R = Play.replay, p = S.play, x = p.claims[R.i - 1]; return 'Replay ' + R.i + '/' + p.claims.length + ' · turn ' + (x ? x.t : 0); },
+    // a replay step redraws only the board and the status words: the buttons stay put, so a tap is never lost
+    replayRefresh() {
+      const R = Play.replay, p = S.play; if (!R || !p) return;
+      const v = $('#v-play'), t = v.querySelector('.st-text'); if (t) t.textContent = Play.replayText();
+      const set = (id, off) => { const b = v.querySelector(id); if (b) b.disabled = off; };
+      set('#p-rback', R.i <= 0); set('#p-rnext', R.i >= p.claims.length);
+      const pb = v.querySelector('#p-rpause'); if (pb) { pb.textContent = R.paused ? 'Play' : 'Pause'; pb.setAttribute('aria-label', R.paused ? 'Play the replay' : 'Pause the replay'); }
+      Play.renderBoard();
+    },
+    // pause / play, and step one route back or forward (stepping pauses)
+    pauseReplay() { const R = Play.replay; if (!R) return; R.paused = !R.paused; R.hold = 0; if (!R.paused && R.i >= S.play.claims.length) R.i = 0; Play.replayRefresh(); },
+    stepReplay(d) {
+      const R = Play.replay, p = S.play; if (!R || !p) return;
+      R.paused = true; R.hold = 0;
+      const i = Math.max(0, Math.min(p.claims.length, R.i + d));
+      if (i !== R.i) { R.i = i; if (d > 0) FX.play('place'); }
+      Play.replayRefresh();
     },
     stopReplay(quiet) {
       if (!Play.replay) return;
@@ -1235,7 +1294,7 @@
         closeSheet(true);
         const room = await Play.netRoom();
         Play.render();
-        const r = await room.createRoom({ name, seats: ['human'].concat(kinds.slice(0, n - 1).map(k => k === 'friend' ? 'empty' : 'computer')), options: { mapId: map.id, deckId: Play.setupDeck || map.ticketDecks[0].id, level, noLongest: S.settings.longest === false } });
+        const r = await room.createRoom({ name, seats: ['human'].concat(kinds.slice(0, n - 1).map(k => k === 'friend' ? 'empty' : 'computer')), options: { mapId: map.id, deckId: Play.setupDeck || map.ticketDecks[0].id, level, house: houseRules() } });
         if (!r.ok) Play.netEnd();
       };
     },
@@ -1441,6 +1500,10 @@
         <div class="sec">Rules</div>
         ${window.COACH ? '<div class="row" style="margin:4px 0 8px"><button class="btn small" id="s-rules">Read the rules</button><button class="btn small" id="s-tour">Replay the guided game</button></div>' : ''}
         <div class="setting"><span class="label">Longest route bonus<div class="note">Off is a common house rule. Nordic and USA 1910 never use it.</div></span><label class="switch"><input type="checkbox" id="s-longest" ${st.longest !== false ? 'checked' : ''}><span></span></label></div>
+        <div class="setting"><span class="label">Globetrotter bonus<div class="note">House rule: 15 for the most finished tickets (ties all), on maps without one.</div></span><label class="switch"><input type="checkbox" id="s-globe" ${st.globe ? 'checked' : ''}><span></span></label></div>
+        <div class="setting"><span class="label">Face-up locomotive = 1 card<div class="note">House rule: take it and still draw a second card.</div></span><label class="switch"><input type="checkbox" id="s-freeloco" ${st.freeLocos ? 'checked' : ''}><span></span></label></div>
+        <div class="setting"><span class="label">Both double tracks open<div class="note">House rule: with 2–3 players the second track of a double can be claimed too.</div></span><label class="switch"><input type="checkbox" id="s-doubles" ${st.doubles ? 'checked' : ''}><span></span></label></div>
+        <p class="note" style="margin:2px 0 0">Rules switches apply to the next new game. The computers play by them too.</p>
         <div class="sec">Table</div>
         <div class="setting"><span class="label">Ticket privacy <button class="q" data-help="privacy" aria-label="About ticket privacy">?</button></span><span class="seg" role="group"><button type="button" data-priv="mine" aria-pressed="${st.privacy === 'mine'}">Just mine</button><button type="button" data-priv="pass" aria-pressed="${st.privacy === 'pass'}">Pass the phone</button></span></div>
         <div class="sec">Sound &amp; effects</div>
@@ -1458,6 +1521,9 @@
       $('#s-study').onchange = e => { st.study = e.target.checked; save(); };
       $('#s-cb').onchange = e => { st.cb = e.target.checked; save(); applyCb(); };
       $('#s-longest').onchange = e => { st.longest = e.target.checked; save(); };
+      $('#s-globe').onchange = e => { st.globe = e.target.checked; save(); };
+      $('#s-freeloco').onchange = e => { st.freeLocos = e.target.checked; save(); };
+      $('#s-doubles').onchange = e => { st.doubles = e.target.checked; save(); };
       if (window.COACH) { $('#s-rules').onclick = () => openRules(); $('#s-tour').onclick = () => Play.startTutorial(); }
       FX.renderSettings($('#s-fx')); // its Effects speed buttons use data-fxspeed, so they never touch Computer speed
       $('#s-reset').onclick = () => {
