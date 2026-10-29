@@ -5,7 +5,7 @@
   const T = window.TTR, G = window.TTRGraph, AI = window.TTRAI, O = window.TTROdds, B = window.Board;
   const FX = window.FX, SFX = window.TTRSfx; // sounds + animations (js/fx.js is the shared library, js/sfx.js maps game events to it)
   const TABLE = window.TABLE, TT = window.TTRTable; // the real-table kit (js/table.js, shared) + this game's board frame and cards
-  const VERSION = '1.17';
+  const VERSION = '1.18';
   const MAP_IDS = ['usa', 'europe', 'nordic', 'india', 'switzerland', 'germany'];
   const MAP_NAMES = { usa: 'USA', europe: 'Europe', nordic: 'Nordic Countries', india: 'India', switzerland: 'Switzerland', germany: 'Germany' };
   // Germany's passenger colours, as on the board
@@ -882,7 +882,7 @@
         panel.querySelector('#p-rules').onclick = () => openRules();
         // first visit: offer the guided game once
         if (Play.tour && !Play.tour.seen() && !Play.tour.saved() && !COACH.offered('ttr-first')) {
-          COACH.offer({ id: 'ttr-first', title: 'New to Ticket to Ride?', text: 'Play a guided first game against one easy computer.', yes: 'Teach me', no: 'No thanks', onYes: () => Play.startTutorial() });
+          COACH.offer({ id: 'ttr-first', title: 'New to Ticket to Ride?', text: 'Play a guided first game against one easy computer.', yes: 'Teach me', no: 'No thanks', onYes: () => Play.startTutorial(), place: 'auto', avoid: ['#p-start'] });
         }
       }
       Strength.note($('#p-strength'), map.id, true);
