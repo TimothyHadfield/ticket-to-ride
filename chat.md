@@ -83,3 +83,6 @@
 - **Built:** 32fc7f8 (v1.16): house rules (globetrotter, free locomotives, doubles in 2–3 players), 4 Rules videos, whole ticket names, replay pause/step, sideways board fills the height. 026ee31 (v1.17, ?v=22): Germany map with passengers, short/long ticket mix, triple routes; computers play it; Odds/Lab handle triples; Settings map row wraps (was clipped at 320); 5th video (Germany).
 - **Verified:** tests 101 → 114 (germany.test 5 of 7 failed on the old engine; house.test failed first too); w3-check 56/56 usa + germany (old build failed 9); germany-check 85/85; zoom-check 270/270; play-layout 24/24; pwa 18/18; Germany 1000-game ladder Hard>Med 66.3%, Med>Easy 92.5%; WebKit shots at 393/320/659x393/1280/1440; live-check 026ee31 LIVE.
 - **Open:** see NOT verified (Wave 3 line).
+
+## 2026-10-28 — kit sweep (builder b4)
+- Built 2f59d08: game-coach 1.2.0 (offer place auto, avoids Start) + game-pwa 1.4.0, build 23. Verified: node tests 114/114, quit test pass, pwa-check 18/18, offer rects at 3 sizes (0 overlap), settings 320 scrollWidth 320/320, live-check LIVE.
