@@ -5,7 +5,7 @@
   const T = window.TTR, G = window.TTRGraph, AI = window.TTRAI, O = window.TTROdds, B = window.Board;
   const FX = window.FX, SFX = window.TTRSfx; // sounds + animations (js/fx.js is the shared library, js/sfx.js maps game events to it)
   const TABLE = window.TABLE, TT = window.TTRTable; // the real-table kit (js/table.js, shared) + this game's board frame and cards
-  const VERSION = '1.18';
+  const VERSION = '1.19';
   const MAP_IDS = ['usa', 'europe', 'nordic', 'india', 'switzerland', 'germany'];
   const MAP_NAMES = { usa: 'USA', europe: 'Europe', nordic: 'Nordic Countries', india: 'India', switzerland: 'Switzerland', germany: 'Germany' };
   // Germany's passenger colours, as on the board
@@ -281,10 +281,10 @@
   // ---- real-table pieces (js/table.js is the shared kit, js/tabletop.js the board frame + cards)
   // a rival's seat: one chip with the name, the score and the counts folded in (cards held, tickets, trains left), so the
   // map gets the height a second strip of card fans and train heaps took (2026-10-20, visibility round 2)
-  function seatHTML(q, i, score, turn) {
+  function seatHTML(q, i, score, turn, won) {
     const n = q.handCount != null ? q.handCount : T.handSize(q.hand);
     const nt = typeof q.tickets === 'number' ? q.tickets : (q.tickets || []).length;
-    return `<div class="seat chip${turn ? ' turn' : ''}" data-seat="${i}" role="button" tabindex="0" aria-label="${esc(q.name)}: ${score} points, ${q.trains} trains, ${n} cards, ${nt} tickets">
+    return `<div class="seat chip${turn ? ' turn' : ''}${won ? ' won' : ''}" data-seat="${i}" role="button" tabindex="0" aria-label="${esc(q.name)}: ${score} points, ${q.trains} trains, ${n} cards, ${nt} tickets">
       <div class="tbl-plate"><i style="background:${B.PLAYER[i]}"></i><span class="nm">${esc(q.name)}</span><b class="sc">${score}</b><span class="cnt"><span class="ic ic-c" title="cards"></span>${n}<span class="ic ic-t" title="tickets"></span>${nt}<span class="ic ic-r" style="background:${B.PLAYER[i]}" title="trains"></span>${q.trains}</span></div></div>`;
   }
   // a destination ticket lying in front of me: the two places, the points, a little map with the line, and the chance
@@ -640,6 +640,8 @@
       if (Play.net && (!p || !p.online || (Play.net.snap && Play.net.snap.status === 'lobby'))) return Play.renderLobby(panel);
       if (!p || p.state.mapId !== map.id) return Play.renderSetup(panel);
       const s = p.state, me = p.me;
+      Play.finaleCheck(p);
+      const ending = Play.ending(), res = s.result;
       const study = S.settings.study && !p.online;
       if (study && !p.study) { p.study = true; save(); } // seeing the computers' cards: not a rated game
       const legal = T.legal(s, me);
@@ -650,7 +652,8 @@
       const pl = s.players[me];
       // status
       let status = '';
-      if (s.phase === 'over') status = 'Game over';
+      if (s.phase === 'over' && ending && res) status = `<b>${(res.tied || [res.winner]).length > 1 ? 'Tie!' : res.winner === me ? 'You win!' : esc(s.players[res.winner].name) + ' wins!'}</b> ${esc((s.log.slice().reverse().find(l => !/game over/i.test(l.text)) || {}).text || '')}`;
+      else if (s.phase === 'over') status = 'Game over';
       else if (s.phase === 'setup') status = pl.pending ? 'Choose your starting tickets' : 'Waiting for the others…';
       else if (s.pendingTunnel && s.turn === me) status = 'Tunnel: pay ' + s.pendingTunnel.extra + ' more?';
       else if (myTurn && pl.pending) status = 'Choose tickets to keep';
@@ -670,11 +673,13 @@
       view.classList.add('game');
       const scores = s.players.map((_, i) => s.phase === 'over' && s.result ? s.result.rows[i].total : T.liveRoutePoints(s, i));
       const turnOf = i => s.turn === i && s.phase !== 'over';
+      // the few seconds after the last turn: the winner's seat glows before the scores open
+      const wonSeat = i => ending && res && (res.tied || [res.winner]).includes(i);
       // ---- the far side of the table: each rival's seat (name plate, held card backs, face-down tickets, train heap)
       // four rivals on a phone: smaller card fans and train heaps so every seat fits across
       const tight = !wide && s.players.length >= 5;
       view.querySelector('.rivals').classList.toggle('tight', tight);
-      view.querySelector('.rivals').innerHTML = s.players.map((q, i) => i === me ? '' : seatHTML(q, i, scores[i], turnOf(i))).join('');
+      view.querySelector('.rivals').innerHTML = s.players.map((q, i) => i === me ? '' : seatHTML(q, i, scores[i], turnOf(i), wonSeat(i))).join('');
       // ---- beside the board: ticket deck, the five face-up cards, the train deck, the discard pile
       const sup = view.querySelector('.supply');
       sup.innerHTML = `
@@ -691,7 +696,7 @@
       const mine = view.querySelector('.mine');
       const tix = odds.tickets.map((x, i) => ticketCard(map, x.t, x, i, Play.sel === i)).join('');
       mine.innerHTML = `
-        <div class="me-seat${turnOf(me) ? ' turn' : ''}" data-seat="${me}">
+        <div class="me-seat${turnOf(me) ? ' turn' : ''}${wonSeat(me) ? ' won' : ''}" data-seat="${me}">
           <div class="tbl-plate"><i style="background:${B.PLAYER[me]}"></i><span class="nm">${esc(pl.name)}</span><b class="sc">${scores[me]}</b></div>
           <div class="me-stuff">${TT.heap(B.PLAYER[me], pl.trains, 'me', wide)}${map.stations ? `<button type="button" class="st-btn${Play.stationMode ? ' on' : ''}" id="p-station" ${myTurn && !s.drew && pl.stations > 0 ? '' : 'disabled'} aria-pressed="${Play.stationMode}" title="Build a station (${T.stationCost(s, me)} cards)"><svg viewBox="0 0 18 18" aria-hidden="true"><path d="M2 9l7-7 7 7v7H2z" fill="${B.PLAYER[me]}"/></svg>${pl.stations}</button><button class="q" data-help="stations" aria-label="About stations">?</button>` : ''}</div>
         </div>
@@ -713,7 +718,7 @@
           ${Play.replay ? `<span class="rp-ctl"><button class="btn small" id="p-rback" aria-label="Previous route" ${Play.replay.i > 0 ? '' : 'disabled'}>‹</button><button class="btn small" id="p-rpause" aria-label="${Play.replay.paused ? 'Play the replay' : 'Pause the replay'}">${Play.replay.paused ? 'Play' : 'Pause'}</button><button class="btn small" id="p-rnext" aria-label="Next route" ${Play.replay.i < p.claims.length ? '' : 'disabled'}>›</button></span><button class="btn small primary" id="p-rstop">Stop</button>` : ''}
           ${Play.canUndo() ? '<button class="btn small" id="p-undo" aria-label="Undo my last move">Undo</button>' : ''}
           ${s.phase === 'main' && myTurn ? '<button class="btn small" id="p-hint">Hint</button>' : ''}
-          ${s.phase === 'over' && !Play.replay ? (p.claims && p.claims.length ? '<button class="btn small" id="p-replay">Replay</button>' : '') + '<button class="btn small primary" id="p-score">Scores</button>' : ''}
+          ${s.phase === 'over' && !Play.replay && !ending ? (p.claims && p.claims.length ? '<button class="btn small" id="p-replay">Replay</button>' : '') + '<button class="btn small primary" id="p-score">Scores</button>' : ''}
           ${Play.replay ? '' : '<button class="btn small notes-btn" id="p-notes" aria-label="Notes: unseen cards, longest, log">Notes</button>'}</div>
         <div class="notes">${notes}</div>`;
       // the hint is written on a note laid on the board, so nothing below it moves
@@ -752,7 +757,7 @@
       if (pl.pending && (s.phase === 'setup' || myTurn) && !sheetEl) { if (pl.pending.mix) Play.mixSheet(true); else Play.ticketSheet(); }
       if (s.pendingTunnel && s.turn === me && !sheetEl) Play.tunnelSheet();
       if (s.phase === 'over') Play.recordProfile();
-      if (s.phase === 'over' && !p.shownScores && !sheetEl) { p.shownScores = true; save(); Play.scores(); }
+      if (s.phase === 'over' && !ending && !p.shownScores && !sheetEl) { p.shownScores = true; save(); Play.scores(); }
     },
     renderBoard() {
       const p = S.play; if (!p || !Play.board) return;
@@ -768,7 +773,8 @@
         owner: s.owner, stations: s.stationAt, pax: s.pax,
         path: new Set(tix ? tix.path : Play.hintRoute ? [Play.hintRoute] : []),
         endCities: tix ? [tix.t.a, tix.t.b] : [], sel: Play.claiming || Play.hintRoute,
-        highlight: new Set(Play.flash ? [Play.flash] : []),
+        // the finale keeps the last route of the game lit until the scores open
+        highlight: new Set(Play.flash ? [Play.flash] : Play.ending() && p.claims && p.claims.length ? [p.claims[p.claims.length - 1].r] : []),
       });
     },
     // score race: route points after every turn
@@ -1055,6 +1061,25 @@
       if (!Play.replay) return;
       clearInterval(Play.replay.timer); Play.replay = null;
       if (!quiet && S.tab === 'play') Play.render();
+    },
+    // the ending is a moment, not a cut (2026-11-25, from Catan): a game seen ending live keeps the table
+    // for 5 s (2.5 s on Fast) with the winner's seat glowing before the scores sheet opens
+    finale: null, finaleSeen: null,
+    finaleCheck(p) {
+      if (!p.online && !p.fid) p.fid = Date.now() + ':' + Math.random(); // which local game this is
+      const s = p.state, id = p.online ? 'net' : p.fid;
+      if (s.phase === 'over' && Play.finaleSeen && Play.finaleSeen.id === id && Play.finaleSeen.ph !== 'over' && !p.shownScores) {
+        const ms = S.settings.speed === 'fast' ? 2500 : 5000;
+        Play.finale = { id, until: Date.now() + ms };
+        clearTimeout(Play.finaleT); Play.finaleT = setTimeout(() => { if (S.tab === 'play') Play.render(); }, ms + 20);
+      }
+      Play.finaleSeen = { id, ph: s.phase };
+      document.body.classList.toggle('finale', Play.ending());
+    },
+    ending() {
+      const p = S.play, f = Play.finale;
+      if (!p || !f || p.state.phase !== 'over' || Play.replay) return false;
+      return f.id === (p.online ? 'net' : p.fid) && Date.now() < f.until;
     },
     flashRoute(id) { Play.flash = id; clearTimeout(Play.flashT); Play.flashT = setTimeout(() => { Play.flash = null; if (S.tab === 'play') Play.render(); }, 1400); },
     // computers move one action at a time, with a pause so you can follow

@@ -495,6 +495,10 @@ table.scores tr.win td { color: var(--accent-warm); font-weight: 700; }
 .tbl-plate .nm { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .tbl-plate .sc { font-variant-numeric: tabular-nums; font-size: 13px; color: #ffe2a0; }
 .seat.turn .tbl-plate, .me-seat.turn .tbl-plate { border-color: #f0c35a; box-shadow: 0 0 0 2px rgba(240,195,90,.5), 0 2px 4px rgba(0,0,0,.4); }
+/* the few seconds after the last turn: the winner's plate glows (same gold as Catan) */
+.seat.won .tbl-plate, .me-seat.won .tbl-plate { border-color: #f5d76e; box-shadow: 0 0 0 2px #f5d76e, 0 0 18px rgba(245,215,110,.75); animation: wonPulse 1.1s ease-in-out infinite; }
+@keyframes wonPulse { 50% { box-shadow: 0 0 0 3px #f5d76e, 0 0 26px rgba(245,215,110,.95); } }
+@media (prefers-reduced-motion: reduce) { .seat.won .tbl-plate, .me-seat.won .tbl-plate { animation: none; } }
 .seat-stuff { display: flex; align-items: flex-end; justify-content: space-between; gap: 3px; min-height: 22px; }
 .seat-stuff b, .me-stuff b { font-size: 11px; font-weight: 700; color: #efe6d2; font-variant-numeric: tabular-nums; text-shadow: 0 1px 2px #000; line-height: 1; }
 .backs { position: relative; display: inline-block; flex: none; }
