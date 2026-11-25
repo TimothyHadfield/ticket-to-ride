@@ -67,6 +67,7 @@ Hard = Steiner-style plan from every ticket start + own ticket-choice knobs (`HA
 - Online: the host's browser holds the full state and runs the computers (shared-module design). Each player receives only the public view plus their own hand and tickets.
 - Online seats that are left open become computers at the level picked when the room is created.
 - Study mode is off in online games: it would show other players' cards.
+- 2026-11-25, Catan lessons (8bba7ea, v1.19): on a live finish the last claimed route stays highlighted for 5 s (2.5 s on Fast), the status line says "X wins!", and the winner's plate glows gold (`Play.finaleCheck`/`Play.ending`, `body.finale`). After that the Scores sheet opens. Random first player, ticket reveal and no-scroll were already fine.
 
 ## QA (fresh agent, 2026-10-20, live site)
 - Fixed: phone taps on 28–59 short routes per map were swallowed by city taps (now 0 of 478 fail, measured by tapping every route's middle in WebKit); routes under the zoom buttons; Start racing a map load; Table's first "Drew tickets" capped at 3; 4–5 player chips cut off; online lobby/join polish.
