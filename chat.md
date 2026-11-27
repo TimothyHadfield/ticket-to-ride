@@ -86,3 +86,9 @@
 
 ## 2026-10-28 — kit sweep (builder b4)
 - Built 2f59d08: game-coach 1.2.0 (offer place auto, avoids Start) + game-pwa 1.4.0, build 23. Verified: node tests 114/114, quit test pass, pwa-check 18/18, offer rects at 3 sizes (0 overlap), settings 320 scrollWidth 320/320, live-check LIVE.
+
+## 2026-11-27 — fit pass (builder under the manager)
+- **Asked:** Tim: "make sure the user can actually see the full screen and everything" (spacing, sizing, fit only; no restyle).
+- **Built:** f8211c6 (v1.20, ?v=25): rival counts 12 px on their own chip line (sideways names whole), ticket points 12.5 px, 320 face-up 28 px wide, laptop tickets under the supply in the right column (`placeTickets`), hand fan re-laid after sizeBoards.
+- **Verified:** `tests/fit-ui.mjs` 484/484 (old build failed 78) at 393/320/659x393/1280/1440, early + crowded 5-player long-name game; node tests 114/114, quit test, play-layout 24/24, w3-check 56/56, zoom-check 270/270, pwa-check 18/18. Shots `C:/Users/timha/AppData/Local/Temp/claude/wt/fit-shots/ttr/before|after`.
+- **Open:** see NOT verified (Fit pass line).
