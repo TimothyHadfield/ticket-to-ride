@@ -67,7 +67,9 @@ for (const size of SIZES) {
   if (size.phone) {
     ok(m.label >= 8.9, `${tag}: city names ${m.label.toFixed(1)} px in the default view (want >= 9)`);
     ok(!m.stuffShown && m.seatMax <= 40, `${tag}: rival seats take a second strip (seat ${m.seatMax.toFixed(0)} px tall)`);
-    const faceMax = size.w < 360 ? 37 : 47; // a quarter shorter than before (49 / 62 px)
+    // a quarter shorter than before (49 / 62 px); 320 px wide was 37, raised to 43 by the fit pass (2026-11-27) so
+    // the face-up cards are at least 28 px wide to tap
+    const faceMax = size.w < 360 ? 43 : 47;
     ok(m.faceH > 0 && m.faceH <= faceMax, `${tag}: face-up cards ${m.faceH.toFixed(0)} px tall (want <= ${faceMax})`);
     const whole = q => q.routes.l >= q.svg.l - 1 && q.routes.r <= q.svg.r + 1 && q.routes.t >= q.svg.t - 1 && q.routes.b <= q.svg.b + 1;
     if (!whole(m)) {

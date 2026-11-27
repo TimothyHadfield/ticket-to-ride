@@ -5,7 +5,7 @@
   const T = window.TTR, G = window.TTRGraph, AI = window.TTRAI, O = window.TTROdds, B = window.Board;
   const FX = window.FX, SFX = window.TTRSfx; // sounds + animations (js/fx.js is the shared library, js/sfx.js maps game events to it)
   const TABLE = window.TABLE, TT = window.TTRTable; // the real-table kit (js/table.js, shared) + this game's board frame and cards
-  const VERSION = '1.19';
+  const VERSION = '1.20';
   const MAP_IDS = ['usa', 'europe', 'nordic', 'india', 'switzerland', 'germany'];
   const MAP_NAMES = { usa: 'USA', europe: 'Europe', nordic: 'Nordic Countries', india: 'India', switzerland: 'Switzerland', germany: 'Germany' };
   // Germany's passenger colours, as on the board
@@ -252,8 +252,17 @@
       wrap.style.height = Math.max(120, Math.min(Math.round(want), maxH)) + 'px';
     }
   }
+  // laptop: my tickets lie in the right-hand column under the supply, where all of them fit (they scrolled sideways in
+  // the bottom row past 4); a phone keeps them in my seat (fit pass 2026-11-27)
+  function placeTickets() {
+    const v = $('#v-play'), t = v && v.querySelector('.mytix'); if (!t) return;
+    const deal = v.querySelector('.deal'), mine = v.querySelector('.mine');
+    if (window.innerWidth >= 900) { if (t.parentNode !== deal) deal.insertBefore(t, deal.querySelector('.panel')); }
+    else if (t.parentNode !== mine) mine.insertBefore(t, mine.querySelector('.hand'));
+  }
+  window.addEventListener('resize', placeTickets);
   window.addEventListener('resize', sizeBoards);
-  window.addEventListener('resize', () => { const m = $('#v-play .mine'); if (m) fitTickets(m); });
+  window.addEventListener('resize', () => { const m = $('#v-play'); if (m) fitTickets(m); });
   function makeBoard(id, map, handlers) {
     // tab shown, map changed or game started: the board goes back to auto (the whole board in view)
     if (boards[id]) { boards[id].setMap(map); boards[id].toAuto(); Object.assign(boards[id].handlers, handlers); return boards[id]; }
@@ -702,6 +711,8 @@
         </div>
         <div class="mytix">${tix || '<span class="empty">No tickets yet</span>'}${tix ? '<button class="q" data-help="chance" aria-label="About chance">?</button>' : ''}</div>
         <div class="hand" aria-label="My hand"></div>`;
+      view.querySelectorAll('.deal > .mytix').forEach(e => e.remove());
+      placeTickets();
       if (Play.fan && Play.fan.disconnect) Play.fan.disconnect();
       const groups = T.COLORS.concat('loco').filter(c => pl.hand[c] > 0);
       Play.fan = TABLE.fan(mine.querySelector('.hand'), groups.map(c => TT.trainCard(c, 'held' + (pl.hand[c] > 2 ? ' p3' : pl.hand[c] > 1 ? ' p2' : ''), `title="${pl.hand[c]} ${c === 'loco' ? 'locomotive' : c}"`).replace('</div>', `<span class="idx">${pl.hand[c]}</span></div>`)), { pick: false, spread: 0.66, maxRot: 10, lift: 0, minHeight: 40 });
@@ -752,7 +763,9 @@
       on('#p-station', () => { Play.stationMode = !Play.stationMode; Play.render(); });
       view.querySelectorAll('[data-tix]').forEach(b => b.onclick = () => { Play.sel = Play.sel === +b.dataset.tix ? null : +b.dataset.tix; Play.render(); });
       sizeBoards();
-      fitTickets(view.querySelector('.mine'));
+      // sizeBoards can narrow the side column (phone on its side): lay the hand out again at the final width
+      if (Play.fan && Play.fan.layout) Play.fan.layout();
+      fitTickets(view);
       // sheets that the state demands
       if (pl.pending && (s.phase === 'setup' || myTurn) && !sheetEl) { if (pl.pending.mix) Play.mixSheet(true); else Play.ticketSheet(); }
       if (s.pendingTunnel && s.turn === me && !sheetEl) Play.tunnelSheet();
@@ -861,6 +874,7 @@
       const v = $('#v-play'), was = v.classList.contains('game');
       v.classList.remove('game');
       ['.rivals', '.supply', '.mine'].forEach(s => { v.querySelector(s).innerHTML = ''; });
+      v.querySelectorAll('.deal > .mytix').forEach(e => e.remove());
       const n = v.querySelector('.board-note'); if (n) n.classList.remove('show');
       if (boards.play && boards.play.frame) boards.play.frame.scores([]);
       if (Play.fan && Play.fan.disconnect) { Play.fan.disconnect(); Play.fan = null; }
